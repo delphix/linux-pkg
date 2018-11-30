@@ -1,0 +1,10 @@
+#
+# All those packages will be auto-updated by the updateall job.
+# Note that if you want to keep a package's upstream branch to be updated
+# but prevent it from being merged, add the package to
+# auto-merge-blacklist.pkg.
+#
+
+cloud-init
+python-rtslib-fb
+targetcli-fb
