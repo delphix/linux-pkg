@@ -5,6 +5,7 @@
 # auto-merge-blacklist.pkg.
 #
 
+bpftrace
 cloud-init
 python-rtslib-fb
 targetcli-fb

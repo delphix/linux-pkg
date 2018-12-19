@@ -3,12 +3,10 @@
 # be available to appliance-build.
 #
 
+bpftrace
 cloud-init
 connstat
 delphix-kernel
 delphix-platform
 python-rtslib-fb
 targetcli-fb
-
-# Uncomment once Delphix repositories are created
-#bpftrace
