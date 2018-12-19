@@ -541,16 +541,28 @@ function update_upstream_from_source_package() {
 function update_upstream_from_git() {
 	check_env UPSTREAM_GIT_URL UPSTREAM_GIT_BRANCH
 	logmust cd "$WORKDIR/repo"
-	check_git_ref "remotes/origin/$REPO_UPSTREAM_BRANCH" repo-HEAD
+	check_git_ref "remotes/origin/$REPO_UPSTREAM_BRANCH"
 
+	#
+	# checkout our local branch that tracks upstream.
+	#
+	logmust git checkout -q -b upstream-HEAD \
+		"remotes/origin/$REPO_UPSTREAM_BRANCH"
+
+	#
+	# Fetch updates from third-party upstream repository.
+	#
 	logmust git remote add upstream "$UPSTREAM_GIT_URL"
 	logmust git fetch upstream "$UPSTREAM_GIT_BRANCH"
 
-	if git diff --cached --quiet FETCH_HEAD \
+	#
+	# Compare third-party upstream repository to our local snapshot of the
+	# upstream repository.
+	#
+	if git diff --quiet FETCH_HEAD \
 		"remotes/origin/$REPO_UPSTREAM_BRANCH"; then
 		echo "NOTE: upstream for $PACKAGE is already up-to-date."
 	else
-		logmust git checkout -q repo-HEAD
 		#
 		# Note we do --ff-only here which will fail if upstream has
 		# been rebased. We always want this behaviour as a rebase
