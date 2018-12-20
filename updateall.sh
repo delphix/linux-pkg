@@ -85,7 +85,6 @@ STATUS_DIR="$TOP/update-status"
 logmust mkdir "$STATUS_DIR"
 
 function report_status() {
-	local has_report=false
 	local pkg
 	local status
 
@@ -97,6 +96,16 @@ function report_status() {
 
 	echo ""
 	echo -e "${FMT_BOLD}Status Report: $status"
+
+	#
+	# Return if there is nothing to report
+	#
+	[[ -f "$STATUS_DIR/upstream-pushed" ]] ||
+		[[ -f "$STATUS_DIR/merge-pushed" ]] ||
+		[[ -f "$STATUS_DIR/update-failed" ]] ||
+		[[ -f "$STATUS_DIR/unexpected-failure" ]] ||
+		return
+
 	echo_bold "___________________________________________"
 
 	if $dry_run; then
@@ -105,7 +114,6 @@ function report_status() {
 	fi
 
 	if [[ -f "$STATUS_DIR/upstream-pushed" ]]; then
-		has_report=true
 		echo -e "${FMT_GREEN}Upstream updated for following" \
 			"packages:${FMT_NF}"
 		while read -r pkg; do
@@ -115,7 +123,6 @@ function report_status() {
 	fi
 
 	if [[ -f "$STATUS_DIR/merge-pushed" ]]; then
-		has_report=true
 		echo -e "${FMT_GREEN}Merged following packages with" \
 			"upstream:${FMT_NF}"
 		while read -r pkg; do
@@ -125,7 +132,6 @@ function report_status() {
 	fi
 
 	if [[ -f "$STATUS_DIR/update-failed" ]]; then
-		has_report=true
 		echo -e "${FMT_RED}Failed to update following packages:" \
 			"${FMT_NF}"
 		while read -r pkg; do
@@ -135,7 +141,6 @@ function report_status() {
 	fi
 
 	if [[ -f "$STATUS_DIR/unexpected-failure" ]]; then
-		has_report=true
 		echo -e "${FMT_RED}Unexpected failure when updating following" \
 			"packages:${FMT_NF}"
 		while read -r pkg; do
@@ -143,8 +148,6 @@ function report_status() {
 		done <"$STATUS_DIR/unexpected-failure"
 		echo ""
 	fi
-
-	$has_report || echo_bold "Nothing to report."
 
 	echo_bold "___________________________________________"
 	echo ""
