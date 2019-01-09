@@ -23,8 +23,4 @@ Standards-Version: 4.1.2
 
 Package: delphix-extra
 Architecture: any
-Depends: ${delphix:Depends}
-Description: Consolidation for Delphix third-party packages.
-  This package ensures that third-party packages built in the linux-pkg
-  repository are installed, even if their versions are lower than upstream
-  Ubuntu packages.
+Description: Provides build metadata for packages built by linux-pkg.

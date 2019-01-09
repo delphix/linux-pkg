@@ -76,8 +76,8 @@ branches.
 ### Building packages
 
 This task is relatively straight forward. Every package that needs to be built
-is built and a metapackage is created to make sure that third-party packages
-built by this framework will be installed over packages provided by Ubuntu.
+is built and a metapackage is created with the build info of each package that
+was built.
 You can see section [Scripts > buildall.sh](#buildallsh) below for more details.
 
 ### Updating third-party packages
@@ -157,12 +157,8 @@ which will update the package with upstream. See section
 Builds "all" the packages and the metapackage. It actually scans
 [package-lists/buildall.pkgs](./package-lists/buildall.pkgs) and builds the
 packages listed there by invoking `buildpkg.sh` on each one of them. Once they
-are all built, it builds the metapackage, which scans
-[package-lists/metapackage.pkgs](./package-lists/metapackage.pkgs) and creates a
-dependency on the exact version of the package built. The metapackge is used to
-make sure that the packages that are being built by this job are going to be
-favored over stock Ubuntu packages, regardless of their version and revision
-numbers.
+are all built, it builds the metapackage, which stores the build info for each
+package that was built -- info such as git hash, git url and git branch.
 
 `buildall.sh` was designed to be called by automation, as such it can be
 configured by passing various environment variables. See section
@@ -660,10 +656,6 @@ You can refer to the Debian Maintainer Guide
 * If this is a third-party package that is to be auto-updated by `updateall.sh`,
   it should also be added to
   [package-lists/updateall.pkgs](./package-lists/updateall.pkgs).
-
-* If this is a third-party package that is also provided by Ubuntu, it must be
-  added to [package-lists/metapackage.pkgs](./package-lists/metapackage.pkgs) to
-  make sure that it is installed instead of the stock Ubuntu package.
 
 * To make sure that the new package is included in the Delphix Appliance by
   appliance-build, it should be added as a dependency to an existing package

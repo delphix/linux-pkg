@@ -23,19 +23,6 @@ METADIR="$TOP/metapackage/"
 
 logmust read_package_list "$TOP/package-lists/buildall.pkgs"
 ALL_PACKAGES=("${_RET_LIST[@]}")
-logmust read_package_list "$TOP/package-lists/metapackage.pkgs"
-DEPENDS_PACKAGES=("${_RET_LIST[@]}")
-
-shopt -s failglob
-for pkg in "${DEPENDS_PACKAGES[@]}"; do
-	cd "$TOP/packages/${pkg}/tmp/artifacts" ||
-		die "$TOP/packages/${pkg}/tmp/artifacts missing." \
-			"Did you build package $pkg?"
-
-	for deb in *.deb; do
-		dpkg-deb --show --showformat='${Package} (=${Version}), ' "$deb"
-	done
-done | sed 's/, $//' >"$METADIR/depends"
 
 logmust mkdir -p "$METADIR/etc"
 
