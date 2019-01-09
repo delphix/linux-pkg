@@ -14,7 +14,7 @@
 # limitations under the License.
 #
 
-.PHONY: clean prepare deb
+.PHONY: clean deb
 
 METAPACKAGE_VERSION ?= 1.0.0
 

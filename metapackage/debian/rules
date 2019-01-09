@@ -18,9 +18,6 @@
 %:
 	dh $@
 
-override_dh_gencontrol:
-	dh_gencontrol -- -Vdelphix:Depends="$$(cat depends)"
-
 override_dh_auto_test:
 	#
 	# Don't run 'make test' during the build step; we'll enforce
