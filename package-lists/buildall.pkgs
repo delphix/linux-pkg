@@ -3,6 +3,10 @@
 # be available to appliance-build.
 #
 
+# Note: bcc should be built before bpftrace since it provides libbcc which is
+# required to build bpftrace.
+bcc
+
 bpftrace
 cloud-init
 connstat
