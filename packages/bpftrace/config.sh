@@ -23,6 +23,10 @@ UPSTREAM_GIT_URL="https://github.com/iovisor/bpftrace.git"
 UPSTREAM_GIT_BRANCH="master"
 
 function prepare() {
+	if ! dpkg-query --show libbcc >/dev/null 2>&1; then
+		echo_bold "libbcc not installed. Building package 'bcc' first."
+		logmust $TOP/buildpkg.sh bcc
+	fi
 
 	#
 	# Due to a bug in Ubuntu's version of Clang we need to fetch the packages
