@@ -24,7 +24,6 @@ export REPO_UPSTREAM_BRANCH="upstreams/master"
 
 # shellcheck disable=SC2086
 function enable_colors() {
-	export DPKG_COLORS="always"
 	[[ -t 1 ]] && flags="" || flags="-T xterm"
 	FMT_RED="$(tput $flags setaf 1)"
 	FMT_GREEN="$(tput $flags setaf 2)"
@@ -34,7 +33,6 @@ function enable_colors() {
 }
 
 function disable_colors() {
-	unset DPKG_COLORS
 	FMT_RED=""
 	FMT_GREEN=""
 	FMT_BOLD=""
