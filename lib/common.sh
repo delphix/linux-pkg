@@ -473,11 +473,12 @@ function default_revision() {
 function fetch_repo_from_git() {
 	check_env PACKAGE_GIT_URL PACKAGE_GIT_BRANCH
 
-	logmust cd "$WORKDIR"
-	logmust git clone --branch "$PACKAGE_GIT_BRANCH" "$PACKAGE_GIT_URL" \
-		repo
+	logmust mkdir "$WORKDIR/repo"
 	logmust cd "$WORKDIR/repo"
-	logmust git checkout -b repo-HEAD HEAD
+	logmust git init
+	logmust git fetch --no-tags "$PACKAGE_GIT_URL" \
+		"+$PACKAGE_GIT_BRANCH:repo-HEAD" --depth=1
+	logmust git checkout repo-HEAD
 }
 
 function generate_commit_message_from_dsc() {
