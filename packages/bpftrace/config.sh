@@ -25,7 +25,7 @@ UPSTREAM_GIT_BRANCH="master"
 function prepare() {
 	if ! dpkg-query --show libbcc >/dev/null 2>&1; then
 		echo_bold "libbcc not installed. Building package 'bcc' first."
-		logmust $TOP/buildpkg.sh bcc
+		logmust "$TOP/buildpkg.sh" bcc
 	fi
 
 	#

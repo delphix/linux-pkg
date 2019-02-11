@@ -49,7 +49,7 @@ function build() {
 	logmust cd "$WORKDIR/repo"
 	# Note: the string to determine the version was copied from bcc's
 	# debian/rules file.
-	PACKAGE_VERSION=$(dpkg-parsechangelog | sed -rne "s,^Version: (.*),\1,p")
+	PACKAGE_VERSION=$(dpkg-parsechangelog | sed -rne 's,^Version: (.*),\1,p')
 
 	logmust dpkg_buildpackage_default
 	logmust store_git_info
