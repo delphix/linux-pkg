@@ -143,8 +143,9 @@ unset PARAM_PACKAGE_GIT_BRANCH
 unset PARAM_PACKAGE_VERSION
 unset PARAM_PACKAGE_REVISION
 
+export DO_UPDATE_PACKAGE=false
+
 do_checkstyle=false
-do_update=false
 do_initialize=false
 do_merge=true
 while getopts ':b:cg:hik:Mr:uv:' c; do
@@ -156,7 +157,7 @@ while getopts ':b:cg:hik:Mr:uv:' c; do
 	k) export TARGET_PLATFORMS="$OPTARG" ;;
 	c) do_checkstyle=true ;;
 	i) do_initialize=true ;;
-	u) do_update=true ;;
+	u) DO_UPDATE_PACKAGE=true ;;
 	M) do_merge=false ;;
 	h) usage >&2 ;;
 	*) usage "illegal option -- $OPTARG" >&2 ;;
@@ -167,8 +168,8 @@ shift $((OPTIND - 1))
 [[ $# -gt 1 ]] && usage "too many arguments" >&2
 PACKAGE=$1
 
-$do_update && $do_initialize && usage "-i and -u are exclusive" >&2
-! $do_merge && ! $do_update && usage "-M requires -u" >&2
+$DO_UPDATE_PACKAGE && $do_initialize && usage "-i and -u are exclusive" >&2
+! $do_merge && ! $DO_UPDATE_PACKAGE && usage "-M requires -u" >&2
 
 logmust check_package_exists "$PACKAGE"
 
@@ -203,7 +204,7 @@ stage prepare
 logmust cd "$WORKDIR"
 stage fetch
 
-if $do_update; then
+if $DO_UPDATE_PACKAGE; then
 	logmust cd "$WORKDIR"
 	logmust touch "$WORKDIR/updating-upstream"
 	type -t update_upstream >/dev/null ||
@@ -240,7 +241,7 @@ echo_success "Package $PACKAGE has been built successfully."
 echo "Build products are in $WORKDIR/artifacts"
 echo ""
 
-if $do_update; then
+if $DO_UPDATE_PACKAGE; then
 	echo_success "Auto-merge with upstream performed" \
 		"successfully in $WORKDIR/repo"
 fi
