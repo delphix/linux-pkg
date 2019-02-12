@@ -476,8 +476,23 @@ function fetch_repo_from_git() {
 	logmust mkdir "$WORKDIR/repo"
 	logmust cd "$WORKDIR/repo"
 	logmust git init
-	logmust git fetch --no-tags "$PACKAGE_GIT_URL" \
-		"+$PACKAGE_GIT_BRANCH:repo-HEAD" --depth=1
+
+	#
+	# If we are updating the package, we need to fetch both the
+	# main branch and the upstream branch with their histories.
+	# Otherwise just get the latest commit of the main branch.
+	#
+	if $DO_UPDATE_PACKAGE; then
+		check_env REPO_UPSTREAM_BRANCH
+		logmust git fetch --no-tags "$PACKAGE_GIT_URL" \
+			"+$PACKAGE_GIT_BRANCH:repo-HEAD"
+		logmust git fetch --no-tags "$PACKAGE_GIT_URL" \
+			"+$REPO_UPSTREAM_BRANCH:upstream-HEAD"
+	else
+		logmust git fetch --no-tags "$PACKAGE_GIT_URL" \
+			"+$PACKAGE_GIT_BRANCH:repo-HEAD" --depth=1
+	fi
+
 	logmust git checkout repo-HEAD
 }
 
@@ -508,8 +523,7 @@ function update_upstream_from_source_package() {
 	# files.
 	#
 	logmust cd "$WORKDIR/repo"
-	logmust git checkout -b upstream-HEAD \
-		"remotes/origin/$REPO_UPSTREAM_BRANCH"
+	logmust git checkout -q upstream-HEAD
 	logmust git rm -qrf .
 	logmust git clean -qfxd
 
@@ -542,13 +556,11 @@ function update_upstream_from_source_package() {
 function update_upstream_from_git() {
 	check_env UPSTREAM_GIT_URL UPSTREAM_GIT_BRANCH
 	logmust cd "$WORKDIR/repo"
-	check_git_ref "remotes/origin/$REPO_UPSTREAM_BRANCH"
 
 	#
 	# checkout our local branch that tracks upstream.
 	#
-	logmust git checkout -q -b upstream-HEAD \
-		"remotes/origin/$REPO_UPSTREAM_BRANCH"
+	logmust git checkout -q upstream-HEAD
 
 	#
 	# Fetch updates from third-party upstream repository.
@@ -560,8 +572,7 @@ function update_upstream_from_git() {
 	# Compare third-party upstream repository to our local snapshot of the
 	# upstream repository.
 	#
-	if git diff --quiet FETCH_HEAD \
-		"remotes/origin/$REPO_UPSTREAM_BRANCH"; then
+	if git diff --quiet FETCH_HEAD upstream-HEAD; then
 		echo "NOTE: upstream for $PACKAGE is already up-to-date."
 	else
 		#
