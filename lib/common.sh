@@ -264,10 +264,13 @@ function load_package_config() {
 	#
 
 	[[ -n "$DEFAULT_PACKAGE_GIT_URL" ]] ||
-		die "$PACKAGE: DEFAULT_PACKAGE_GIT_URL is not defined"
+		die "$PACKAGE: DEFAULT_PACKAGE_GIT_URL is not defined. Set " \
+			"it to 'none' if the source is not fetched from git"
 
 	[[ "$DEFAULT_PACKAGE_GIT_URL" == https://* ]] ||
-		die "$PACKAGE: DEFAULT_PACKAGE_GIT_URL must begin with https://"
+		[[ "$DEFAULT_PACKAGE_GIT_URL" == "none" ]] ||
+		die "$PACKAGE: DEFAULT_PACKAGE_GIT_URL must begin with " \
+			"https:// or be set to 'none'"
 
 	#
 	# Check for variables related to update_upstream() hook

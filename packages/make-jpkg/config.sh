@@ -33,6 +33,7 @@ function build() {
 
 	logmust dpkg_buildpackage_default
 	logmust store_git_info
+	logmust install_pkgs "$WORKDIR/artifacts"/*.deb
 }
 
 function update_upstream() {
