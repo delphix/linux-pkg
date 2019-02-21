@@ -39,3 +39,4 @@ function build() {
 function update_upstream() {
 	logmust update_upstream_from_git
 }
+
