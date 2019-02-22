@@ -20,23 +20,21 @@ DEFAULT_PACKAGE_GIT_URL=none
 tarfile="OpenJDK8U-jdk_x64_linux_hotspot_8u202b08.tar.gz"
 
 function prepare() {
-        logmust $TOP/buildpkg.sh make-jpkg
+	logmust "$TOP/buildpkg.sh" make-jpkg
 }
 
 function fetch() {
-        logmust cd "$WORKDIR/"
+	logmust cd "$WORKDIR/"
 
-        local url="http://artifactory.delphix.com/artifactory"
+	local url="http://artifactory.delphix.com/artifactory"
 
-        wget -nv "$url/java-binaries/linux/jdk/8/$tarfile" -O "$tarfile"
+	wget -nv "$url/java-binaries/linux/jdk/8/$tarfile" -O "$tarfile"
 }
 
 function build() {
-        logmust cd "$WORKDIR/"
+	logmust cd "$WORKDIR/"
 
-        env DEB_BUILD_OPTIONS=nostrip \
-          fakeroot make-jpkg "$tarfile" <<<y
+	env DEB_BUILD_OPTIONS=nostrip fakeroot make-jpkg "$tarfile" <<<y
 
-        logmust mv ./*.deb artifacts/
-        rm -r ./*.tar.gz
+	logmust mv ./*.deb artifacts/
 }
