@@ -406,7 +406,7 @@ function install_pkgs() {
 		echo "apt-get install failed, retrying."
 		sleep 10
 	done
-	echo_error "apt-get install failed after $attempt attempts"
+	die "apt-get install failed after $attempt attempts"
 }
 
 function install_source_package_build_deps() {
