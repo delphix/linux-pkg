@@ -398,7 +398,15 @@ function get_package_config_from_env() {
 }
 
 function install_pkgs() {
-	logmust sudo env DEBIAN_FRONTEND=noninteractive apt-get install -y "$@"
+	for attempt in {1..3}; do
+		echo "Running: sudo env DEBIAN_FRONTEND=noninteractive " \
+			"apt-get install -y $*"
+		sudo env DEBIAN_FRONTEND=noninteractive apt-get install \
+			-y "$@" && return
+		echo "apt-get install failed, retrying."
+		sleep 10
+	done
+	echo_error "apt-get install failed after $attempt attempts"
 }
 
 function install_source_package_build_deps() {
