@@ -3,9 +3,12 @@
 # be available to appliance-build.
 #
 
-# Note: bcc should be built before bpftrace since it provides libbcc which is
-# required to build bpftrace.
+# Note: The following packages should be built first be cause other packages
+# depend on them being built.
+#  - bcc is required by bpftrace
+#  - java8 is required by the saml app
 bcc
+java8
 
 bpftrace
 cloud-init
