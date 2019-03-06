@@ -10,6 +10,7 @@
 bcc
 java8
 
+delphix-sso-app
 bpftrace
 cloud-init
 connstat
