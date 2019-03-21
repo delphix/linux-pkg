@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright 2018 Delphix
+# Copyright 2018, 2019 Delphix
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -13,6 +13,13 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+#
+
+#
+# This script first updates a list of third-party packages with upstream
+# by running "buildpkg.sh -u" on each package. If updates can be merged
+# cleanly and the resulting package builds, the merge is pushed to the
+# package's repository (denoted by DEFAULT_PACKAGE_GIT_URL in its config.sh).
 #
 
 TOP="$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")"
@@ -45,10 +52,10 @@ function record_failure() {
 
 function usage() {
 	[[ $# != 0 ]] && echo "$(basename "$0"): $*"
-	echo "Usage: $(basename "$0") [-hns]"
+	echo "Usage: $(basename "$0") [-hns] <list>"
 	echo ""
 	echo "This script attempts to update all the packages in"
-	echo "packages-lists/updateall.pkgs."
+	echo "package-lists/update/<list>.pkgs."
 	echo ""
 	echo "    -n  dry-run. Pass the dry-run flag to git push (git push -n)."
 	echo "    -s  stop on failure. By default script continues when update"
@@ -69,7 +76,11 @@ while getopts ':hns' c; do
 	esac
 done
 shift $((OPTIND - 1))
-[[ $# -gt 0 ]] && usage "too many arguments" >&2
+[[ $# -ne 1 ]] && usage "takes exactly one argument." >&2
+
+pkg_list="$1"
+logmust get_package_list_file "update" "$pkg_list"
+pkg_list_file="$_RET"
 
 trap exit_hook EXIT
 FAILURE=false
@@ -180,7 +191,7 @@ if [[ -n "$UPDATE_PACKAGE_NAME" ]]; then
 	echo_bold "auto-mege-blacklist.pkgs is ignored"
 	NO_MERGE_PACKAGES=()
 else
-	logmust read_package_list "$TOP/package-lists/updateall.pkgs"
+	logmust read_package_list "$pkg_list_file"
 	PACKAGES=("${_RET_LIST[@]}")
 	logmust read_package_list "$TOP/package-lists/auto-merge-blacklist.pkgs"
 	NO_MERGE_PACKAGES=("${_RET_LIST[@]}")

@@ -1,0 +1,7 @@
+#
+# This list is responsible of building adoptopenjdk. We first need to build
+# our modified make-jpkg package.
+#
+
+make-jpkg
+adoptopenjdk

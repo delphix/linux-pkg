@@ -1,5 +1,5 @@
 #
-# All those packages will be auto-updated by the updateall job.
+# All those packages will be auto-updated by the linux-pkg-update/userland job.
 # Note that if you want to keep a package's upstream branch to be updated
 # but prevent it from being merged, add the package to
 # auto-merge-blacklist.pkg.

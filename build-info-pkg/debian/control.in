@@ -14,24 +14,13 @@
 # limitations under the License.
 #
 
-.PHONY: clean deb
+Source: @@PACKAGE@@
+Section: metapackages
+Priority: optional
+Maintainer: Delphix Engineering <eng@delphix.com>
+Build-Depends: debhelper (>= 10)
+Standards-Version: 4.1.2
 
-METAPACKAGE_VERSION ?= 1.0.0
-
-all:
-	./prepare.sh
-
-clean:
-	@rm -rf etc/
-	@rm -f depends
-	@rm -rf artifacts
-
-deb:
-	rm -f debian/changelog
-	DEBEMAIL="Delphix Engineering <eng@delphix.com>" \
-		dch --create --package delphix-extra \
-		-v "$(METAPACKAGE_VERSION)" \
-		"Automatically generated changelog entry."
-	dpkg-buildpackage -uc -us -b
-	mkdir -p artifacts
-	mv ../delphix-extra*.deb artifacts/
+Package: @@PACKAGE@@
+Architecture: any
+Description: Provides build metadata for packages built by linux-pkg.

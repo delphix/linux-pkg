@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright 2018 Delphix
+# Copyright 2018, 2019 Delphix
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -15,6 +15,13 @@
 # limitations under the License.
 #
 
+#
+# This script first builds a list of packages by running buildpkg.sh on each
+# package, and then generates a build-info package. All the build products are
+# stored in the ./artifacts directory. Valid package lists are stored in
+# package-lists/build/
+#
+
 TOP="$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")"
 source "$TOP/lib/common.sh"
 
@@ -22,18 +29,21 @@ logmust check_running_system
 
 function usage() {
 	[[ $# != 0 ]] && echo "$(basename "$0"): $*"
-	echo "Usage: $(basename "$0")"
+	echo "Usage: $(basename "$0") <list>"
 	echo ""
 	echo "  This script fetches and builds all the packages defined in"
-	echo "  packages-lists/buildall.pkgs, as well as the metapackage."
+	echo "  package-lists/build/<list>.pkgs."
 	echo ""
 	exit 2
 }
 
-[[ $# -eq 0 ]] || usage "takes no arguments." >&2
+[[ $# -eq 1 ]] || usage "takes exactly one argument." >&2
+
+pkg_list="$1"
+logmust get_package_list_file "build" "$pkg_list"
+pkg_list_file="$_RET"
 
 logmust cd "$TOP"
-
 logmust make clean
 logmust mkdir artifacts
 
@@ -62,11 +72,9 @@ if [[ "$CHECKSTYLE" == "true" ]]; then
 fi
 
 #
-# Note that we do not build all the packages under the packages/ directory,
-# but instead rely on the buildall.pkgs package list. This allows us to
-# add new packages to the framework that aren't part of the buildall bundle.
+# Get the list of packages to build.
 #
-logmust read_package_list "$TOP/package-lists/buildall.pkgs"
+logmust read_package_list "$pkg_list_file"
 PACKAGES=("${_RET_LIST[@]}")
 
 for pkg in "${PACKAGES[@]}"; do
@@ -74,15 +82,11 @@ for pkg in "${PACKAGES[@]}"; do
 	logmust ./buildpkg.sh $build_flags "$pkg"
 done
 
-logmust pushd metapackage
-export METAPACKAGE_VERSION="1.0.0-$DEFAULT_REVISION"
-logmust make deb
-logmust popd
-logmust mv metapackage/artifacts/* artifacts/
+logmust build-info-pkg/build-package.sh "$pkg_list"
+logmust cp build-info-pkg/artifacts/* artifacts/
 
 for pkg in "${PACKAGES[@]}"; do
-	logmust mv "packages/$pkg/tmp/artifacts"/* artifacts/
+	logmust cp "packages/$pkg/tmp/artifacts"/* artifacts/
 done
-logmust cp metapackage/etc/delphix-extra-build-info artifacts/build-info
 
 echo_success "Packages have been built successfully."
