@@ -12,9 +12,6 @@ java8
 delphix-sso-app
 bpftrace
 cloud-init
-# TOOL-7381: remove connstat and delphix-kernel from this list
-connstat
-delphix-kernel
 delphix-platform
 python-rtslib-fb
 targetcli-fb
