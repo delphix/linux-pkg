@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright 2018 Delphix
+# Copyright 2018, 2019 Delphix
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -174,7 +174,7 @@ $DO_UPDATE_PACKAGE && $do_initialize && usage "-i and -u are exclusive" >&2
 logmust check_package_exists "$PACKAGE"
 
 #
-# DEFAULT_REVISION & DEFAULT_GIT_BRANCH will be set if called from buildall.sh.
+# DEFAULT_REVISION & DEFAULT_GIT_BRANCH will be set if called from buildlist.sh.
 # If the script is called manually, we set it here.
 #
 DEFAULT_REVISION="${DEFAULT_REVISION:-$(default_revision)}"

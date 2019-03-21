@@ -1,0 +1,8 @@
+#
+# This build list includes all the packages that are build for specific
+# kernel versions.
+#
+
+connstat
+delphix-kernel
+zfs

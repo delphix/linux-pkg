@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright 2018 Delphix
+# Copyright 2018, 2019 Delphix
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -69,7 +69,7 @@ function echo_bold() {
 }
 
 function die() {
-	echo_error "$*"
+	[[ $# -gt 0 ]] && echo_error "$*"
 	exit 1
 }
 
@@ -434,6 +434,28 @@ function read_package_list() {
 	done <"$file" || die "Failed to read package list: $file"
 }
 
+function get_package_list_file() {
+	local list_type="$1"
+	local list_name="$2"
+
+	if [[ "$list_type" != build ]] && [[ "$list_type" != update ]]; then
+		die "Invalid list type '$list_type'"
+	fi
+
+	_RET="$TOP/package-lists/${list_type}/${list_name}.pkgs"
+	if [[ ! -f "$_RET" ]]; then
+		echo_error "Invalid $list_type package list '$list_name'"
+		echo_error "See lists in $TOP/package-lists/${list_type}/."
+		echo_error "Choose one of:"
+		cd "$TOP/package-lists/${list_type}/" ||
+			die "failed to cd to $TOP/package-lists/${list_type}/"
+		for list in *.pkgs; do
+			echo_error "    ${list%.pkgs}"
+		done
+		die
+	fi
+}
+
 function install_shfmt() {
 	if [[ ! -f /usr/local/bin/shfmt ]]; then
 		logmust sudo wget -nv -O /usr/local/bin/shfmt \
@@ -444,7 +466,7 @@ function install_shfmt() {
 }
 
 function install_kernel_headers() {
-	determine_target_kernels
+	logmust determine_target_kernels
 	check_env KERNEL_VERSIONS
 
 	local kernel
@@ -629,8 +651,8 @@ function dpkg_buildpackage_default() {
 
 #
 # Store some metadata about what was this package built from. When running
-# buildall.sh, build_info for all packages is ingested by the metapackage
-# and installed into /etc/delphix-extra-build-info.
+# buildlist.sh, build_info for all packages is ingested by the metapackage
+# and installed into /lib/delphix-buildinfo/<package-list>.info.
 #
 function store_git_info() {
 	logmust pushd "$WORKDIR/repo"

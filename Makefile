@@ -1,5 +1,5 @@
 #
-# Copyright 2018 Delphix
+# Copyright 2018, 2019 Delphix
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,29 +14,30 @@
 # limitations under the License.
 #
 
-ALL_PACKAGES = $(shell find packages -maxdepth 1 -mindepth 1 -exec basename {} \;)
-
 .PHONY: \
 	clean \
 	shellcheck \
 	shfmtcheck \
-	$(ALL_PACKAGES)
+	check \
+	default
 
-all: setup
-	./buildall.sh
-
-$(ALL_PACKAGES): setup
-	./buildpkg.sh $@
-
-setup:
-	./setup.sh
+default:
+	@echo 'This Makefile is only used for cleaning the repository and'
+	@echo 'running the style checks. To build packages, first run'
+	@echo './setup.sh, then run ./buildlist.sh <list> by passing the'
+	@echo 'appropriate package list. For instance to build the "userland"'
+	@echo 'package list, run:'
+	@echo '  ./setup.sh && ./buildlist.sh userland'
+	@echo 'You can also build a single package with:'
+	@echo '  ./setup.sh && ./buildpkg.sh <pkg>'
+	@echo 'Refer to the README for more info.'
 
 clean:
 	@sudo rm -rf packages/*/tmp
 	@rm -rf artifacts
-	@(cd metapackage && make clean)
 	@rm -f *.buildinfo *.changes *.deb
 	@rm -rf update-status
+	@build-info-pkg/clean.sh
 
 shellcheck:
 	shellcheck --exclude=SC1090,SC1091 \

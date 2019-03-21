@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright 2018 Delphix
+# Copyright 2018, 2019 Delphix
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -25,8 +25,8 @@ function usage() {
 	echo "Usage: $(basename "$0")"
 	echo ""
 	echo "  This is a wrapper script that is meant to be called from"
-	echo "  Jenkins. It calls either buildall.sh or buildpkg.sh depending"
-	echo "  on the value of BUILD_ALL."
+	echo "  Jenkins. It consumes and processes environment variables"
+	echo "  passed from Jenkins and call 'buildlist.sh <BUILD_LIST>'."
 	echo ""
 	exit 2
 }
@@ -46,10 +46,9 @@ function parse_custom_env() {
 	local pkg
 
 	#
-	# Build a list of allowed custom environment variables
+	# Build a list of allowed custom environment variables.
 	#
-	logmust cd "$TOP/packages/"
-	for pkg in *; do
+	for pkg in "${PACKAGES[@]}"; do
 		get_package_prefix "$pkg"
 		prefix="$_RET"
 		for suffix in GIT_URL GIT_BRANCH VERSION REVISION; do
@@ -87,14 +86,34 @@ function parse_custom_env() {
 
 [[ $# -eq 0 ]] || usage "takes no arguments." >&2
 
+#
+# Validate the list of packages to build.
+#
+check_env BUILD_LIST
+logmust get_package_list_file "build" "$BUILD_LIST"
+pkg_list_file="$_RET"
+logmust read_package_list "$pkg_list_file"
+PACKAGES=("${_RET_LIST[@]}")
+
 if [[ -n "$BUILDER_CUSTOM_ENV" ]]; then
 	logmust parse_custom_env
 fi
 
-BUILD_ALL=${BUILD_ALL:-"true"}
-
 if [[ -n "$SINGLE_PACKAGE_NAME" ]]; then
 	logmust check_package_exists "$SINGLE_PACKAGE_NAME"
+	#
+	# Make sure that the package is actually part of the BUILD_LIST.
+	#
+	found=false
+	for pkg in "${PACKAGES[@]}"; do
+		if [[ "$pkg" == "$SINGLE_PACKAGE_NAME" ]]; then
+			found=true
+			break
+		fi
+	done
+	$found || die "Package SINGLE_PACKAGE_NAME=$SINGLE_PACKAGE_NAME is not" \
+		"in package list '$BUILD_LIST'"
+
 	#
 	# The following env parameters are propagated from jenkins:
 	#
@@ -128,31 +147,5 @@ if [[ -n "$SINGLE_PACKAGE_NAME" ]]; then
 fi
 
 logmust cd "$TOP"
-
-#
-# If BUILD_ALL is false, then only build package SINGLE_PACKAGE_NAME,
-# otherwise build all pacakges.
-#
-if [[ "$BUILD_ALL" == "false" ]]; then
-	[[ -n "$SINGLE_PACKAGE_NAME" ]] || die "SINGLE_PACKAGE_NAME must be" \
-		"set when BUILD_ALL=false"
-
-	build_flags=""
-	if [[ "$CHECKSTYLE" == "true" ]]; then
-		build_flags="${build_flags} -c"
-	fi
-
-	echo_bold "BUILD_ALL=FALSE so only building one package!"
-	logmust make clean
-	# shellcheck disable=SC2086
-	logmust ./buildpkg.sh $build_flags "$SINGLE_PACKAGE_NAME"
-	# Jenkins expects artifacts to be in topmost directory
-	logmust mkdir artifacts
-	logmust mv "packages/$SINGLE_PACKAGE_NAME/tmp/artifacts"/* artifacts/
-elif [[ "$BUILD_ALL" == "true" ]]; then
-	echo_bold "BUILD_ALL=TRUE so building all packages!"
-	logmust ./buildall.sh
-else
-	die "'$BUILD_ALL' is an invalid value for BUILD_ALL." \
-		"Expecting true/false"
-fi
+logmust ./setup.sh
+logmust ./buildlist.sh "$BUILD_LIST"

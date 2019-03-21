@@ -1,0 +1,8 @@
+artifacts
+debian/changelog
+debian/control
+debian/.debhelper
+debian/delphix-buildinfo*
+debian/files
+debian/debhelper-build-stamp
+lib

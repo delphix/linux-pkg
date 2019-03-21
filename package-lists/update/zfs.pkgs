@@ -1,0 +1,6 @@
+#
+# ZFS is configured to be updated every time we detect an upstream change,
+# so we provide a separate update list for it.
+#
+
+zfs

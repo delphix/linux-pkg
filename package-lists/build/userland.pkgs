@@ -1,9 +1,8 @@
 #
-# List of packages to be built by the buildall job. All those packages will
-# be available to appliance-build.
+# List of misc userland packages to be included in the Delphix Appliance.
 #
 
-# Note: The following packages should be built first be cause other packages
+# Note: The following packages should be built first because other packages
 # depend on them being built.
 #  - bcc is required by bpftrace
 #  - java8 is required by the saml app
@@ -13,6 +12,7 @@ java8
 delphix-sso-app
 bpftrace
 cloud-init
+# TOOL-7381: remove connstat and delphix-kernel from this list
 connstat
 delphix-kernel
 delphix-platform

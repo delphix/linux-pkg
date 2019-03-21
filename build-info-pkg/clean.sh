@@ -1,5 +1,6 @@
+#!/bin/bash -eu
 #
-# Copyright 2018 Delphix
+# Copyright 2019 Delphix
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,13 +15,13 @@
 # limitations under the License.
 #
 
-Source: delphix-extra
-Section: metapackages
-Priority: optional
-Maintainer: Delphix Engineering <eng@delphix.com>
-Build-Depends: debhelper (>= 10)
-Standards-Version: 4.1.2
+cd "$(dirname "${BASH_SOURCE[0]}")"
 
-Package: delphix-extra
-Architecture: any
-Description: Provides build metadata for packages built by linux-pkg.
+rm -rf lib
+rm -rf artifacts
+rm -f debian/control
+rm -f debian/changelog
+rm -rf debian/.debhelper/
+rm -rf debian/delphix-buildinfo*
+rm -f debian/files
+rm -f debian/debhelper-build-stamp

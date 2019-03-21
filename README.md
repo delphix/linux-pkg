@@ -49,37 +49,59 @@ This quick tutorial shows how to build the packages managed by this framework.
 You need a system that meets the requirements above. For Delphix developers, you
 should clone the `bootstrap-18-04` group on DCoA.
 
-### Step 2. Clone this repository
+### Step 2. Clone this repository and run the setup script
 
 Clone this repository on the build VM.
 
 ```
 git clone https://github.com/delphix/linux-pkg.git
-cd linux-pkg
 ```
 
-### Step 3. Build all the packages
+Run the setup script. It only needs to be run once after cloning the VM.
 
-All you need to do is run `make`. This will run [setup.sh](#setupsh) followed
-by [buildall.sh](#buildallsh) and build all the packages in the
-[buildall package list](./package-lists/buildall.pkgs).
+```
+cd linux-pkg
+./setup.sh
+```
 
-Packages will be stored in directory `artifacts/`.
+### Step 3. Build a package or a package list
+
+We can now build an arbitrary package. Any package in the
+[packages directory](./packages) would do. Let's pick `cloud-init` as an
+example:
+
+```
+./buildpkg.sh cloud-init
+```
+
+Packages will be stored in directory `packages/cloud-init/tmp/artifacts/`.
+
+Linux-pkg also allows you to build a pre-defined list of packages. Package
+lists can be found in the [package-lists directory](./package-lists/build/).
+Let's try to build the "userland" package list:
+
+```
+./buildlist.sh userland
+```
+
+Note that the build of the "userland" list can take close to an hour. The
+artifacts for all the packages built will be located in directory `artifacts/`.
 
 ## Project Summary
 
-There are two main tasks that are performed by this framework: building all the
-required packages so that they can be later included in
+There are two main tasks that are performed by this framework: building lists
+of packages so that they can be later included in
 [appliance-build](https://github.com/delphix/appliance-build), and keeping each
 package up-to-date with its upstream project by updating the appropriate git
 branches.
 
 ### Building packages
 
-This task is relatively straight forward. Every package that needs to be built
-is built and a metapackage is created with the build info of each package that
-was built.
-You can see section [Scripts > buildall.sh](#buildallsh) below for more details.
+This task is relatively straight forward. Every package listed in the target
+package list is built and a metapackage is created with the build info of each
+package that was built.
+You can see section [Scripts > buildlist.sh](#buildlistsh) below for more
+details.
 
 ### Updating third-party packages
 
@@ -123,7 +145,7 @@ Although for now we only support auto-updating the **master** branch, the
 framework is designed so that other branches could also be auto-updated.
 
 For additional details, you can see section
-[Scripts > updateall.sh](#updateallsh) below.
+[Scripts > updatelist.sh](#updatelistsh) below.
 
 ## Scripts
 
@@ -151,35 +173,46 @@ in the `artifacts` sub-directory.
 
 `buildpkg.sh` includes additional options. The most common of them is `-u`,
 which will update the package with upstream. See section
-[Updating Package](#updating-package) for more info.
+[Updating third-party packages](#updating-third-party-packages) for more info.
 
-### buildall.sh
+### buildlist.sh
 
-Builds "all" the packages and the metapackage. It actually scans
-[package-lists/buildall.pkgs](./package-lists/buildall.pkgs) and builds the
-packages listed there by invoking `buildpkg.sh` on each one of them. Once they
-are all built, it builds the metapackage, which stores the build info for each
-package that was built -- info such as git hash, git url and git branch.
+Builds a list of packages and the assossiated metapackage. The list of packages
+is read from [package-lists/build/{list}.pkgs](./package-lists/build/) and
+builds the packages listed there by invoking `buildpkg.sh` on each one of them.
+Once they are all built, it builds the metapackage, which stores the build info
+for each package that was built -- info such as git hash, git url and git
+branch.
 
-`buildall.sh` was designed to be called by automation, as such it can be
-configured by passing various environment variables. See section
-[Environment Variables](#environment-variables) for more details.
+```
+./buildlist.sh <package list>
+```
 
-This job will stop if a package fails to build.
+`buildlist.sh` doesn't take build options but can be configured by passing
+various environment variables.
+See section [Environment Variables](#environment-variables) for more details.
 
-### jenkins-build.sh
+Packages are built sequentially in the order defined in the pkgs file. If a
+package fails to build, the script exits immediately.
 
-This is a wrapper script around `buildall.sh` and `buildpkg.sh` and was designed
+### jenkins-buildlist.sh
+
+This is a wrapper script around `buildlist.sh` and was designed
 to be called by Jenkins. Any environment variables that are passed to
-`jenkins-build.sh` are propagated to the child script. In addition,
-`jenkins-build.sh` interprets environment variables specified in section
-[Environment variables specific to jenkins-build](#environment-variables-specific-to-jenkins-build).
+`jenkins-buildlist.sh` are propagated to the child script. In addition,
+`jenkins-buildlist.sh` interprets environment variables specified in section
+[Environment variables specific to jenkins-buildlist](#environment-variables-specific-to-jenkins-buildlist).
 
-### updateall.sh
+### updatelist.sh
 
-Updates all the packages listed in
-[package-lists/updateall.pkgs](./package-lists/updateall.pkgs). Here are the
-steps for updating one package:
+Updates all the packages listed in package list
+[package-lists/update/{list}.pkgs](./package-lists/update/):
+
+```
+./updatelist.sh [-n] <package list>
+```
+
+Here are the steps for updating one package:
 
 1. Run `buildpkg.sh -u <package>`. This will attempt to update the
    **upstreams/master** branch, and then attempt to merge **upstreams/master**
@@ -198,9 +231,16 @@ steps for updating one package:
 Each package is processed independently, so a failure to update one package
 doesn't affect the update of other packages. A report is generated at the end.
 
-`updateall.sh` was designed to be called by automation, as such it can be
+`updatelist.sh` can be run in dry-run mode by passing `-n` so that package
+updates are not pushing to the target repository. Its behaviour can also be
 configured by passing various environment variables. See section
 [Environment Variables](#environment-variables) for more details.
+
+### jenkins-updatelist.sh
+
+This is a wrapper script around `updatelist.sh` and was designed to be called
+by Jenkins. Any environment variables that are passed to `jenkins-buildlist.sh`
+are propagated to the child script.
 
 ### push-updates.sh
 
@@ -227,21 +267,22 @@ of some of the scripts defined above.
 * **DISABLE_SYSTEM_CHECK**: Set to "true" to disable the check that makes sure
   we are running on an Ubuntu Bionic (18.04) system in AWS. Affects all scripts.
 
-* **DRY_RUN**: Set to "true" to prevent `updateall.sh` from updating production
-  package repositories. `updateall.sh` will invoke `push-updates.sh` with `-n`.
+* **DRY_RUN**: Set to "true" to prevent `updatelist.sh` from updating production
+  package repositories. `updatelist.sh` will invoke `push-updates.sh` with `-n`.
 
 * **PUSH_GIT_USER, PUSH_GIT_PASSWORD**: Set to the git credentials used to push
-  updates to package repositories. Affects `updateall.sh` and `push-updates.sh`.
+  updates to package repositories. Affects `updatelist.sh` and
+  `push-updates.sh`.
 
 * **DEFAULT_REVISION**: Default revision to use for packages that do not have a
   revision defined. If not set, it will be auto-generated from the timestamp.
-  Applies to `buildpkg.sh` and `buildall.sh`.
+  Applies to `buildpkg.sh` and `buildlist.sh`.
 
 * **DEFAULT_BRANCH**: Default git branch to use when fetching a package that
   does not have a branch explicitly defined. If not set, it will default to
-  "master". Applies to `buildpkg.sh` and `buildall.sh`.
+  "master". Applies to `buildpkg.sh` and `buildlist.sh`.
 
-* **CHECKSTYLE**: Applies to `buildall.sh`. Passes `-c` to `buildpkg.sh` when
+* **CHECKSTYLE**: Applies to `buildlist.sh`. Passes `-c` to `buildpkg.sh` when
   `CHECKSTYLE` is "true" to execute the `checkstyle` hook when building a package.
   See [Package Definition](#package-definition) section for more details about
   the hook.
@@ -253,41 +294,34 @@ of some of the scripts defined above.
   `TARGET_PLATFORMS` is unset or "default", then it will build for all supported
   platforms.
 
-* **UPDATE_PACKAGE_NAME**: Applies to `updateall.sh` only. If this variable is
-  set then `updateall.sh` only updates the package specified by this variable.
+* **UPDATE_PACKAGE_NAME**: Applies to `updatelist.sh` only. If this variable is
+  set then `updatelist.sh` only updates the package specified by this variable.
 
 * **{PACKAGE}_GIT_URL, {PACKAGE}_GIT_BRANCH, {PACKAGE}_VERSION,
   {PACKAGE}_REVISION**: Can be used to override defaults for a given package.
   `{PACKAGE}` is the package name in upper case with `-` converted to `_`. For
   instance `CLOUD_INIT_GIT_BRANCH=feature1` would set the branch to fetch
   package `cloud-init` from to `feature1`. This is useful when running
-  `buildall.sh` to override defaults for multiple packages. Applies to both
-  `buildall.sh` and `buildpkg.sh`.
+  `buildlist.sh` to override defaults for multiple packages. Applies to both
+  `buildlist.sh` and `buildpkg.sh`.
 
-### Environment variables specific to jenkins-build
+### Environment variables specific to jenkins-buildlist
 
-* **BUILD_ALL**: Applies to `jenkins-build.sh` to determine which script to
-  call. By default, or when "true", it calls `buildall.sh`, otherwise it
-  calls `buildpkg.sh`. When `BUILD_ALL` is not "true", environment variable
-  `SINGLE_PACKAGE_NAME` must be set.
-
-* **SINGLE_PACKAGE_NAME**: When running `jenkins-build.sh`, this is required if
-  `BUILD_ALL` is "false" and specifies which package to build. Note that if
-  `BUILD_ALL` is "true", then all the packages will be built but other
+* **SINGLE_PACKAGE_NAME**: When running `jenkins-buildlist.sh`, other
   `SINGLE_PACKAGE_{*}` parameters mentioned below are used to override the
-  defaults for the package.
+  defaults for this package.
 
 * **SINGLE_PACKAGE_GIT_URL, SINGLE_PACKAGE_GIT_BRANCH, SINGLE_PACKAGE_VERSION,
-  SINGLE_PACKAGE_REVISION**: Applies to `jenkins-build.sh` only. Those are
+  SINGLE_PACKAGE_REVISION**: Applies to `jenkins-buildlist.sh` only. Those are
   equivalent to the `{PACKAGE}_{*}` variables described previously but apply to
   the package passed in `SINGLE_PACKAGE_NAME`. They are added for convenience
   when using Jenkins.
 
-* **CUSTOM_BUILDER_ENV**: Applies to `jenkins-build.sh` only. This is a
+* **CUSTOM_BUILDER_ENV**: Applies to `jenkins-buildlist.sh` only. This is a
   multi-line field that takes one `{PACKAGE}_{*}=value` entry per line and is
-  parsed by `jenkins-build.sh` to set the specified `{PACKAGE}_{*}` environment
-  variables. This can be used to set any number of `{PACKAGE}_{*}` variables
-  from Jenkins.
+  parsed by `jenkins-buildlist.sh` to set the specified `{PACKAGE}_{*}`
+  environment variables. This can be used to set any number of `{PACKAGE}_{*}`
+  variables from Jenkins.
 
 ## Package Definition
 
@@ -306,14 +340,16 @@ Here is a list of variables that can be defined for a package:
 * **DEFAULT_PACKAGE_GIT_URL**: (Mandatory) Git repository to fetch the package
   source code from. This is also the repository that is used when pushing
   changes with the `push-updates.sh` script. Note that this must be an
-  `https://` URL.
+  `https://` URL. One exception is if the source of the package being built
+  isn't fetched from git. In this case, set this to "none".
 
 * **DEFAULT_PACKAGE_GIT_BRANCH**: (Optional) Default git branch to use when
-  fetching from or pushing to `DEFAULT_PACKAGE_GIT_URL`. If unset, it defaults
+  fetching from or pushing to `DEFAULT_PACKAGE_GIT_URL`. This should be
+  typically left unset. The branch to fetch the package from defaults
   to the value of the environment variable `DEFAULT_BRANCH`, which itself
   defaults to "master".
 
-* **DEFAULT_PACKAGE_VERSION**: (Mandatory) The version of the package is set to
+* **DEFAULT_PACKAGE_VERSION**: (Optional) The version of the package is set to
   this value when it is built. **Note:** If this field is not set, then you
   should provide a mechanism in the [build](#build) hook to auto-determine the
   version from the source code.
@@ -346,7 +382,9 @@ normally installs the build dependencies for the package.
 The `fetch()` hook is optional, as a default is provided and should be used. It
 is called when fetching the source code of the package to build or to update.
 The repository is cloned into `packages/<package>/tmp/repo` and checked out as
-branch **repo-HEAD**.
+branch **repo-HEAD**. If we are performing a package update, then we also
+fetch the **upstreams/master** branch into **upstream-HEAD**. The default
+should only be overridden when not fetching the package source from git.
 
 #### Build
 
@@ -362,7 +400,7 @@ The `checkstyle()` hook is optional. It is called before building the package if
 
 The `update_upstream()` hook should only be defined for third party packages
 that need to be auto-updated. It is responsible for fetching the latest upstream
-source code into branch **upstream-HEAD** of our fetched repository in
+source code on top of branch **upstream-HEAD** of our fetched repository in
 `packages/<package>/tmp/repo`. Note that any changes should be rebased on top of
 the **upstreams/master** branch. If changes are detected, file
 `packages/<package>/tmp/upstream-updated` should be created.
@@ -424,8 +462,8 @@ The following files are used as status indicators in `WORKDIR`:
 Finally, when building a package, build info should be stored in the
 **build_info** file under `WORKDIR`. To store some default git info,
 `store_git_info()` can be called. **build_info** files for each package are
-consumed by the [metapackage](./metapackage) when running
-[buildall.sh](#buildallsh).
+consumed by the [metapackage](./build-info-pkg) when running
+[buildlist.sh](#buildlistsh).
 
 ## Adding new packages
 
@@ -480,6 +518,13 @@ UPSTREAM_GIT_BRANCH="<git branch>"
 ```
 
 #### Step 3. Fetch the upstream source
+
+Note that steps 3 to 5 are most useful when getting a third party package from
+an Ubuntu source package. When the third party package is fetched from git,
+you may simply fork the upstream repository and add an **upstreams/master**
+branch that points to the **master** branch; you can then update
+`DEFAULT_PACKAGE_GIT_URL` in config.sh to your forked git repository and skip
+to step 6.
 
 You can fetch the upstream source code by running:
 
@@ -647,16 +692,19 @@ Those steps apply to both third-party and in-house packages.
 
 You can refer to the Debian Maintainer Guide
 [here](https://www.debian.org/doc/manuals/maint-guide/dreq.en.html).
+Note that packages built by gradle, such as the `delphix-sso-app`, do not
+require a debian metadirectory.
 
 #### Add package to package-lists
 
-* Add the new package to
-  [package-lists/buildall.pkgs](./package-lists/buildall.pkgs) so that it is
-  built by `buildall.sh`.
+* Add the new package to the appropriate build list in
+  [package-lists/build/](./package-lists/build/).
+  Most packages that will be deployed on the Delphix Appliance should be added
+  to the [userland.pkgs](./package-lists/build/userland.pkgs) list.
 
-* If this is a third-party package that is to be auto-updated by `updateall.sh`,
-  it should also be added to
-  [package-lists/updateall.pkgs](./package-lists/updateall.pkgs).
+* If this is a third-party package that is to be auto-updated by
+  `updatelist.sh`, it should also be added to
+  [package-lists/update/userland.pkgs](./package-lists/update/userland.pkgs).
 
 * To make sure that the new package is included in the Delphix Appliance by
   appliance-build, it should be added as a dependency to an existing package
@@ -687,18 +735,40 @@ is to create an official repository for it.
 
 ## Testing your changes
 
-### Testing changes to a package
+### Testing changes to an existing package
 
-TODO
+If you are not making any changes to linux-pkg, only changes to a given
+package managed by linux-pkg:
 
-Temporary instructions available
+1. Run `git-ab-pre-push` from your package's repository.
+
+More instructions available
 [here](https://docs.google.com/document/d/1pD0AusWAIbqXalx-B5nhrrHBfMme6wHvJG9c7O_wqb4/view).
 
 ### Testing changes to linux-pkg
 
-TODO
+If you are adding a new package, changing the linux-pkg framework, or changing
+the build definition (config.sh file) of a package, you should perform the
+following steps:
 
-Temporary instructions available
+1. On your build VM, in the linux-pkg repository, run checkstyle:
+
+   ```
+   make clean
+   make check
+   ```
+
+1. Run the Jenkins build jobs for the
+   [userland](http://selfservice.jenkins.delphix.com/job/devops-gate/job/master/job/linux-pkg-build/job/master/job/kernel/job/pre-push/)
+   and
+   [kernel](http://selfservice.jenkins.delphix.com/job/devops-gate/job/master/job/linux-pkg-build/job/master/job/userland/job/pre-push/)
+   build lists.
+
+1. Run the Jenkins update job for the
+   [userland](http://selfservice.jenkins.delphix.com/job/devops-gate/job/master/job/linux-pkg-update/job/master/job/userland/job/update/)
+   update list.
+
+More instructions available
 [here](https://docs.google.com/document/d/1pD0AusWAIbqXalx-B5nhrrHBfMme6wHvJG9c7O_wqb4/view).
 
 ## Versions and Branches
