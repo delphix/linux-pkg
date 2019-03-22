@@ -55,6 +55,16 @@ function prepare() {
 	logmust install_kernel_headers
 }
 
+function checkstyle() {
+	logmust cd "$WORKDIR/repo"
+	logmust sh autogen.sh
+	logmust ./configure --with-config=user
+	logmust install_pkgs flake8 mandoc
+	logmust make codecheck
+	logmust git reset --hard HEAD
+	logmust git clean -qdxf
+}
+
 function build() {
 	logmust cd "$WORKDIR/repo"
 
