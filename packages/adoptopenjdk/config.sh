@@ -18,9 +18,13 @@
 
 DEFAULT_PACKAGE_GIT_URL=none
 tarfile="OpenJDK8U-jdk_x64_linux_hotspot_8u202b08.tar.gz"
+jdk_path="/usr/lib/jvm/adoptopenjdk-java8-jdk-amd64"
 
 function prepare() {
-	logmust "$TOP/buildpkg.sh" make-jpkg
+	if [[ $(dpkg-query --show java-package) != *"delphix"* ]]; then
+		echo_bold "custom java-package not installed. Building package 'make-jpkg' first."
+		logmust "$TOP/buildpkg.sh" make-jpkg
+	fi
 }
 
 function fetch() {
@@ -28,7 +32,7 @@ function fetch() {
 
 	local url="http://artifactory.delphix.com/artifactory"
 
-	wget -nv "$url/java-binaries/linux/jdk/8/$tarfile" -O "$tarfile"
+	logmust wget -nv "$url/java-binaries/linux/jdk/8/$tarfile" -O "$tarfile"
 }
 
 function build() {
@@ -36,5 +40,20 @@ function build() {
 
 	env DEB_BUILD_OPTIONS=nostrip fakeroot make-jpkg "$tarfile" <<<y
 
-	logmust mv ./*.deb artifacts/
+	logmust mv ./*.deb "$WORKDIR/artifacts/"
+	#
+	# Store the install path of the JDK in a file so that the users of this
+	# Java package know where to look. This is especially useful for
+	# other linux-pkg packages that have a build dependency on this
+	# particular version of Java, as they don't have to hardcode the
+	# path in their build definition. This would also be useful if external
+	# packages, such as the app-gate, decide to fetch and install Java from
+	# the Linux-pkg bundle.
+	#
+	logmust bash -c "echo $jdk_path >'$WORKDIR/artifacts/JDK_PATH'"
+	#
+	# Install the Java package on this system so that other linux-pkg
+	# packages can use it.
+	#
+	logmust install_pkgs "$WORKDIR/artifacts/"*.deb
 }

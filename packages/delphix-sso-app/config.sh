@@ -17,13 +17,13 @@
 # shellcheck disable=SC2034
 
 DEFAULT_PACKAGE_GIT_URL="https://gitlab.delphix.com/app/saml-app.git"
-JDK_PATH_FILE="$TOP/packages/java8/tmp/artifacts/JDK_PATH"
+JDK_PATH_FILE="$TOP/packages/adoptopenjdk/tmp/artifacts/JDK_PATH"
 
 function prepare() {
-	java_package_exists=$(dpkg-query --show oracle-java8-jdk >/dev/null 2>&1)
+	java_package_exists=$(dpkg-query --show adoptopenjdk-java8-jdk >/dev/null 2>&1)
 	if [[ ! $java_package_exists && ! -f $JDK_PATH_FILE ]]; then
-		echo_bold "java8 not installed. Building package 'java8' first."
-		logmust "$TOP/buildpkg.sh" java8
+		echo_bold "java8 not installed. Building package 'adoptopenjdk' first."
+		logmust "$TOP/buildpkg.sh" adoptopenjdk
 	fi
 }
 
