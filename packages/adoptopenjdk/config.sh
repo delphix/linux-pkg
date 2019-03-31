@@ -21,7 +21,7 @@ tarfile="OpenJDK8U-jdk_x64_linux_hotspot_8u202b08.tar.gz"
 jdk_path="/usr/lib/jvm/adoptopenjdk-java8-jdk-amd64"
 
 function prepare() {
-	if [[ $(dpkg-query --show java-package) != *"delphix"* ]]; then
+	if [ ! -f "$TOP/packages/make-jpkg/tmp/artifacts/"*.deb ]; then
 		echo_bold "custom java-package not installed. Building package 'make-jpkg' first."
 		logmust "$TOP/buildpkg.sh" make-jpkg
 	fi
@@ -38,7 +38,7 @@ function fetch() {
 function build() {
 	logmust cd "$WORKDIR/"
 
-	env DEB_BUILD_OPTIONS=nostrip fakeroot make-jpkg "$tarfile" <<<y
+	logmust env DEB_BUILD_OPTIONS=nostrip fakeroot make-jpkg "$tarfile" <<<y
 
 	logmust mv ./*.deb "$WORKDIR/artifacts/"
 	#
