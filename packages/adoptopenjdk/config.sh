@@ -21,7 +21,7 @@ tarfile="OpenJDK8U-jdk_x64_linux_hotspot_8u202b08.tar.gz"
 jdk_path="/usr/lib/jvm/adoptopenjdk-java8-jdk-amd64"
 
 function prepare() {
-	if [ ! -f "$TOP/packages/make-jpkg/tmp/artifacts/"*.deb ]; then
+	if ! ls "$TOP/packages/make-jpkg/tmp/artifacts/"*.deb >/dev/null 2>&1; then
 		echo_bold "custom java-package not installed. Building package 'make-jpkg' first."
 		logmust "$TOP/buildpkg.sh" make-jpkg
 	fi
