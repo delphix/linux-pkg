@@ -63,7 +63,8 @@ function prepare() {
 		libllvm5.0 \
 		llvm-5.0 \
 		llvm-5.0-dev \
-		llvm-5.0-runtime
+		llvm-5.0-runtime \
+		systemtap-sdt-dev
 }
 
 function build() {
