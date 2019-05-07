@@ -15,6 +15,7 @@ delphix-sso-app
 bpftrace
 cloud-init
 delphix-platform
+gdb-python
 python-rtslib-fb
 targetcli-fb
 ptools
