@@ -16,6 +16,7 @@ bpftrace
 cloud-init
 delphix-platform
 gdb-python
+libkdumpfile
 python-rtslib-fb
 targetcli-fb
 ptools
