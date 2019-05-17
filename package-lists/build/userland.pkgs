@@ -15,6 +15,7 @@ delphix-sso-app
 bpftrace
 cloud-init
 delphix-platform
+drgn
 gdb-python
 libkdumpfile
 python-rtslib-fb
