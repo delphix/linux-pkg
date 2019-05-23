@@ -14,6 +14,7 @@ adoptopenjdk
 delphix-sso-app
 bpftrace
 cloud-init
+crash-python
 delphix-platform
 drgn
 gdb-python
