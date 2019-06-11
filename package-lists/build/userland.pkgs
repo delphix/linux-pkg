@@ -15,7 +15,6 @@ delphix-sso-app
 bpftrace
 cloud-init
 crash-python
-crypt-blowfish
 delphix-platform
 drgn
 gdb-python
