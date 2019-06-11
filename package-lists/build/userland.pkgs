@@ -13,6 +13,7 @@ adoptopenjdk
 
 delphix-sso-app
 bpftrace
+challenge-response
 cloud-init
 crash-python
 crypt-blowfish
