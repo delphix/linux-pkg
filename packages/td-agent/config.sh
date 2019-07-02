@@ -18,8 +18,8 @@
 
 DEFAULT_PACKAGE_GIT_URL="https://github.com/delphix/omnibus-td-agent.git"
 
-# We're customizing td-agent version 3.4.0
-DEFAULT_PACKAGE_VERSION=3.4.0
+# We're customizing td-agent version 3.4.1
+DEFAULT_PACKAGE_VERSION=3.4.1
 
 UPSTREAM_GIT_URL=https://github.com/treasure-data/omnibus-td-agent.git
 UPSTREAM_GIT_BRANCH=master
