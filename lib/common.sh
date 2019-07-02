@@ -27,6 +27,7 @@ function enable_colors() {
 	[[ -t 1 ]] && flags="" || flags="-T xterm"
 	FMT_RED="$(tput $flags setaf 1)"
 	FMT_GREEN="$(tput $flags setaf 2)"
+	FMT_YELLOW="$(tput $flags setaf 3)"
 	FMT_BOLD="$(tput $flags bold)"
 	FMT_NF="$(tput $flags sgr0)"
 	COLORS_ENABLED=true
@@ -35,6 +36,7 @@ function enable_colors() {
 function disable_colors() {
 	FMT_RED=""
 	FMT_GREEN=""
+	FMT_YELLOW=""
 	FMT_BOLD=""
 	FMT_NF=""
 	COLORS_ENABLED=false
@@ -62,6 +64,10 @@ function echo_error() {
 
 function echo_success() {
 	echo -e "${FMT_BOLD}${FMT_GREEN}Success: $*${FMT_NF}"
+}
+
+function echo_warn() {
+	echo -e "${FMT_BOLD}${FMT_YELLOW}Warning: $*${FMT_NF}"
 }
 
 function echo_bold() {
@@ -325,13 +331,17 @@ function get_package_config_from_env() {
 
 	echo "get_package_config_from_env(): using prefix: ${PACKAGE_PREFIX}_"
 
+	export PACKAGE_CUSTOMIZED=false
+
 	var="${PACKAGE_PREFIX}_GIT_URL"
 	if [[ -n "$PARAM_PACKAGE_GIT_URL" ]]; then
 		PACKAGE_GIT_URL="$PARAM_PACKAGE_GIT_URL"
 		echo "PARAM_PACKAGE_GIT_URL passed from '-g'"
+		PACKAGE_CUSTOMIZED=true
 	elif [[ -n "${!var}" ]]; then
 		PACKAGE_GIT_URL="${!var}"
 		echo "PACKAGE_GIT_URL set to value of ${var}"
+		PACKAGE_CUSTOMIZED=true
 	elif [[ -n "$DEFAULT_PACKAGE_GIT_URL" ]]; then
 		PACKAGE_GIT_URL="$DEFAULT_PACKAGE_GIT_URL"
 		echo "PACKAGE_GIT_URL set to value of DEFAULT_PACKAGE_GIT_URL"
@@ -341,9 +351,11 @@ function get_package_config_from_env() {
 	if [[ -n "$PARAM_PACKAGE_GIT_BRANCH" ]]; then
 		PACKAGE_GIT_BRANCH="$PARAM_PACKAGE_GIT_BRANCH"
 		echo "PARAM_PACKAGE_GIT_BRANCH passed from '-b'"
+		PACKAGE_CUSTOMIZED=true
 	elif [[ -n "${!var}" ]]; then
 		PACKAGE_GIT_BRANCH="${!var}"
 		echo "PACKAGE_GIT_BRANCH set to value of ${var}"
+		PACKAGE_CUSTOMIZED=true
 	elif [[ -n "$DEFAULT_PACKAGE_GIT_BRANCH" ]]; then
 		PACKAGE_GIT_BRANCH="$DEFAULT_PACKAGE_GIT_BRANCH"
 		echo "PACKAGE_GIT_BRANCH set to value of" \
@@ -359,9 +371,11 @@ function get_package_config_from_env() {
 	if [[ -n "$PARAM_PACKAGE_VERSION" ]]; then
 		PACKAGE_VERSION="$PARAM_PACKAGE_VERSION"
 		echo "PACKAGE_VERSION passed from '-v'"
+		PACKAGE_CUSTOMIZED=true
 	elif [[ -n "${!var}" ]]; then
 		PACKAGE_VERSION="${!var}"
 		echo "PACKAGE_VERSION set to value of ${var}"
+		PACKAGE_CUSTOMIZED=true
 	elif [[ -n "$DEFAULT_PACKAGE_VERSION" ]]; then
 		PACKAGE_VERSION="$DEFAULT_PACKAGE_VERSION"
 		echo "PACKAGE_VERSION set to value of DEFAULT_PACKAGE_VERSION"
@@ -371,9 +385,11 @@ function get_package_config_from_env() {
 	if [[ -n "$PARAM_PACKAGE_REVISION" ]]; then
 		PACKAGE_REVISION="$PARAM_PACKAGE_REVISION"
 		echo "PACKAGE_REVISION passed from '-r'"
+		PACKAGE_CUSTOMIZED=true
 	elif [[ -n "${!var}" ]]; then
 		PACKAGE_REVISION="${!var}"
 		echo "PACKAGE_REVISION set to value of ${var}"
+		PACKAGE_CUSTOMIZED=true
 	elif [[ -n "$DEFAULT_PACKAGE_REVISION" ]]; then
 		PACKAGE_REVISION="$DEFAULT_PACKAGE_REVISION"
 		echo "PACKAGE_REVISION set to value of DEFAULT_PACKAGE_REVISION"

@@ -108,6 +108,43 @@ function inititalize_from_upstream() {
 	fi
 }
 
+function fetch_cached_artifacts() {
+	if [[ "$PACKAGE_CUSTOMIZED" != "false" ]]; then
+		echo_warn "Package $PACKAGE has custom build parameters."
+		return 1
+	fi
+
+	if [[ -z "$CACHED_ARTIFACTS_URL" ]]; then
+		echo_warn "CACHED_ARTIFACTS_URL is unset."
+		return 1
+	fi
+
+	if ! aws s3 ls "$CACHED_ARTIFACTS_URL" &>/dev/null; then
+		echo_warn "Invalid cached artifacts url: $CACHED_ARTIFACTS_URL"
+		return 1
+	fi
+
+	local cache_url="$CACHED_ARTIFACTS_URL/cache/$PACKAGE/"
+	if ! aws s3 ls "$cache_url" &>/dev/null; then
+		echo_warn "No cached artifacts for package (url: $cache_url)."
+		return 1
+	fi
+
+	logmust mkdir "$WORKDIR/cached"
+	logmust aws s3 cp --recursive --no-progress \
+		"$cache_url" "$WORKDIR/cached/"
+	logmust rm -rf "$WORKDIR/artifacts"
+	logmust cp -r "$WORKDIR/cached/artifacts" "$WORKDIR/artifacts"
+	if [[ -f "$WORKDIR/cached/build_info" ]]; then
+		logmust cp "$WORKDIR/cached/build_info" "$WORKDIR/build_info"
+	else
+		logmust touch "$WORKDIR/build_info"
+	fi
+	logmust bash -c "echo 'Fetched from $cache_url' >>'$WORKDIR/build_info'"
+	logmust touch "$WORKDIR/fetched-from-cache"
+	echo "Fetched artifacts for $PACKAGE from $cache_url"
+}
+
 function usage() {
 	[[ $# != 0 ]] && echo "$(basename "$0"): $*"
 	echo "Usage: $(basename "$0") [-i | -u [-M]] [-ch] [-g pkg_git_url]"
@@ -171,6 +208,15 @@ PACKAGE=$1
 $DO_UPDATE_PACKAGE && $do_initialize && usage "-i and -u are exclusive" >&2
 ! $do_merge && ! $DO_UPDATE_PACKAGE && usage "-M requires -u" >&2
 
+if [[ "$REUSE_CACHED_ARTIFACTS" == "always" ]] ||
+	[[ "$REUSE_CACHED_ARTIFACTS" == "on-failure" ]]; then
+	if $DO_UPDATE_PACKAGE || $do_initialize; then
+		echo_warn "REUSE_CACHED_ARTIFACTS unset because" \
+			"-i or -u is passed."
+		REUSE_CACHED_ARTIFACTS=""
+	fi
+fi
+
 logmust check_package_exists "$PACKAGE"
 
 #
@@ -191,6 +237,21 @@ logmust load_package_config "$PACKAGE"
 logmust sudo rm -rf "$WORKDIR"
 logmust mkdir "$WORKDIR"
 logmust mkdir "$WORKDIR/artifacts"
+
+if [[ "$REUSE_CACHED_ARTIFACTS" == "always" ]]; then
+	#
+	# Fetch artifacts from cache. We execute in a subshell so that
+	# failures do not terminate this script.
+	#
+	echo "REUSE_CACHED_ARTIFACTS == 'always': fetch artifacts from" \
+		"previous build"
+	if (fetch_cached_artifacts); then
+		echo_success "Package $PACKAGE fetched from previous build."
+		exit 0
+	else
+		echo_warn "Package artifacts not fetched from previous build."
+	fi
+fi
 
 if $do_initialize; then
 	logmust inititalize_from_upstream
@@ -234,7 +295,24 @@ if $do_checkstyle; then
 	stage checkstyle
 fi
 logmust cd "$WORKDIR"
-stage build
+build_failed=false
+#
+# We execute the build stage in a subshell so that a failure doesn't
+# terminate this script.
+#
+(stage build) || build_failed=true
+if $build_failed && [[ $REUSE_CACHED_ARTIFACTS == "on-failure" ]]; then
+	echo_warn "Build failed, but REUSE_CACHED_ARTIFACTS == 'on-failure'"
+	echo_warn "Attempting to fetch artifacts from previous build."
+	if (logmust fetch_cached_artifacts); then
+		echo_success "Package $PACKAGE fetched from previous build."
+		exit 0
+	else
+		echo_error "Package artifacts not fetched from previous build."
+	fi
+elif $build_failed; then
+	exit 1
+fi
 logmust rm "$WORKDIR/building"
 
 echo_success "Package $PACKAGE has been built successfully."

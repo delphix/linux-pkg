@@ -81,11 +81,13 @@ PACKAGES=("${_RET_LIST[@]}")
 for pkg in "${PACKAGES[@]}"; do
 	# shellcheck disable=SC2086
 	logmust ./buildpkg.sh $build_flags "$pkg"
+	echo ""
 done
 
 logmust build-info-pkg/build-package.sh "$pkg_list"
 logmust cp build-info-pkg/artifacts/* artifacts/
 
+fetched_from_cache=false
 for pkg in "${PACKAGES[@]}"; do
 	logmust cp "packages/$pkg/tmp/artifacts"/* artifacts/
 
@@ -101,6 +103,19 @@ for pkg in "${PACKAGES[@]}"; do
 		logmust cp "packages/$pkg/tmp/build_info" \
 			"artifacts/cache/$pkg/"
 	fi
+	if [[ -f "packages/$pkg/tmp/fetched-from-cache" ]]; then
+		fetched_from_cache=true
+	fi
 done
+
+if $fetched_from_cache; then
+	echo_warn "The following package artifacts were not built, but" \
+		"fetched from $CACHED_ARTIFACTS_URL:"
+	for pkg in "${PACKAGES[@]}"; do
+		if [[ -f "packages/$pkg/tmp/fetched-from-cache" ]]; then
+			echo_warn " - $pkg"
+		fi
+	done
+fi
 
 echo_success "Packages have been built successfully."
