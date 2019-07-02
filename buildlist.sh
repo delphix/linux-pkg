@@ -46,6 +46,7 @@ pkg_list_file="$_RET"
 logmust cd "$TOP"
 logmust make clean
 logmust mkdir artifacts
+logmust mkdir artifacts/cache
 
 #
 # Auto-generate the default revision for all the packages. It will be the
@@ -87,6 +88,19 @@ logmust cp build-info-pkg/artifacts/* artifacts/
 
 for pkg in "${PACKAGES[@]}"; do
 	logmust cp "packages/$pkg/tmp/artifacts"/* artifacts/
+
+	#
+	# Cache each package's artifacts in a separate directory so that they
+	# can be easily retrieved by future linux-pkg builds. Note that those
+	# artifacts are not consumed by appliance-build.
+	#
+	logmust mkdir -p "artifacts/cache/$pkg/artifacts"
+	logmust cp "packages/$pkg/tmp/artifacts"/* \
+		"artifacts/cache/$pkg/artifacts/"
+	if [[ -f "packages/$pkg/tmp/build_info" ]]; then
+		logmust cp "packages/$pkg/tmp/build_info" \
+			"artifacts/cache/$pkg/"
+	fi
 done
 
 echo_success "Packages have been built successfully."
