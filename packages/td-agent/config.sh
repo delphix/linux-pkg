@@ -17,9 +17,7 @@
 # shellcheck disable=SC2034
 
 DEFAULT_PACKAGE_GIT_URL="https://github.com/delphix/omnibus-td-agent.git"
-
-# We're customizing td-agent version 3.4.1
-DEFAULT_PACKAGE_VERSION=3.4.1
+# Note: we get the package version programatically in build()
 
 UPSTREAM_GIT_URL=https://github.com/treasure-data/omnibus-td-agent.git
 UPSTREAM_GIT_BRANCH=master
@@ -33,6 +31,9 @@ function prepare() {
 
 function build() {
 	logmust cd "$WORKDIR/repo"
+	if [[ -z "$PACKAGE_VERSION" ]]; then
+		logmust eval PACKAGE_VERSION="$(grep build_version ./config/projects/td-agent3.rb | head -1 | awk '{ print $2; }')"
+	fi
 	# Ensure all required gems are installed
 	logmust bundle install --binstubs
 	# Download dependent gems using downloader
