@@ -36,7 +36,6 @@ function build() {
 		logmust eval PACKAGE_VERSION="$(python3 tools/read-version)"
 	fi
 	logmust dpkg_buildpackage_default
-	logmust store_git_info
 }
 
 function update_upstream() {

@@ -162,8 +162,6 @@ function build() {
 	done
 	logmust cd "$WORKDIR"
 	logmust mv "all-packages/"*.deb "artifacts/"
-
-	logmust store_git_info
 }
 
 function update_upstream() {

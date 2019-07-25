@@ -48,6 +48,4 @@ function build() {
 
 	logmust cd "$WORKDIR/repo"
 	logmust mv ./*.deb "$WORKDIR/artifacts/"
-
-	logmust store_git_info
 }

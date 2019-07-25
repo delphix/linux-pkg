@@ -32,7 +32,6 @@ function build() {
 	fi
 
 	logmust dpkg_buildpackage_default
-	logmust store_git_info
 
 	# java-package supporting adoptopenjdk needs to be installed to
 	# create jdk debian package from jdk tarball when building adoptopenjdk

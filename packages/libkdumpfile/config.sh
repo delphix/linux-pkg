@@ -36,5 +36,4 @@ function prepare() {
 
 function build() {
 	logmust dpkg_buildpackage_default
-	logmust store_git_info
 }

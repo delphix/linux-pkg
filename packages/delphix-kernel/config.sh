@@ -38,5 +38,4 @@ function build() {
 		logmust ./configure.sh
 		logmust dpkg_buildpackage_default
 	done
-	logmust store_git_info
 }
