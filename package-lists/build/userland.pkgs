@@ -6,22 +6,23 @@
 # depend on them being built.
 #  - bcc is required by bpftrace
 #  - java8 is required by the saml app
+adoptopenjdk
 bcc
 java8
 make-jpkg
-adoptopenjdk
 
-delphix-sso-app
+base-os-tools
 bpftrace
 challenge-response
 cloud-init
 crash-python
 crypt-blowfish
 delphix-platform
+delphix-sso-app
 drgn
 gdb-python
 libkdumpfile
+ptools
 python-rtslib-fb
 targetcli-fb
-ptools
 td-agent
