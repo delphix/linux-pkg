@@ -51,3 +51,7 @@ function build() {
 	#
 	logmust install_pkgs "$WORKDIR/artifacts/"*.deb
 }
+
+function store_build_info() {
+	echo "Tar file: $tarfile" >"$WORKDIR/build_info"
+}

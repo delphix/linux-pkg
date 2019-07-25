@@ -391,6 +391,20 @@ should only be overridden when not fetching the package source from git.
 The `build()` hook is mandatory. It is responsible for building the package and
 storing the build products into `packages/<package>/tmp/artifacts/`.
 
+#### Store Build Info
+
+The `store_build_info()` hook is optional. It is called right after the
+build hook. It is responsible of creating the `<WORKDIR>/build_info` file that
+contains information about the source of the code used to build the package.
+
+A default hook is provided in `default-package-config.sh` and will
+be used if it is not overriden. If the package comes from a git repository,
+the default hook will store the git hash, branch and repository of the
+package's source.
+
+`build_info` files for each package are consumed by the
+[metapackage](./build-info-pkg) when running [buildlist.sh](#buildlistsh).
+
 #### Checkstyle
 
 The `checkstyle()` hook is optional. It is called before building the package if
@@ -459,11 +473,7 @@ The following files are used as status indicators in `WORKDIR`:
 * **repo-updated**: created if **repo-HEAD** has updates that should be pushed,
   following a merge.
 
-Finally, when building a package, build info should be stored in the
-**build_info** file under `WORKDIR`. To store some default git info,
-`store_git_info()` can be called. **build_info** files for each package are
-consumed by the [metapackage](./build-info-pkg) when running
-[buildlist.sh](#buildlistsh).
+* **build_info**: created by the `store_build_info()` package hook.
 
 ## Adding new packages
 

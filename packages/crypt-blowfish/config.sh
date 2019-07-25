@@ -24,6 +24,4 @@ function build() {
 	logmust make package
 	logmust make package-dev
 	logmust mv ./out/*.deb "$WORKDIR/artifacts/"
-
-	logmust store_git_info
 }

@@ -31,7 +31,6 @@ function build() {
 		logmust eval PACKAGE_VERSION="$(./setup.py --version)"
 	fi
 	logmust dpkg_buildpackage_default
-	logmust store_git_info
 }
 
 function update_upstream() {

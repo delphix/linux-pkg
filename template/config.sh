@@ -73,7 +73,6 @@ function build() {
 	# Those are the default functions to build the package:
 	#
 	logmust dpkg_buildpackage_default
-	logmust store_git_info
 }
 
 #
