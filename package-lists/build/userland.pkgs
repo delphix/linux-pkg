@@ -10,6 +10,7 @@ bcc
 java8
 make-jpkg
 adoptopenjdk
+libkdumpfile
 
 delphix-sso-app
 bpftrace
@@ -20,7 +21,6 @@ crypt-blowfish
 delphix-platform
 drgn
 gdb-python
-libkdumpfile
 python-rtslib-fb
 targetcli-fb
 ptools

@@ -36,4 +36,7 @@ function prepare() {
 
 function build() {
 	logmust dpkg_buildpackage_default
+
+	# Install libkdumpfile, it's needed to build drgn
+	logmust install_pkgs "$WORKDIR/artifacts"/*.deb
 }
