@@ -17,8 +17,10 @@
 
 # shellcheck disable=SC2034
 DEFAULT_PACKAGE_GIT_URL="https://github.com/delphix/drgn.git"
-DEFAULT_PACKAGE_GIT_BRANCH="master"
 DEFAULT_PACKAGE_VERSION=1.0.0
+
+UPSTREAM_GIT_URL="https://github.com/osandov/drgn.git"
+UPSTREAM_GIT_BRANCH="master"
 
 function prepare() {
 	logmust install_pkgs \
@@ -35,4 +37,8 @@ function prepare() {
 
 function build() {
 	logmust dpkg_buildpackage_default
+}
+
+function update_upstream() {
+	logmust update_upstream_from_git
 }

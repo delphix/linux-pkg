@@ -13,6 +13,7 @@
 
 bpftrace
 cloud-init
+drgn
 python-rtslib-fb
 targetcli-fb
 td-agent
