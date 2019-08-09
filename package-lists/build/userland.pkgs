@@ -22,6 +22,7 @@ delphix-platform
 drgn
 gdb-python
 python-rtslib-fb
+sdb
 targetcli-fb
 ptools
 td-agent
