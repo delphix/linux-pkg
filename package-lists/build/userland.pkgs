@@ -21,6 +21,7 @@ crypt-blowfish
 delphix-platform
 drgn
 gdb-python
+nfs-utils
 python-rtslib-fb
 sdb
 targetcli-fb
