@@ -19,8 +19,6 @@
 DEFAULT_PACKAGE_GIT_URL="https://github.com/delphix/makedumpfile.git"
 # Note: we get the package version programatically in our build() hook
 
-DEFAULT_PACKAGE_GIT_BRANCH="master"
-
 UPSTREAM_SOURCE_PACKAGE="makedumpfile"
 
 function prepare() {
