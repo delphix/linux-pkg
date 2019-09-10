@@ -199,9 +199,6 @@ if $do_initialize; then
 fi
 
 logmust cd "$WORKDIR"
-stage prepare
-
-logmust cd "$WORKDIR"
 stage fetch
 
 if $DO_UPDATE_PACKAGE; then
@@ -227,6 +224,9 @@ if $DO_UPDATE_PACKAGE; then
 		exit 0
 	fi
 fi
+
+logmust cd "$WORKDIR"
+stage prepare
 
 logmust touch "$WORKDIR/building"
 if $do_checkstyle; then
