@@ -22,27 +22,7 @@ UPSTREAM_GIT_URL=https://github.com/iovisor/bcc.git
 UPSTREAM_GIT_BRANCH=master
 
 function prepare() {
-	logmust install_pkgs \
-		arping \
-		bison \
-		build-essential \
-		clang-format-6.0 \
-		cmake \
-		flex \
-		git \
-		iperf \
-		libclang-6.0-dev \
-		libedit-dev \
-		libelf-dev \
-		libllvm6.0 \
-		llvm-6.0-dev \
-		luajit \
-		luajit-5.1-dev \
-		netperf \
-		python \
-		python-netaddr \
-		python-pyroute2 \
-		zlib1g-dev
+	logmust install_build_deps_from_control_file
 }
 
 function build() {

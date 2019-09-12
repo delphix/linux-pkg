@@ -581,7 +581,8 @@ can leverage convenience functions provided by [lib/common.sh](./lib/common.sh).
 To build the package you'll most likely need to install some build
 dependencies. If that is the case, you should add a [prepare()](#prepare) hook
 that will install those build dependencies. For an Ubuntu source package, those
-dependencies can be installed by calling `install_source_package_build_deps()`.
+dependencies can be installed by calling
+`install_build_deps_from_control_file()`.
 For other packages, you can usually find the build dependencies in the project's
 README. It is recommended to use the `install_pkgs()` function to install
 packages.
