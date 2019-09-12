@@ -28,26 +28,6 @@ function prepare() {
 		logmust "$TOP/buildpkg.sh" bcc
 	fi
 
-	#
-	# Due to a bug in Ubuntu's version of Clang we need to fetch the packages
-	# from the official llvm PPA.
-	# See https://github.com/iovisor/bpftrace/issues/76.
-	#
-	logmust bash -c "wget -q -O - https://apt.llvm.org/llvm-snapshot.gpg.key |
-		sudo apt-key add -"
-
-	cat >/tmp/bpftrace-sources.list <<-EOF
-		# from https://apt.llvm.org/:
-		deb http://apt.llvm.org/bionic/ llvm-toolchain-bionic main
-		deb-src http://apt.llvm.org/bionic/ llvm-toolchain-bionic main
-		# 5.0
-		deb http://apt.llvm.org/bionic/ llvm-toolchain-bionic-5.0 main
-		deb-src http://apt.llvm.org/bionic/ llvm-toolchain-bionic-5.0 main
-	EOF
-
-	logmust sudo mv /tmp/bpftrace-sources.list /etc/apt/sources.list.d/
-	logmust sudo apt-get update
-
 	logmust install_build_deps_from_control_file
 }
 
