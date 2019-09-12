@@ -27,12 +27,15 @@ logmust sudo apt-get update
 # - devscripts provides dch, which is used to automatically generate and update
 #   changelog entries. It is required by the dpkg_buildpackage_default()
 #   command.
+# - equivs is used by the mk-build-deps utility which is used to install
+#   build dependencies from a control file.
 # - install_shfmt and shellcheck are needed for - make check - to be able to
 #   make sure style checks are fine.
 #
 logmust install_pkgs \
 	debhelper \
 	devscripts \
+	equivs \
 	shellcheck
 
 logmust install_shfmt

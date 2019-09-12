@@ -48,23 +48,7 @@ function prepare() {
 	logmust sudo mv /tmp/bpftrace-sources.list /etc/apt/sources.list.d/
 	logmust sudo apt-get update
 
-	logmust install_pkgs \
-		bison \
-		cmake \
-		flex \
-		g++ \
-		libelf-dev \
-		zlib1g-dev \
-		libfl-dev \
-		clang-5.0 \
-		libclang-5.0-dev \
-		libclang-common-5.0-dev \
-		libclang1-5.0 \
-		libllvm5.0 \
-		llvm-5.0 \
-		llvm-5.0-dev \
-		llvm-5.0-runtime \
-		systemtap-sdt-dev
+	logmust install_build_deps_from_control_file
 }
 
 function build() {

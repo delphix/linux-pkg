@@ -22,7 +22,7 @@ DEFAULT_PACKAGE_GIT_URL="https://github.com/delphix/nfs-utils.git"
 UPSTREAM_SOURCE_PACKAGE=nfs-utils
 
 function prepare() {
-	logmust install_source_package_build_deps
+	logmust install_build_deps_from_control_file
 }
 
 function build() {

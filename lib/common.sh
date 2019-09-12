@@ -409,10 +409,12 @@ function install_pkgs() {
 	die "apt-get install failed after $attempt attempts"
 }
 
-function install_source_package_build_deps() {
-	check_env UPSTREAM_SOURCE_PACKAGE
-	logmust sudo env DEBIAN_FRONTEND=noninteractive apt-get build-dep -y \
-		"$UPSTREAM_SOURCE_PACKAGE"
+function install_build_deps_from_control_file() {
+	logmust pushd "$WORKDIR/repo"
+	logmust sudo env DEBIAN_FRONTEND=noninteractive mk-build-deps --install \
+		--tool='apt-get -o Debug::pkgProblemResolver=yes --no-install-recommends --yes' \
+		debian/control
+	logmust popd
 }
 
 function read_package_list() {

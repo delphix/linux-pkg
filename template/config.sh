@@ -60,7 +60,7 @@ function prepare() {
 	# Useful helper functions:
 	#
 	#logmust install_pkgs build-dep-pkg1 build-dep-pkg2 ...
-	#logmust install_source_package_build_deps
+	#logmust install_build_deps_from_control_file
 	return
 }
 
