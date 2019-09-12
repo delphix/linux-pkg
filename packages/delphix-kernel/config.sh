@@ -20,7 +20,9 @@ DEFAULT_PACKAGE_GIT_URL="https://github.com/delphix/delphix-kernel.git"
 DEFAULT_PACKAGE_VERSION="1.0.0"
 
 function prepare() {
-	logmust install_build_deps_from_control_file
+	logmust install_pkgs \
+		debhelper \
+		devscripts
 }
 
 function build() {
