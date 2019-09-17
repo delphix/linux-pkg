@@ -22,6 +22,30 @@ export DEBIAN_FRONTEND=noninteractive
 # TODO: allow updating upstream for other branches than master
 export REPO_UPSTREAM_BRANCH="upstreams/master"
 
+#
+# Determine DEFAULT_GIT_BRANCH. If it is unset, default to the branch set in
+# branch.config.
+#
+if [[ -z "$DEFAULT_GIT_BRANCH" ]]; then
+	echo "DEFAULT_GIT_BRANCH is not set."
+	if ! source "$TOP/branch.config" 2>/dev/null; then
+		echo "No branch.config file found in repo root."
+		exit 1
+	fi
+
+	if [[ -z "$DEFAULT_GIT_BRANCH" ]]; then
+		echo "$DEFAULT_GIT_BRANCH parameter was not sourced from " \
+			"branch.config. Ensure branch.config is properly formatted with " \
+			"e.g. DEFAULT_GIT_BRANCH=\"<upstream-product-branch>\""
+		exit 1
+	fi
+
+	echo "Defaulting DEFAULT_GIT_BRANCH to branch $DEFAULT_GIT_BRANCH set in" \
+		"branch.config."
+
+	export DEFAULT_GIT_BRANCH
+fi
+
 # shellcheck disable=SC2086
 function enable_colors() {
 	[[ -t 1 ]] && flags="" || flags="-T xterm"
