@@ -26,13 +26,21 @@ function prepare() {
 	logmust install_pkgs \
 		autoconf \
 		automake \
+		bison \
+		flex \
+		gawk \
 		git \
+		gcc \
+		libbz2-dev \
 		libdw-dev \
 		libelf-dev \
+		liblzma-dev \
 		libtool \
+		make \
 		pkg-config \
 		python3-distutils \
-		python3.6-dev
+		python3.6-dev \
+		zlib1g-dev
 }
 
 function build() {
