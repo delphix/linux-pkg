@@ -32,5 +32,5 @@ function build() {
 	java_home=$(cat "$JDK_PATH_FILE")
 	logmust cd "$WORKDIR/repo"
 	logmust sudo ./gradlew "-Dorg.gradle.java.home=$java_home" distDeb
-	logmust sudo mv ./build/distributions/*.deb "$WORKDIR/artifacts/"
+	logmust sudo mv ./build/distributions/*deb "$WORKDIR/artifacts/"
 }

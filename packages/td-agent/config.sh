@@ -46,7 +46,7 @@ function build() {
 	# now kick off the build
 	logmust bin/omnibus build td-agent3
 	# copy to artifacts
-	logmust cp "$WORKDIR"/repo/pkg/*.deb "$WORKDIR/artifacts/"
+	logmust cp "$WORKDIR"/repo/pkg/*deb "$WORKDIR/artifacts/"
 }
 
 function update_upstream() {

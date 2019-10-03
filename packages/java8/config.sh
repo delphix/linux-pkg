@@ -34,7 +34,7 @@ function fetch() {
 function build() {
 	logmust cd "$WORKDIR"
 	logmust env DEB_BUILD_OPTIONS=nostrip fakeroot make-jpkg "$tarfile" <<<y
-	logmust mv ./*.deb "$WORKDIR/artifacts/"
+	logmust mv ./*deb "$WORKDIR/artifacts/"
 	#
 	# Store the install path of the JDK in a file so that the users of this
 	# Java package know where to look. This is especially useful for
