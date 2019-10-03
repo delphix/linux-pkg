@@ -84,6 +84,6 @@ export PACKAGE_REVISION=${DEFAULT_REVISION:-0}
 logmust set_changelog "$package_name"
 logmust dpkg-buildpackage -uc -us -b
 logmust mkdir -p artifacts
-logmust mv ../"$package_name"*.deb artifacts/
+logmust mv ../"$package_name"*deb artifacts/
 logmust rm -f ../"$package_name"*.buildinfo ../"$package_name"*.changes
 logmust cp "$INFO_FILE" artifacts/build-info

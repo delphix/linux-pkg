@@ -47,5 +47,5 @@ function build() {
 	logmust dpkg-buildpackage -b -us -uc
 
 	logmust cd "$WORKDIR/repo"
-	logmust mv ./*.deb "$WORKDIR/artifacts/"
+	logmust mv ./*deb "$WORKDIR/artifacts/"
 }

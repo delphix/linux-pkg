@@ -785,9 +785,9 @@ More instructions available
 ## Versions and Branches
 
 The framework is designed in a way to allow easy integration with the Delphix
-release process. The idea is that both the package build artifacts (`.debs`)
-and package source code should be available for each Delphix release. This
-should hold for both in-house and third-party packages.
+release process. The idea is that both the package build artifacts (`.deb`s
+and `.ddeb`s) and package source code should be available for each Delphix
+release. This should hold for both in-house and third-party packages.
 
 Regarding the build artifacts, those should be taken care of by the existing
 Delphix build artifacts storage policy, available

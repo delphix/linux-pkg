@@ -31,5 +31,5 @@ function build() {
 	logmust ./scripts/docker-run.sh make packages \
 		VERSION="$PACKAGE_VERSION-$PACKAGE_REVISION"
 	logmust sudo chown -R "$USER:" artifacts
-	logmust mv artifacts/*.deb "$WORKDIR/artifacts/"
+	logmust mv artifacts/*deb "$WORKDIR/artifacts/"
 }

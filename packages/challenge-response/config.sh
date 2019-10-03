@@ -29,5 +29,5 @@ function prepare() {
 function build() {
 	logmust cd "$WORKDIR/repo/challenge_response"
 	logmust make package
-	logmust mv ./x86_64/*.deb "$WORKDIR/artifacts/"
+	logmust mv ./x86_64/*deb "$WORKDIR/artifacts/"
 }

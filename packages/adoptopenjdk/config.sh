@@ -21,7 +21,7 @@ tarfile="OpenJDK8U-jdk_x64_linux_hotspot_8u212b04.tar.gz"
 jdk_path="/usr/lib/jvm/adoptopenjdk-java8-jdk-amd64"
 
 function prepare() {
-	if ! ls "$TOP/packages/make-jpkg/tmp/artifacts/"*.deb >/dev/null 2>&1; then
+	if ! ls "$TOP/packages/make-jpkg/tmp/artifacts/"*deb >/dev/null 2>&1; then
 		echo_bold "custom java-package not installed. Building package 'make-jpkg' first."
 		logmust "$TOP/buildpkg.sh" make-jpkg
 	fi
@@ -40,7 +40,7 @@ function build() {
 
 	logmust env DEB_BUILD_OPTIONS=nostrip fakeroot make-jpkg "$tarfile" <<<y
 
-	logmust mv ./*.deb "$WORKDIR/artifacts/"
+	logmust mv ./*deb "$WORKDIR/artifacts/"
 	#
 	# Store the install path of the JDK in a file so that the users of this
 	# Java package know where to look. This is especially useful for
