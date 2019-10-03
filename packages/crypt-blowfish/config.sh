@@ -23,5 +23,5 @@ function build() {
 	logmust cd "$WORKDIR/repo/crypt_blowfish"
 	logmust make package
 	logmust make package-dev
-	logmust mv ./out/*.deb "$WORKDIR/artifacts/"
+	logmust mv ./out/*deb "$WORKDIR/artifacts/"
 }
