@@ -18,7 +18,48 @@
 TOP="$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")"
 source "$TOP/lib/common.sh"
 
+#
+# Update the sources.list file to point to our internal package mirror. If no
+# mirror url is passed in, then the latest mirror snapshot is used.
+#
+configure_apt_sources() {
+	local package_mirror_url=''
+	if [[ -n "$DELPHIX_PACKAGE_MIRROR_MAIN" ]]; then
+		package_mirror_url="$DELPHIX_PACKAGE_MIRROR_MAIN"
+	else
+		local latest_url="http://linux-package-mirror.delphix.com/"
+		latest_url+="${DEFAULT_GIT_BRANCH}/latest/"
+		package_mirror_url=$(curl -LfSs -o /dev/null -w '%{url_effective}' \
+			"$latest_url" || die "Could not curl $latest_url")
+
+		package_mirror_url+="ubuntu"
+	fi
+
+	#
+	# Remove other sources in sources.list.d if they are present.
+	#
+	[[ -d /etc/apt/sources.list.d ]] && (
+		logmust sudo rm -rf /etc/apt/sources.list.d ||
+			die "Could not remove /etc/apt/sources.list.d"
+	)
+
+	sudo bash -c "cat <<-EOF >/etc/apt/sources.list
+deb ${package_mirror_url} bionic main restricted universe multiverse
+deb-src ${package_mirror_url} bionic main restricted universe multiverse
+
+deb ${package_mirror_url} bionic-updates main restricted universe multiverse
+deb-src ${package_mirror_url} bionic-updates main restricted universe multiverse
+
+deb ${package_mirror_url} bionic-security main restricted universe multiverse
+deb-src ${package_mirror_url} bionic-security main restricted universe multiverse
+
+deb ${package_mirror_url} bionic-backports main restricted universe multiverse
+deb-src ${package_mirror_url} bionic-backports main restricted universe multiverse
+EOF" || die "/etc/apt/sources.list could not be updated"
+}
+
 logmust check_running_system
+logmust configure_apt_sources
 logmust sudo apt-get update
 
 #
