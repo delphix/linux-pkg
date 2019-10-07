@@ -23,16 +23,17 @@ UPSTREAM_GIT_URL="https://github.com/osandov/drgn.git"
 UPSTREAM_GIT_BRANCH="master"
 
 function prepare() {
-	logmust install_pkgs \
-		autoconf \
-		automake \
-		git \
-		libdw-dev \
-		libelf-dev \
-		libtool \
-		pkg-config \
-		python3-distutils \
-		python3.6-dev
+	#
+	# Strictly speaking libkdumpfile is not a hard prerequisite for
+	# drgn itself, but it is a hard requirement in our use-case as
+	# we do want to use drgn for kdump-compressed crash dumps.
+	#
+	if ! dpkg-query --show libkdumpfile >/dev/null 2>&1; then
+		echo_bold "libkdumpfile not installed. Building package 'libkdumpfile' first."
+		logmust "$TOP/buildpkg.sh" libkdumpfile
+	fi
+
+	logmust install_build_deps_from_control_file
 }
 
 function build() {
