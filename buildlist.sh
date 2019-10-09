@@ -52,11 +52,6 @@ logmust mkdir artifacts
 # default used if the revision is not set explicitly anywhere else.
 #
 export DEFAULT_REVISION="${DEFAULT_REVISION:-$(default_revision)}"
-#
-# Default branch to checkout when fetching source code for packages. Note that
-# this can be overriden by per-package settings.
-#
-export DEFAULT_GIT_BRANCH="${DEFAULT_GIT_BRANCH:-master}"
 
 #
 # A list of target platform or versions to build modules for can be passed in
