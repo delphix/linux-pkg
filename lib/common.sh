@@ -672,7 +672,7 @@ function dpkg_buildpackage_default() {
 	logmust set_changelog
 	logmust dpkg-buildpackage -b -us -uc
 	logmust cd "$WORKDIR/"
-	logmust mv ./*.deb artifacts/
+	logmust mv ./*deb artifacts/
 }
 
 #
