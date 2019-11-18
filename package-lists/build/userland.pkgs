@@ -26,5 +26,6 @@ nfs-utils
 python-rtslib-fb
 sdb
 targetcli-fb
+performance-diagnostics
 ptools
 td-agent-prebuilt
