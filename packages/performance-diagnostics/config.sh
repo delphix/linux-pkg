@@ -14,32 +14,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-
 # shellcheck disable=SC2034
-DEFAULT_PACKAGE_GIT_URL="https://github.com/delphix/drgn.git"
-DEFAULT_PACKAGE_VERSION=1.0.0
+#
 
-UPSTREAM_GIT_URL="https://github.com/osandov/drgn.git"
-UPSTREAM_GIT_BRANCH="master"
+DEFAULT_PACKAGE_GIT_URL="https://github.com/delphix/performance-diagnostics.git"
+DEFAULT_PACKAGE_VERSION="1.0.0"
 
 function prepare() {
-	#
-	# Strictly speaking libkdumpfile is not a hard prerequisite for
-	# drgn itself, but it is a hard requirement in our use-case as
-	# we do want to use drgn for kdump-compressed crash dumps.
-	#
-	if ! dpkg-query --show libkdumpfile >/dev/null 2>&1; then
-		echo_bold "libkdumpfile not installed. Building package 'libkdumpfile' first."
-		logmust "$TOP/buildpkg.sh" libkdumpfile
-	fi
-
 	logmust install_build_deps_from_control_file
 }
 
 function build() {
 	logmust dpkg_buildpackage_default
-}
-
-function update_upstream() {
-	logmust update_upstream_from_git
 }
