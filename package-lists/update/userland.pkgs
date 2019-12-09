@@ -13,6 +13,7 @@
 
 bpftrace
 cloud-init
+crash
 drgn
 libkdumpfile
 nfs-utils
