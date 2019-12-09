@@ -16,6 +16,7 @@ delphix-sso-app
 bpftrace
 challenge-response
 cloud-init
+crash
 crash-python
 crypt-blowfish
 delphix-platform

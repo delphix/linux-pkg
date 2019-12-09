@@ -13,6 +13,7 @@
 
 bpftrace
 cloud-init
+crash
 drgn
 nfs-utils
 python-rtslib-fb
