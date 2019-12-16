@@ -58,6 +58,7 @@ function usage() {
 	echo "package-lists/update/<list>.pkgs."
 	echo ""
 	echo "    -n  dry-run. Pass the dry-run flag to git push (git push -n)."
+	echo "    -r  release. Update packages for a release branch."
 	echo "    -s  stop on failure. By default script continues when update"
 	echo "        for a package fails."
 	echo "    -h  display this message and exit."
@@ -65,10 +66,12 @@ function usage() {
 	exit 2
 }
 
+release=false
 dry_run=false
 stop_on_failure=false
-while getopts ':hns' c; do
+while getopts ':hnrs' c; do
 	case "$c" in
+	r) release=true ;;
 	s) stop_on_failure=true ;;
 	n) dry_run=true ;;
 	h) usage >&2 ;;
@@ -202,6 +205,15 @@ for pkg in "${PACKAGES[@]}"; do
 	echo_bold "Updating package $pkg."
 
 	logmust load_package_config "$pkg"
+
+	#
+	# If the "-r" option is specified, this indicates that we're
+	# updating packages for a specific release. For releases, we
+	# only want to update packages that are pulling from Ubuntu's
+	# source packages. Thus, we skip any packages here, that do not
+	# update from a source package.
+	#
+	$release && [[ -z "$UPSTREAM_SOURCE_PACKAGE" ]] && continue
 
 	WORKDIR="$TOP/packages/$pkg/tmp"
 	unexpected_failure=false

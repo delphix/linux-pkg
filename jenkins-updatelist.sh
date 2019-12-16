@@ -46,6 +46,12 @@ else
 	dry_run='-n'
 fi
 
+if [[ "$GIT_RELEASE" == "true" ]]; then
+	release='-r'
+else
+	release=''
+fi
+
 logmust cd "$TOP"
 logmust ./setup.sh
-logmust ./updatelist.sh $dry_run "$UPDATE_LIST"
+logmust ./updatelist.sh $dry_run $release "$UPDATE_LIST"
