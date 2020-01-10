@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright 2018, 2019 Delphix
+# Copyright 2018, 2020 Delphix
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -750,7 +750,7 @@ function determine_target_kernels() {
 		return 0
 	fi
 
-	local supported_platforms="generic aws gcp azure kvm"
+	local supported_platforms="generic aws gcp azure oracle"
 	local platform
 
 	if [[ -z "$TARGET_PLATFORMS" ]]; then
