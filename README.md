@@ -265,7 +265,8 @@ There's a set of environment variables that can be set to modify the operation
 of some of the scripts defined above.
 
 * **DISABLE_SYSTEM_CHECK**: Set to "true" to disable the check that makes sure
-  we are running on an Ubuntu Bionic (18.04) system in AWS. Affects all scripts.
+  we are running on the appropriate Ubuntu distribution in AWS.
+  Affects all scripts.
 
 * **DRY_RUN**: Set to "true" to prevent `updatelist.sh` from updating production
   package repositories. `updatelist.sh` will invoke `push-updates.sh` with `-n`.
@@ -785,9 +786,9 @@ More instructions available
 ## Versions and Branches
 
 The framework is designed in a way to allow easy integration with the Delphix
-release process. The idea is that both the package build artifacts (`.debs`)
-and package source code should be available for each Delphix release. This
-should hold for both in-house and third-party packages.
+release process. The idea is that both the package build artifacts (`.deb`s
+and `.ddeb`s) and package source code should be available for each Delphix
+release. This should hold for both in-house and third-party packages.
 
 Regarding the build artifacts, those should be taken care of by the existing
 Delphix build artifacts storage policy, available

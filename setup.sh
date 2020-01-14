@@ -44,17 +44,17 @@ configure_apt_sources() {
 	)
 
 	sudo bash -c "cat <<-EOF >/etc/apt/sources.list
-deb ${package_mirror_url} bionic main restricted universe multiverse
-deb-src ${package_mirror_url} bionic main restricted universe multiverse
+deb ${package_mirror_url} ${UBUNTU_DISTRIBUTION} main restricted universe multiverse
+deb-src ${package_mirror_url} ${UBUNTU_DISTRIBUTION} main restricted universe multiverse
 
-deb ${package_mirror_url} bionic-updates main restricted universe multiverse
-deb-src ${package_mirror_url} bionic-updates main restricted universe multiverse
+deb ${package_mirror_url} ${UBUNTU_DISTRIBUTION}-updates main restricted universe multiverse
+deb-src ${package_mirror_url} ${UBUNTU_DISTRIBUTION}-updates main restricted universe multiverse
 
-deb ${package_mirror_url} bionic-security main restricted universe multiverse
-deb-src ${package_mirror_url} bionic-security main restricted universe multiverse
+deb ${package_mirror_url} ${UBUNTU_DISTRIBUTION}-security main restricted universe multiverse
+deb-src ${package_mirror_url} ${UBUNTU_DISTRIBUTION}-security main restricted universe multiverse
 
-deb ${package_mirror_url} bionic-backports main restricted universe multiverse
-deb-src ${package_mirror_url} bionic-backports main restricted universe multiverse
+deb ${package_mirror_url} ${UBUNTU_DISTRIBUTION}-backports main restricted universe multiverse
+deb-src ${package_mirror_url} ${UBUNTU_DISTRIBUTION}-backports main restricted universe multiverse
 EOF" || die "/etc/apt/sources.list could not be updated"
 }
 

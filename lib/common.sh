@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright 2018, 2019 Delphix
+# Copyright 2018, 2020 Delphix
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -21,6 +21,8 @@ export DEBIAN_FRONTEND=noninteractive
 
 # TODO: allow updating upstream for other branches than master
 export REPO_UPSTREAM_BRANCH="upstreams/master"
+
+export UBUNTU_DISTRIBUTION="bionic"
 
 #
 # Determine DEFAULT_GIT_BRANCH. If it is unset, default to the branch set in
@@ -103,9 +105,9 @@ function logmust() {
 }
 
 #
-# Check that we are running on an Ubuntu Bionic system in AWS.
-# This is not a strict requirement for the build to work but rather a
-# safety measure to prevent developers from accidentally running the
+# Check that we are running in AWS on an Ubuntu system of the appropriate
+# distribution. This is not a strict requirement for the build to work but
+# rather a safety measure to prevent developers from accidentally running the
 # scripts on their work system and changing its configuration.
 #
 function check_running_system() {
@@ -115,8 +117,8 @@ function check_running_system() {
 	fi
 
 	if ! (command -v lsb_release >/dev/null &&
-		[[ $(lsb_release -cs) == "bionic" ]]); then
-		die "Script can only be ran on an ubuntu-bionic system."
+		[[ $(lsb_release -cs) == "$UBUNTU_DISTRIBUTION" ]]); then
+		die "Script can only be ran on an ubuntu-${UBUNTU_DISTRIBUTION} system."
 	fi
 
 	if ! curl "http://169.254.169.254/latest/meta-datas" \
@@ -672,7 +674,7 @@ function dpkg_buildpackage_default() {
 	logmust set_changelog
 	logmust dpkg-buildpackage -b -us -uc
 	logmust cd "$WORKDIR/"
-	logmust mv ./*.deb artifacts/
+	logmust mv ./*deb artifacts/
 }
 
 #
@@ -695,6 +697,7 @@ function store_git_info() {
 #
 function get_kernel_for_platform() {
 	local platform="$1"
+	local package
 
 	#
 	# For each supported platform, Ubuntu provides a 'linux-image-PLATFORM'
@@ -705,10 +708,21 @@ function get_kernel_for_platform() {
 	# for kernel version '4.15.0-1027-aws'. We use this depenency to figure
 	# out the default kernel version for a given platform.
 	#
+	# The "generic" platform is a special case, since we want to use the
+	# hwe kernel image instead of the regular generic image.
+	#
 	# Note that while the default kernel is usually also the latest
 	# available, it is not always the case.
 	#
-	if [[ "$(apt-cache show --no-all-versions "linux-image-${platform}" \
+
+	if [[ "$platform" == generic ]] &&
+		[[ "$UBUNTU_DISTRIBUTION" == bionic ]]; then
+		package=linux-image-generic-hwe-18.04
+	else
+		package="linux-image-${platform}"
+	fi
+
+	if [[ "$(apt-cache show --no-all-versions "$package" \
 		2>/dev/null | grep Depends)" =~ linux-image-([^,]*-${platform}) ]]; then
 		_RET=${BASH_REMATCH[1]}
 		return 0
@@ -736,7 +750,7 @@ function determine_target_kernels() {
 		return 0
 	fi
 
-	local supported_platforms="generic aws gcp azure kvm"
+	local supported_platforms="generic aws gcp azure oracle"
 	local platform
 
 	if [[ -z "$TARGET_PLATFORMS" ]]; then
