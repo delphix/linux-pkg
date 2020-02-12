@@ -344,11 +344,14 @@ Here is a list of variables that can be defined for a package:
   `https://` URL. One exception is if the source of the package being built
   isn't fetched from git. In this case, set this to "none".
 
-* **DEFAULT_PACKAGE_GIT_BRANCH**: (Optional) Default git branch to use when
+* **DEFAULT_PACKAGE_GIT_BRANCH**: (DEPRECATED) Default git branch to use when
   fetching from or pushing to `DEFAULT_PACKAGE_GIT_URL`. This should be
   typically left unset. The branch to fetch the package from defaults
   to the value of the environment variable `DEFAULT_BRANCH`, which itself
   defaults to "master".
+  WARNING: do not set this parameter unless you know exactly what you are doing,
+  as our current versioning convention is to use DEFAULT_BRANCH for each
+  package. This parameter may be removed in the future.
 
 * **DEFAULT_PACKAGE_VERSION**: (Optional) The version of the package is set to
   this value when it is built. **Note:** If this field is not set, then you
