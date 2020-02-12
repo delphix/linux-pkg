@@ -15,6 +15,7 @@ bpftrace
 cloud-init
 crash
 drgn
+makedumpfile
 nfs-utils
 python-rtslib-fb
 targetcli-fb
