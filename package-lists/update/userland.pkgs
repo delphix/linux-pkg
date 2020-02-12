@@ -16,6 +16,7 @@ cloud-init
 crash
 drgn
 libkdumpfile
+makedumpfile
 nfs-utils
 python-rtslib-fb
 targetcli-fb
