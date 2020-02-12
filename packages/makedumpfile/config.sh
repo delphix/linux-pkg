@@ -28,11 +28,9 @@ function prepare() {
 function build() {
 	logmust cd "$WORKDIR/repo"
 	if [[ -z "$PACKAGE_VERSION" ]]; then
-		logmust eval PACKAGE_VERSION="$(grep '^VERSION=' Makefile | cut -d "=" -f 2)"
+		logmust eval PACKAGE_VERSION="1:$(grep '^VERSION=' Makefile | cut -d "=" -f 2)"
 	fi
 	logmust dpkg_buildpackage_default
-	# we only need makedumpfile package
-	logmust rm -f "$WORKDIR/artifacts/"kdump-tools_*_amd64.deb
 }
 
 function update_upstream() {
