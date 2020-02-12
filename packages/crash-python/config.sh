@@ -17,7 +17,6 @@
 
 # shellcheck disable=SC2034
 DEFAULT_PACKAGE_GIT_URL="https://gitlab.delphix.com/os-platform/crash-python.git"
-DEFAULT_PACKAGE_GIT_BRANCH="next"
 DEFAULT_PACKAGE_VERSION=1.0.0
 
 function prepare() {
