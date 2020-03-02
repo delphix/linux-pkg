@@ -16,21 +16,14 @@
 #
 
 # shellcheck disable=SC2034
-DEFAULT_PACKAGE_GIT_URL="https://gitlab.delphix.com/os-platform/libkdumpfile.git"
+DEFAULT_PACKAGE_GIT_URL="https://github.com/delphix/libkdumpfile.git"
 DEFAULT_PACKAGE_VERSION=1.0.0
 
+UPSTREAM_GIT_URL="https://github.com/ptesarik/libkdumpfile.git"
+UPSTREAM_GIT_BRANCH="master"
+
 function prepare() {
-	logmust install_pkgs \
-		autoconf \
-		automake \
-		git \
-		liblzo2-dev \
-		libsnappy1v5 \
-		libtool \
-		pkg-config \
-		python3-distutils \
-		python3.6-dev \
-		zlib1g-dev
+	logmust install_build_deps_from_control_file
 }
 
 function build() {
@@ -38,4 +31,8 @@ function build() {
 
 	# Install libkdumpfile, it's needed to build drgn
 	logmust install_pkgs "$WORKDIR/artifacts"/*.deb
+}
+
+function update_upstream() {
+	logmust update_upstream_from_git
 }
