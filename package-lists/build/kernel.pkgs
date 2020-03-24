@@ -3,6 +3,11 @@
 # kernel versions.
 #
 
+# Note: The following packages should be built first because other packages
+# depend on them being built.
+#  - zfs is required by grub2
+zfs
+
 connstat
 delphix-kernel
-zfs
+grub2

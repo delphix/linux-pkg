@@ -21,3 +21,4 @@ nfs-utils
 python-rtslib-fb
 targetcli-fb
 td-agent
+grub2
