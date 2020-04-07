@@ -17,9 +17,7 @@
 # shellcheck disable=SC2034
 
 DEFAULT_PACKAGE_GIT_URL="https://github.com/delphix/grub2"
-DEFAULT_PACKAGE_GIT_BRANCH="applied/ubuntu/bionic-updates"
 
-DEFAULT_PACKAGE_VERSION="2.02-2ubuntu8.15"
 UPSTREAM_SOURCE_PACKAGE=grub2
 
 #
@@ -39,6 +37,11 @@ function prepare() {
 # Build the package.
 #
 function build() {
+	logmust cd "$WORKDIR/repo"
+	if [[ -z "$PACKAGE_VERSION" ]]; then
+		logmust eval PACKAGE_VERSION="$(dpkg-parsechangelog -S Version | \
+		    awk -F'-' '{print $1}')"
+	fi
 	logmust dpkg_buildpackage_default
 }
 
