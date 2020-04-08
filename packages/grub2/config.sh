@@ -18,7 +18,8 @@
 
 DEFAULT_PACKAGE_GIT_URL="https://github.com/delphix/grub2"
 
-UPSTREAM_SOURCE_PACKAGE=grub2
+UPSTREAM_GIT_URL=https://git.launchpad.net/ubuntu/+source/grub2
+UPSTREAM_GIT_BRANCH=applied/ubuntu/bionic-updates
 
 #
 # Install build dependencies for the package.
@@ -49,6 +50,6 @@ function build() {
 # Hook to fetch upstream package changes and merge into our tree.
 #
 function update_upstream() {
-	logmust update_upstream_from_source_package
+	logmust update_upstream_from_git
 	return
 }
