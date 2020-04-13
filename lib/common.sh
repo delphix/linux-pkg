@@ -24,30 +24,6 @@ export REPO_UPSTREAM_BRANCH="upstreams/master"
 
 export UBUNTU_DISTRIBUTION="bionic"
 
-#
-# Determine DEFAULT_GIT_BRANCH. If it is unset, default to the branch set in
-# branch.config.
-#
-if [[ -z "$DEFAULT_GIT_BRANCH" ]]; then
-	echo "DEFAULT_GIT_BRANCH is not set."
-	if ! source "$TOP/branch.config" 2>/dev/null; then
-		echo "No branch.config file found in repo root."
-		exit 1
-	fi
-
-	if [[ -z "$DEFAULT_GIT_BRANCH" ]]; then
-		echo "$DEFAULT_GIT_BRANCH parameter was not sourced from " \
-			"branch.config. Ensure branch.config is properly formatted with " \
-			"e.g. DEFAULT_GIT_BRANCH=\"<upstream-product-branch>\""
-		exit 1
-	fi
-
-	echo "Defaulting DEFAULT_GIT_BRANCH to branch $DEFAULT_GIT_BRANCH set in" \
-		"branch.config."
-
-	export DEFAULT_GIT_BRANCH
-fi
-
 # shellcheck disable=SC2086
 function enable_colors() {
 	[[ -t 1 ]] && flags="" || flags="-T xterm"
@@ -126,6 +102,32 @@ function check_running_system() {
 		die "Not running in AWS, are you sure you are on the" \
 			"right system?"
 	fi
+}
+
+#
+# Determine DEFAULT_GIT_BRANCH. If it is unset, default to the branch set in
+# branch.config.
+#
+function determine_default_git_branch() {
+
+	[[ -n "$DEFAULT_GIT_BRANCH" ]] && return
+
+	echo "DEFAULT_GIT_BRANCH is not set."
+	if ! source "$TOP/branch.config" 2>/dev/null; then
+		die "No branch.config file found in repo root."
+	fi
+
+	if [[ -z "$DEFAULT_GIT_BRANCH" ]]; then
+		die "$DEFAULT_GIT_BRANCH parameter was not sourced" \
+			"from branch.config. Ensure branch.config is" \
+			"properly formatted with e.g." \
+			"DEFAULT_GIT_BRANCH='<upstream-product-branch>'"
+	fi
+
+	echo "Defaulting DEFAULT_GIT_BRANCH to branch" \
+		"$DEFAULT_GIT_BRANCH set in branch.config."
+
+	export DEFAULT_GIT_BRANCH
 }
 
 function check_package_exists() {
@@ -259,6 +261,8 @@ function get_package_prefix() {
 #
 function load_package_config() {
 	export PACKAGE="$1"
+	local verbose=""
+	[[ "$2" == "verbose" ]] && verbose="verbose"
 
 	logmust check_package_exists "$PACKAGE"
 
@@ -283,7 +287,7 @@ function load_package_config() {
 	#
 	logmust get_package_prefix "$PACKAGE"
 	export PACKAGE_PREFIX="$_RET"
-	logmust get_package_config_from_env
+	logmust get_package_config_from_env "$verbose"
 
 	#
 	# Check that package configuration is valid
@@ -346,74 +350,85 @@ function load_package_config() {
 # This function should be called after loading a package's config.sh.
 #
 function get_package_config_from_env() {
+	local verbose="false"
 	local var
 	check_env PACKAGE_PREFIX
 
-	echo "get_package_config_from_env(): using prefix: ${PACKAGE_PREFIX}_"
+	[[ "$1" == "verbose" ]] && verbose=true
+
+	$verbose && echo "get_package_config_from_env(): using" \
+		"prefix: ${PACKAGE_PREFIX}_"
 
 	var="${PACKAGE_PREFIX}_GIT_URL"
 	if [[ -n "$PARAM_PACKAGE_GIT_URL" ]]; then
 		PACKAGE_GIT_URL="$PARAM_PACKAGE_GIT_URL"
-		echo "PARAM_PACKAGE_GIT_URL passed from '-g'"
+		$verbose && echo "PARAM_PACKAGE_GIT_URL passed from '-g'"
 	elif [[ -n "${!var}" ]]; then
 		PACKAGE_GIT_URL="${!var}"
-		echo "PACKAGE_GIT_URL set to value of ${var}"
+		$verbose && echo "PACKAGE_GIT_URL set to value of ${var}"
 	elif [[ -n "$DEFAULT_PACKAGE_GIT_URL" ]]; then
 		PACKAGE_GIT_URL="$DEFAULT_PACKAGE_GIT_URL"
-		echo "PACKAGE_GIT_URL set to value of DEFAULT_PACKAGE_GIT_URL"
+		$verbose && echo "PACKAGE_GIT_URL set to value of" \
+			"DEFAULT_PACKAGE_GIT_URL"
 	fi
 
 	var="${PACKAGE_PREFIX}_GIT_BRANCH"
 	if [[ -n "$PARAM_PACKAGE_GIT_BRANCH" ]]; then
 		PACKAGE_GIT_BRANCH="$PARAM_PACKAGE_GIT_BRANCH"
-		echo "PARAM_PACKAGE_GIT_BRANCH passed from '-b'"
+		$verbose && echo "PARAM_PACKAGE_GIT_BRANCH passed from '-b'"
 	elif [[ -n "${!var}" ]]; then
 		PACKAGE_GIT_BRANCH="${!var}"
-		echo "PACKAGE_GIT_BRANCH set to value of ${var}"
+		$verbose && echo "PACKAGE_GIT_BRANCH set to value of ${var}"
 	elif [[ -n "$DEFAULT_PACKAGE_GIT_BRANCH" ]]; then
 		PACKAGE_GIT_BRANCH="$DEFAULT_PACKAGE_GIT_BRANCH"
-		echo "PACKAGE_GIT_BRANCH set to value of" \
+		$verbose && echo "PACKAGE_GIT_BRANCH set to value of" \
 			"DEFAULT_PACKAGE_GIT_BRANCH"
 	fi
 
 	if [[ -z "$PACKAGE_GIT_BRANCH" ]]; then
 		PACKAGE_GIT_BRANCH="$DEFAULT_GIT_BRANCH"
-		echo "PACKAGE_GIT_BRANCH set to value of DEFAULT_GIT_BRANCH"
+		$verbose && echo "PACKAGE_GIT_BRANCH set to value of" \
+			"DEFAULT_GIT_BRANCH"
 	fi
 
 	var="${PACKAGE_PREFIX}_VERSION"
 	if [[ -n "$PARAM_PACKAGE_VERSION" ]]; then
 		PACKAGE_VERSION="$PARAM_PACKAGE_VERSION"
-		echo "PACKAGE_VERSION passed from '-v'"
+		$verbose && echo "PACKAGE_VERSION passed from '-v'"
 	elif [[ -n "${!var}" ]]; then
 		PACKAGE_VERSION="${!var}"
-		echo "PACKAGE_VERSION set to value of ${var}"
+		$verbose && echo "PACKAGE_VERSION set to value of ${var}"
 	elif [[ -n "$DEFAULT_PACKAGE_VERSION" ]]; then
 		PACKAGE_VERSION="$DEFAULT_PACKAGE_VERSION"
-		echo "PACKAGE_VERSION set to value of DEFAULT_PACKAGE_VERSION"
+		$verbose && echo "PACKAGE_VERSION set to value of" \
+			"DEFAULT_PACKAGE_VERSION"
 	fi
 
 	var="${PACKAGE_PREFIX}_REVISION"
 	if [[ -n "$PARAM_PACKAGE_REVISION" ]]; then
 		PACKAGE_REVISION="$PARAM_PACKAGE_REVISION"
-		echo "PACKAGE_REVISION passed from '-r'"
+		$verbose && echo "PACKAGE_REVISION passed from '-r'"
 	elif [[ -n "${!var}" ]]; then
 		PACKAGE_REVISION="${!var}"
-		echo "PACKAGE_REVISION set to value of ${var}"
+		$verbose && echo "PACKAGE_REVISION set to value of ${var}"
 	elif [[ -n "$DEFAULT_PACKAGE_REVISION" ]]; then
 		PACKAGE_REVISION="$DEFAULT_PACKAGE_REVISION"
-		echo "PACKAGE_REVISION set to value of DEFAULT_PACKAGE_REVISION"
+		$verbose && echo "PACKAGE_REVISION set to value of" \
+			"DEFAULT_PACKAGE_REVISION"
 	fi
 
 	if [[ -z "$PACKAGE_REVISION" ]]; then
 		PACKAGE_REVISION="$DEFAULT_REVISION"
-		echo "PACKAGE_REVISION set to value of DEFAULT_REVISION"
+		$verbose && echo "PACKAGE_REVISION set to value of" \
+			"DEFAULT_REVISION"
 	fi
 
 	export PACKAGE_GIT_URL
 	export PACKAGE_GIT_BRANCH
 	export PACKAGE_VERSION
 	export PACKAGE_REVISION
+
+	$verbose || return 0
 
 	echo_bold "------------------------------------------------------------"
 	echo_bold "PACKAGE_GIT_URL:      $PACKAGE_GIT_URL"
