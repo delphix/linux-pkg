@@ -162,6 +162,9 @@ function build() {
 	done
 	logmust cd "$WORKDIR"
 	logmust mv "all-packages/"*.deb "artifacts/"
+
+	# Install libzfs which is required to build grub
+	logmust install_pkgs "$WORKDIR/artifacts"/{libnvpair1linux,libuutil1linux,libzfs2linux,libzpool2linux,libzfslinux-dev}_*.deb
 }
 
 function update_upstream() {
