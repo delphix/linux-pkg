@@ -39,9 +39,9 @@ function prepare() {
 #
 function build() {
 	logmust cd "$WORKDIR/repo"
-	if [[ -z "$PACKAGE_VERSION" ]]; then
-		logmust eval PACKAGE_VERSION="$(dpkg-parsechangelog -S Version | \
-		    awk -F'-' '{print $1}')"
+	if [[ -z $PACKAGE_VERSION ]]; then
+		logmust eval PACKAGE_VERSION="$(dpkg-parsechangelog -S Version |
+			awk -F'-' '{print $1}')"
 	fi
 	logmust dpkg_buildpackage_default
 }
