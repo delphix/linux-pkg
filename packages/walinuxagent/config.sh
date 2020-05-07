@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright 2019 Delphix
+# Copyright 2020 Delphix
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,23 +14,27 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-
 # shellcheck disable=SC2034
-DEFAULT_PACKAGE_GIT_URL="https://github.com/delphix/libkdumpfile.git"
-DEFAULT_PACKAGE_VERSION=1.0.0
 
-UPSTREAM_GIT_URL="https://github.com/ptesarik/libkdumpfile.git"
-UPSTREAM_GIT_BRANCH="master"
+DEFAULT_PACKAGE_GIT_URL="https://gitlab.delphix.com/os-platform/walinuxagent-ubuntu.git"
+UPSTREAM_GIT_URL="https://git.launchpad.net/ubuntu/+source/walinuxagent"
+UPSTREAM_GIT_BRANCH="ubuntu/bionic-updates"
 
 function prepare() {
 	logmust install_build_deps_from_control_file
 }
 
-function build() {
-	logmust dpkg_buildpackage_default
+function checkstyle() {
+	logmust cd "$WORKDIR/repo"
+	logmust make style-check
+}
 
-	# Install libkdumpfile, it's needed to build drgn
-	logmust install_pkgs "$WORKDIR/artifacts"/*.deb
+function build() {
+	logmust cd "$WORKDIR/repo"
+	PACKAGE_VERSION=$(
+		dpkg-parsechangelog -S Version | awk -F'-' '{print $1}'
+	)
+	logmust dpkg_buildpackage_default
 }
 
 function update_upstream() {
