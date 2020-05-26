@@ -18,6 +18,8 @@
 TOP="$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")"
 source "$TOP/lib/common.sh"
 
+logmust determine_default_git_branch
+
 #
 # Update the sources.list file to point to our internal package mirror. If no
 # mirror url is passed in, then the latest mirror snapshot is used.

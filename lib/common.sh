@@ -24,30 +24,6 @@ export REPO_UPSTREAM_BRANCH="upstreams/master"
 
 export UBUNTU_DISTRIBUTION="bionic"
 
-#
-# Determine DEFAULT_GIT_BRANCH. If it is unset, default to the branch set in
-# branch.config.
-#
-if [[ -z "$DEFAULT_GIT_BRANCH" ]]; then
-	echo "DEFAULT_GIT_BRANCH is not set."
-	if ! source "$TOP/branch.config" 2>/dev/null; then
-		echo "No branch.config file found in repo root."
-		exit 1
-	fi
-
-	if [[ -z "$DEFAULT_GIT_BRANCH" ]]; then
-		echo "$DEFAULT_GIT_BRANCH parameter was not sourced from " \
-			"branch.config. Ensure branch.config is properly formatted with " \
-			"e.g. DEFAULT_GIT_BRANCH=\"<upstream-product-branch>\""
-		exit 1
-	fi
-
-	echo "Defaulting DEFAULT_GIT_BRANCH to branch $DEFAULT_GIT_BRANCH set in" \
-		"branch.config."
-
-	export DEFAULT_GIT_BRANCH
-fi
-
 # shellcheck disable=SC2086
 function enable_colors() {
 	[[ -t 1 ]] && flags="" || flags="-T xterm"
@@ -83,7 +59,7 @@ function without_colors() {
 }
 
 function echo_error() {
-	echo -e "${FMT_BOLD}${FMT_RED}Error: $*${FMT_NF}"
+	echo -e "${FMT_BOLD}${FMT_RED}Error: $*${FMT_NF}" >&2
 }
 
 function echo_success() {
@@ -126,6 +102,32 @@ function check_running_system() {
 		die "Not running in AWS, are you sure you are on the" \
 			"right system?"
 	fi
+}
+
+#
+# Determine DEFAULT_GIT_BRANCH. If it is unset, default to the branch set in
+# branch.config.
+#
+function determine_default_git_branch() {
+
+	[[ -n "$DEFAULT_GIT_BRANCH" ]] && return
+
+	echo "DEFAULT_GIT_BRANCH is not set."
+	if ! source "$TOP/branch.config" 2>/dev/null; then
+		die "No branch.config file found in repo root."
+	fi
+
+	if [[ -z "$DEFAULT_GIT_BRANCH" ]]; then
+		die "$DEFAULT_GIT_BRANCH parameter was not sourced" \
+			"from branch.config. Ensure branch.config is" \
+			"properly formatted with e.g." \
+			"DEFAULT_GIT_BRANCH='<upstream-product-branch>'"
+	fi
+
+	echo "Defaulting DEFAULT_GIT_BRANCH to branch" \
+		"$DEFAULT_GIT_BRANCH set in branch.config."
+
+	export DEFAULT_GIT_BRANCH
 }
 
 function check_package_exists() {
@@ -443,6 +445,19 @@ function install_build_deps_from_control_file() {
 	logmust popd
 }
 
+function list_all_packages() {
+	local pkg
+
+	_RET_LIST=()
+
+	for pkg in "$TOP/packages/"*; do
+		pkg=$(basename "$pkg")
+		if [[ -f "$TOP/packages/$pkg/config.sh" ]]; then
+			_RET_LIST+=("$pkg")
+		fi
+	done
+}
+
 function read_package_list() {
 	local file="$1"
 
@@ -451,9 +466,11 @@ function read_package_list() {
 
 	_RET_LIST=()
 
+	[[ -f "$file" ]] || die "Not a file: $file"
+
 	while read -r line; do
 		# trim whitespace
-		pkg=$(echo "$line" | sed 's/^\s*//;s/\s*$//')
+		pkg=$(echo "$line" | tr -d '[:space:]')
 		[[ -z "$pkg" ]] && continue
 		# ignore comments
 		[[ ${pkg:0:1} == "#" ]] && continue
