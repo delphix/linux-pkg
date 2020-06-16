@@ -34,3 +34,269 @@ function store_build_info() {
 		echo "No build info available" >"$WORKDIR/build_info"
 	fi
 }
+
+#
+# The functions below are specific for the Linux kernel packages
+# and contain the majority of their common code.
+#
+function kernel_prepare() {
+	logmust install_pkgs \
+		equivs \
+		devscripts \
+		kernel-wedge
+}
+
+#
+# The configuration disabled below is specifically for uses
+# of ${debian_rules_args}. Quoting the specific variable
+# results in incorrect behavior and thus we disable that
+# check.
+#
+# shellcheck disable=SC2086
+function kernel_build() {
+	local platform="$1"
+	#
+	# Note: Extra arguments can overwrite default arguments.
+	#       For example in this function we default skipdbg
+	#       to false, but if we pass "skipdbg=true" as an
+	#       extra argument we will be overwriting this value
+	#       to true. This is because when a variable's value
+	#       is declared multiple times when invoking the
+	#       debian/rules command, the rightmost declaration
+	#       is the one that is actually used.
+	#
+	local debian_rules_extra_args="$2"
+
+	logmust cd "$WORKDIR/repo"
+
+	#
+	# We generate the default control file from Canonical
+	# so we can capture the ABI number (abinum) from
+	# Canonical's kernel - (see comment that follows for
+	# the reason and the relevant code for the logic).
+	#
+	logmust debian/rules debian/control
+
+	#
+	# We overwrite the default abinum build variable with our
+	# version strings and at the same time retain the original
+	# abinum from Canonical by appending it at the end.
+	#
+	# We chose to mutate the abinum field as it is the least
+	# invasive for Ubuntu's build logic (e.g. most of the other
+	# variables actually interact with logic in the build). At
+	# the same time the abinum variable is part of the fields
+	# that we care about (e.g. package name, linux image file
+	# name, etc..).
+	#
+	# We still retain the original abinum by appending it at
+	# the end of the new one to maintain the mapping between
+	# Canonical's releases and our releases.
+	#
+	local canonical_abinum delphix_abinum
+	canonical_abinum=$(fakeroot debian/rules printenv | grep abinum | cut -d= -f2 | tr -d '[:space:]')
+	delphix_abinum="dlpx-$(date -u +"%Y%m%dt%H%M%S")-$(git rev-parse --short HEAD)-${canonical_abinum}"
+
+	#
+	# skipdbg=false
+	#   We need debug info for our debugging tools to work.
+	#   Don't skip them.
+	# uefi_signed=false
+	#   This variable defaults to true but since we don't have
+	#   any intention and logic to provide signatures for now
+	#   we set it to false to avoid any misconfigurations down
+	#   the line.
+	#
+	local debian_rules_args="skipdbg=false uefi_signed=false abinum=${delphix_abinum} ${debian_rules_extra_args}"
+
+	#
+	# Clean up everything generated so far and recreate the
+	# final control file with the arguments that we want.
+	#
+	logmust fakeroot debian/rules clean ${debian_rules_args}
+
+	#
+	# Print the environment configuration solely for
+	# debugging purposes.
+	#
+	logmust fakeroot debian/rules printenv ${debian_rules_args}
+
+	#
+	# The default value of the tool argument for mk-build-deps
+	# is the following:
+	# "apt-get -o Debug::pkgProblemResolver=yes --no-install-recommends"
+	#
+	# We append --yes to it to disable interactivity by apt-get
+	# and allow for automation.
+	#
+	local build_deps_tool="apt-get -o Debug::pkgProblemResolver=yes --no-install-recommends --yes"
+	logmust sudo mk-build-deps --install debian/control --tool "${build_deps_tool}"
+
+	logmust fakeroot debian/rules "binary-${platform}" ${debian_rules_args}
+
+	logmust cd "$WORKDIR"
+	logmust mv ./*deb "artifacts/"
+}
+
+#
+# Syncing our kernel with the right upstream Canonical repo is not as
+# straighforward as the other packages in linux-pkg.
+#
+# The Ubuntu developers maintain the timeline of the mainline kernel
+# (kernel.org) in their git history. When it is time to use a new
+# mainline version, they fork a new branch and then cherry-pick all their
+# Ubuntu-specific generic patches on top of that and create their base
+# tag. Then on top of that they cherry-pick their platform-specific
+# patches (e.g. azure, aws, etc..) and create separate tags for each
+# platform. This whole process is repeated for every bump in the kernel
+# version (both mainline and ubuntu-specific).
+#
+# We want to track and sync our changes every time Canonical bumps
+# their kernel version for the kernels that are used by the Delphix
+# Engine that we release in order to stay up to date and lower our
+# maintainance burden. As a result we do the following:
+#
+# * We have one kernel repo per platform.
+# * Each of this repos is an Ubuntu kernel repo with our specific
+#   patches on top.
+# * The vanilla Ubuntu kernel and our patches are divided by a single
+#   placeholder commit with the description "@@DELPHIX_PATCHSET_START@@".
+# * Whenever the Ubuntu kernel version is bumped, we detect that
+#   change and use the new Ubuntu version as our base and cherry-pick
+#   the placeholder commit followed by our patches on top of it.
+#
+function kernel_update_upstream() {
+	local platform="$1"
+
+	check_env UPSTREAM_GIT_URL
+	logmust cd "$WORKDIR/repo"
+
+	#
+	# checkout our local branch that tracks upstream.
+	#
+	logmust git checkout -q upstream-HEAD
+
+	#
+	# declare third-party upstream repository.
+	#
+	logmust git remote add upstream "$UPSTREAM_GIT_URL"
+
+	#
+	# We get the kernel version and the ABI number from
+	# $_RET that is set from `get_kernel_from_platform()`.
+	# Example:
+	#
+	#   $_RET -> 5.3.0-53-generic
+	#
+	#   `cut -d '-' -f 1` of that -> 5.3.0
+	#   `cut -d '-' -f 3` of that -> 53
+	#
+	# We need the kernel version and ABI number to figure
+	# out the latest upstream tag to sync with.
+	#
+	local kernel_version abinum
+	logmust get_kernel_for_platform "${platform}"
+	kernel_version=$(echo "$_RET" | cut -d '-' -f 1)
+	abinum=$(echo "$_RET" | cut -d '-' -f 2)
+
+	#
+	# For each supported platform we will try to find the
+	# latest upstream tag to sync based on the kernel
+	# version and the ABI num that we got above.
+	#
+	# Note that "generic" (used mainly ESX) is a special
+	# case as we are currently using the HWE kernel image.
+	#
+	local tag_prefix
+	if [[ "${platform}" == generic ]] &&
+		[[ "$UBUNTU_DISTRIBUTION" == bionic ]]; then
+		tag_prefix="Ubuntu-hwe-${kernel_version}-${abinum}"
+	elif [[ "${platform}" == aws ]] ||
+		[[ "${platform}" == azure ]] ||
+		[[ "${platform}" == gcp ]] ||
+		[[ "${platform}" == oracle ]]; then
+
+		local kvers_major kvers_minor short_kvers
+		kvers_major=$(echo "${kernel_version}" | cut -d '.' -f 1)
+		kvers_minor=$(echo "${kernel_version}" | cut -d '.' -f 2)
+		short_kvers="${kvers_major}.${kvers_minor}"
+
+		tag_prefix="Ubuntu-${platform}-${short_kvers}-${kernel_version}-${abinum}"
+	else
+		die "assertion: unexpected platform: ${platform}"
+	fi
+	echo "note: upstream tag prefix used: ${tag_prefix}"
+
+	#
+	# Query for upstream tag info based on the prefix that we've
+	# assembled.
+	#
+	# = Why the `tail -n 1` part?
+	#
+	# Using `git ls-remote` and `grep` with the tag's prefix alone
+	# may sometimes return two (and theoretically more?) results
+	# due to Ubuntu's "point releases". Point releases are specific
+	# to LTS releases and more info about them can be found in the
+	# links below:
+	# [1] https://wiki.ubuntu.com/LTS
+	# [2] https://wiki.ubuntu.com/PointReleaseProcess
+	#
+	# Example:
+	# ```
+	# $ git ls-remote --tags upstream | grep Ubuntu-oracle-5.3-5.3.0-1015
+	# df8fd7d8802d59   refs/tags/Ubuntu-oracle-5.3-5.3.0-1015.16_18.04.1
+	# 0fe5cd29e90a5e   refs/tags/Ubuntu-oracle-5.3-5.3.0-1015.16_18.04.2
+	# ```
+	#
+	# We most probably want the latest point release of a specific
+	# kernel thus we add `tail -n 1` in the pipeline below.
+	#
+	local upstream_tag_info
+	upstream_tag_info=$(git ls-remote --tags --ref upstream | grep "${tag_prefix}" | tail -n 1)
+	[[ -z "${upstream_tag_info}" ]] && die "could not find upstream tag for tag prefix: ${tag_prefix}"
+
+	local upstream_tag
+	upstream_tag=$(echo "${upstream_tag_info}" | awk -F / '{print $3}')
+	[[ -z "${upstream_tag}" ]] && die "could not extract upstream tag name from the tag info"
+	echo "note: upstream tag: ${upstream_tag}"
+	logmust git fetch upstream "${upstream_tag}"
+
+	#
+	# Ensure that there is a commit marking the start of
+	# the Delphix set of patches. Then get the hash of
+	# the commit right before it.
+	#
+	local dlpx_patch_end dlpx_patch_start current_ubuntu_commit
+	dlpx_patch_start=$(git log --pretty=oneline repo-HEAD | grep @@DELPHIX_PATCHSET_START@@ | awk '{ print $1 }')
+	[[ -z "${dlpx_patch_start}" ]] && die "could not find DELPHIX_PATCHSET_START"
+	[[ $(wc -l <<<"${dlpx_patch_start}") != 1 ]] && die "multiple DELPHIX_PATCHSET_START commits - ${dlpx_patch_start}"
+	current_ubuntu_commit=$(git rev-parse "${dlpx_patch_start}"^)
+	[[ -z "${current_ubuntu_commit}" ]] && die "could not find commit before DELPHIX_PATCHSET_START"
+	dlpx_patch_end=$(git rev-parse repo-HEAD)
+	[[ -z "${dlpx_patch_end}" ]] && die "could not find repo-HEAD's head commit"
+
+	#
+	# Compare that commit with the head commit of the
+	# upstream tag. If the commits are the same then
+	# there is nothing for us to do as we are using
+	# the most up-to-date tag as the base for our set
+	# of patches. On the other hand, if the commits
+	# differ then it means that the upstream has been
+	# updated, at which point we need to cherry-pick
+	# our patches on top of the new upstream.
+	#
+	local upstream_head_commit
+	upstream_head_commit=$(git rev-parse upstream-HEAD)
+	[[ -z "${upstream_head_commit}" ]] && die "could not find upstream-HEAD's head commit"
+
+	if [[ "${current_ubuntu_commit}" == "${upstream_head_commit}" ]]; then
+		echo "NOTE: upstream for $PACKAGE is already up-to-date."
+	else
+		# shellcheck disable=SC2086
+		logmust git cherry-pick ${dlpx_patch_start}^..${dlpx_patch_end}
+
+		logmust touch "$WORKDIR/upstream-updated"
+	fi
+
+	logmust cd "$WORKDIR"
+}
