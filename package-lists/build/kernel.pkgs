@@ -5,9 +5,10 @@
 
 # Note: The following packages should be built first because other packages
 # depend on them being built.
-#  - zfs is required by grub2
+#  - zfs is required by grub2 and recovery-environment
 zfs
 
 connstat
 delphix-kernel
 grub2
+recovery-environment
