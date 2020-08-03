@@ -796,3 +796,14 @@ function determine_target_kernels() {
 	echo "Kernel versions to use to build modules:"
 	echo "  $KERNEL_VERSIONS"
 }
+
+#
+# Install gcc 8, and make it the default
+#
+function install_gcc8() {
+	logmust install_pkgs gcc-8 g++-8
+	logmust sudo update-alternatives --install /usr/bin/gcc gcc \
+		/usr/bin/gcc-7 700 --slave /usr/bin/g++ g++ /usr/bin/g++-7
+	logmust sudo update-alternatives --install /usr/bin/gcc gcc \
+		/usr/bin/gcc-8 800 --slave /usr/bin/g++ g++ /usr/bin/g++-8
+}
