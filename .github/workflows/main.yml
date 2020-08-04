@@ -1,0 +1,31 @@
+on: [push, pull_request]
+
+jobs:
+  check-shellcheck:
+    runs-on: ubuntu-18.04
+    steps:
+      - uses: actions/checkout@v1
+      - run: sudo ./.github/scripts/install-shellcheck.sh
+      - run: make shellcheck
+  check-shfmt:
+    runs-on: ubuntu-18.04
+    steps:
+      - uses: actions/checkout@v1
+      - run: sudo ./.github/scripts/install-shfmt.sh
+      - run: make shfmtcheck
+  verify-query-packages:
+    runs-on: ubuntu-18.04
+    steps:
+      - uses: actions/checkout@v1
+      - run: ./.github/scripts/verify-query-packages.sh
+  verify-query-packages-macos:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v1
+      - run: ./.github/scripts/verify-query-packages.sh
+  verify-query-packages-jenkins:
+    runs-on: ubuntu-latest
+    container: jenkins/jenkins
+    steps:
+      - uses: actions/checkout@v1
+      - run: ./.github/scripts/verify-query-packages.sh
