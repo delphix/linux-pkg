@@ -25,6 +25,7 @@ gdb-python
 makedumpfile
 nfs-utils
 python-rtslib-fb
+savedump
 sdb
 targetcli-fb
 performance-diagnostics
