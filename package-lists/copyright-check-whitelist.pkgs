@@ -1,0 +1,7 @@
+#
+# Packages in this list will not be check for copyright file in repo fetched
+# during package build process.
+#
+java8
+adoptopenjdk
+delphix-sso-app

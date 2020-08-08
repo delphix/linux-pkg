@@ -228,6 +228,14 @@ fi
 logmust cd "$WORKDIR"
 stage prepare
 
+logmust package_exists_in_list "$PACKAGE" "$TOP/package-lists/copyright-check-whitelist.pkgs"
+
+file_count=$(find "$WORKDIR/repo" | grep 'debian/copyright' -c)
+
+if [[ "$_RET_EXISTS" == "false" && ! $file_count -gt 0 ]]; then
+	logmust die "Copyright file is missing in the package repository."
+fi
+
 logmust touch "$WORKDIR/building"
 if $do_checkstyle; then
 	logmust cd "$WORKDIR"

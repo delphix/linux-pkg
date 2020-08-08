@@ -17,6 +17,7 @@
 
 export _RET
 export _RET_LIST
+export _RET_EXISTS
 export DEBIAN_FRONTEND=noninteractive
 
 # TODO: allow updating upstream for other branches than master
@@ -499,6 +500,22 @@ function get_package_list_file() {
 		done
 		die
 	fi
+}
+
+function package_exists_in_list() {
+	local package="$1"
+	local list_file="$2"
+
+	logmust read_package_list "$list_file"
+	local packages_list=("${_RET_LIST[@]}")
+
+	_RET_EXISTS=false
+
+	for item in "${packages_list[@]}"; do
+		if [[ "$item" == "$package" ]]; then
+			_RET_EXISTS=true
+		fi
+	done
 }
 
 function install_shfmt() {
