@@ -240,6 +240,9 @@ logmust rm "$WORKDIR/building"
 logmust cd "$WORKDIR"
 stage store_build_info
 
+logmust cd "$WORKDIR"
+stage post_build_checks
+
 echo_success "Package $PACKAGE has been built successfully."
 echo "Build products are in $WORKDIR/artifacts"
 echo ""
