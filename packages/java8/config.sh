@@ -17,7 +17,6 @@
 # shellcheck disable=SC2034
 
 DEFAULT_PACKAGE_GIT_URL=none
-SKIP_COPYRIGHTS_CHECK=true
 
 tarfile="jdk-8u171-linux-x64.tar.gz"
 jdk_path="/usr/lib/jvm/oracle-java8-jdk-amd64"
