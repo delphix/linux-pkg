@@ -17,6 +17,7 @@
 # shellcheck disable=SC2034
 
 DEFAULT_PACKAGE_GIT_URL=none
+SKIP_COPYRIGHTS_CHECK=true
 package="td-agent_3.5.0-delphix-2019.09.18.20_amd64.deb"
 
 function fetch() {
