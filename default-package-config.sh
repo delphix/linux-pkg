@@ -300,3 +300,23 @@ function kernel_update_upstream() {
 
 	logmust cd "$WORKDIR"
 }
+
+function post_build_checks() {
+
+	# This function checks for SKIP_COPYRIGHTS_CHECK flag
+	# in config.sh file of each package. If the flag is
+	# present and is set to 'true', the check will be skipped.
+	# The license information for the platform packages are
+	# generated based on Ubuntu package convention and are
+	# picked from copyright file under /debian folder. As a
+	# part of the check we look for existance of the file in
+	# each package.
+	if [[ "$SKIP_COPYRIGHTS_CHECK" != true ]]; then
+		echo "Start copyright check"
+		file_count=$(find "$WORKDIR/repo" | grep 'debian/copyright' -c)
+
+		if [[ ! $file_count -gt 0 ]]; then
+			logmust die "Copyright file is missing in the package repository."
+		fi
+	fi
+}
