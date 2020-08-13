@@ -409,6 +409,17 @@ package's source.
 `build_info` files for each package are consumed by the
 [metapackage](./build-info-pkg) when running [buildlist.sh](#buildlistsh).
 
+#### Post Build Checks
+
+The `post_build_checks()` hook is optional. It is responsible for checking if
+the debian package being built has copyright file associated with it in the
+right location. This file will be used to generate the license information for
+the appliance.
+
+A default hook is provided in `default-package-config.sh` and will
+be used if it is not overriden. The packages that are eligible to skip this check
+should define `SKIP_COPYRIGHTS_CHECK=true` in their respective `config.sh` files.
+
 #### Checkstyle
 
 The `checkstyle()` hook is optional. It is called before building the package if
