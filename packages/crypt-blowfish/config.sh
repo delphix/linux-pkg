@@ -18,6 +18,7 @@
 
 DEFAULT_PACKAGE_GIT_URL="https://gitlab.delphix.com/os-platform/linux-3rd-party-pkgs.git"
 DEFAULT_PACKAGE_VERSION="1.0.0"
+SKIP_COPYRIGHTS_CHECK=true
 
 function build() {
 	logmust cd "$WORKDIR/repo/crypt_blowfish"
