@@ -308,15 +308,17 @@ function post_build_checks() {
 	# present and is set to 'true', the check will be skipped.
 	# The license information for the platform packages are
 	# generated based on Ubuntu package convention and are
-	# picked from copyright file under /debian folder. As a
+	# picked from copyright file in debian package. As a
 	# part of the check we look for existance of the file in
 	# each package.
 	if [[ "$SKIP_COPYRIGHTS_CHECK" != true ]]; then
-		echo "Start copyright check"
-		file_count=$(find "$WORKDIR/repo" | grep 'debian/copyright' -c)
+		cd "$WORKDIR/artifacts" || return
 
-		if [[ ! $file_count -gt 0 ]]; then
-			logmust die "Copyright file is missing in the package repository."
-		fi
+		set -o pipefail
+		for deb in *.deb; do
+			echo "Running: dpkg-deb -c $deb | grep '/usr/share/doc/' | grep copyright"
+			dpkg-deb -c "$deb" | grep '/usr/share/doc/' | grep copyright || die "copyright file missing for package $deb"
+		done
+		set +o pipefail
 	fi
 }
