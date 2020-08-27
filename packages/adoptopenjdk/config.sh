@@ -17,7 +17,7 @@
 # shellcheck disable=SC2034
 
 DEFAULT_PACKAGE_GIT_URL=none
-tarfile="OpenJDK8U-jdk_x64_linux_hotspot_8u212b04.tar.gz"
+tarfile="OpenJDK8U-jdk_x64_linux_hotspot_8u262b10.tar.gz"
 jdk_path="/usr/lib/jvm/adoptopenjdk-java8-jdk-amd64"
 
 function prepare() {
