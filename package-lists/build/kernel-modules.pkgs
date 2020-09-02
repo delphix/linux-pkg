@@ -1,0 +1,8 @@
+#
+# List of kernel packages to be included in the Delphix Appliance.
+# This list should not include the linux kernel packages themselves.
+#
+
+connstat
+delphix-kernel
+zfs

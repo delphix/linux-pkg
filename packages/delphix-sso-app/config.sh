@@ -18,6 +18,7 @@
 
 DEFAULT_PACKAGE_GIT_URL="https://gitlab.delphix.com/app/saml-app.git"
 JDK_PATH_FILE="$TOP/packages/adoptopenjdk/tmp/artifacts/JDK_PATH"
+PACKAGE_DEPENDENCIES="adoptopenjdk"
 
 function prepare() {
 	java_package_exists=$(dpkg-query --show adoptopenjdk-java8-jdk >/dev/null 2>&1)
