@@ -18,6 +18,7 @@
 
 DEFAULT_PACKAGE_GIT_URL="https://github.com/delphix/zfs.git"
 DEFAULT_PACKAGE_VERSION="0.8.0"
+PACKAGE_DEPENDENCIES="@linux-kernel"
 
 UPSTREAM_GIT_URL="https://github.com/zfsonlinux/zfs.git"
 UPSTREAM_GIT_BRANCH="master"

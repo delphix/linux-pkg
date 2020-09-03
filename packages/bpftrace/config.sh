@@ -18,6 +18,7 @@
 
 DEFAULT_PACKAGE_GIT_URL="https://github.com/delphix/bpftrace.git"
 DEFAULT_PACKAGE_VERSION=1.0.0
+PACKAGE_DEPENDENCIES="bcc"
 
 UPSTREAM_GIT_URL="https://github.com/iovisor/bpftrace.git"
 UPSTREAM_GIT_BRANCH="master"
