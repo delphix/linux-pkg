@@ -70,6 +70,11 @@ done
 test "$(./query-packages.sh list linux-kernel | wc -l | awk '{print $1}')" -gt 1
 test "$(TARGET_KERNEL_FLAVORS=generic ./query-packages.sh list linux-kernel)" == "linux-kernel-generic"
 
+# Check that when a package has multiple dependencies they are printed in the
+# expected format.
+test "$(TARGET_KERNEL_FLAVORS="generic aws" ./query-packages.sh single -o dependencies zfs)" == \
+	"linux-kernel-generic,linux-kernel-aws"
+
 # Check that the output from the appliance list contains zfs and
 # delphix-platform packages. Note, we explicitly do not use grep -q here as it
 # exits as soon as a match is found and that causes a broken pipe error as
