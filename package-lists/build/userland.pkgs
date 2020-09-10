@@ -16,6 +16,7 @@ delphix-sso-app
 bpftrace
 challenge-response
 cloud-init
+crash
 crash-python
 crypt-blowfish
 delphix-platform
@@ -24,6 +25,7 @@ gdb-python
 makedumpfile
 nfs-utils
 python-rtslib-fb
+savedump
 sdb
 targetcli-fb
 performance-diagnostics
