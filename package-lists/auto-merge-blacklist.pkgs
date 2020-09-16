@@ -1,5 +1,0 @@
-#
-# Packages in this list will not be auto-merged with upstream, even if they
-# are listed in updatelist.pkgs. A package should be added here only if the
-# latest version of an upstream package breaks the delphix appliance.
-#

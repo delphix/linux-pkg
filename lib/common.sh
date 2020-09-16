@@ -524,28 +524,6 @@ function read_package_list() {
 	done <"$file" || die "Failed to read package list: $file"
 }
 
-function get_package_list_file() {
-	local list_type="$1"
-	local list_name="$2"
-
-	if [[ "$list_type" != build ]] && [[ "$list_type" != update ]]; then
-		die "Invalid list type '$list_type'"
-	fi
-
-	_RET="$TOP/package-lists/${list_type}/${list_name}.pkgs"
-	if [[ ! -f "$_RET" ]]; then
-		echo_error "Invalid $list_type package list '$list_name'"
-		echo_error "See lists in $TOP/package-lists/${list_type}/."
-		echo_error "Choose one of:"
-		cd "$TOP/package-lists/${list_type}/" ||
-			die "failed to cd to $TOP/package-lists/${list_type}/"
-		for list in *.pkgs; do
-			echo_error "    ${list%.pkgs}"
-		done
-		die
-	fi
-}
-
 #
 # List all target kernel packages. By default, it returns all the kernel
 # flavors supported and built by linux-pkg, however this can be overridden

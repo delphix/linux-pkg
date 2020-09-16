@@ -1,8 +1,0 @@
-#
-# Since building td-agent is currently quite unreliable as it depends on
-# lots of external dependencies that are out of our control, we do not want
-# to fail our build when some of those dependencies are broken. As such,
-# we build td-agent in a separate build list and include a pre-built package
-# in the main list.
-#
-td-agent
