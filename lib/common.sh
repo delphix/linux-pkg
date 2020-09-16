@@ -19,8 +19,6 @@ export _RET
 export _RET_LIST
 export DEBIAN_FRONTEND=noninteractive
 
-# TODO: allow updating upstream for other branches than master
-export REPO_UPSTREAM_BRANCH="upstreams/master"
 export SUPPORTED_KERNEL_FLAVORS="generic aws gcp azure oracle"
 
 #
@@ -178,25 +176,6 @@ function check_git_ref() {
 			die "git ref '$ref' not found"
 		fi
 	done
-}
-
-function query_git_credentials() {
-	if [[ -n "$PUSH_GIT_USER" ]] && [[ -n "$PUSH_GIT_PASSWORD" ]]; then
-		return 0
-	fi
-
-	if [[ ! -t 1 ]]; then
-		die "PUSH_GIT_USER and PUSH_GIT_PASSWORD environment" \
-			"variables must be set to a user that has" \
-			"push permissions for the target repository."
-	fi
-
-	echo "Please enter git credentials for pushing to repository."
-	read -r -p "User: " PUSH_GIT_USER
-	read -r -s -p "Password: " PUSH_GIT_PASSWORD
-	echo ""
-	export PUSH_GIT_USER
-	export PUSH_GIT_PASSWORD
 }
 
 #
@@ -713,15 +692,17 @@ function fetch_repo_from_git() {
 	# main branch and the upstream branch with their histories.
 	# Otherwise just get the latest commit of the main branch.
 	#
-	if $DO_UPDATE_PACKAGE; then
-		check_env REPO_UPSTREAM_BRANCH
+	if [[ "$DO_UPDATE_PACKAGE" == "true" ]]; then
 		logmust git fetch --no-tags "$PACKAGE_GIT_URL" \
 			"+$PACKAGE_GIT_BRANCH:repo-HEAD"
 		logmust git fetch --no-tags "$PACKAGE_GIT_URL" \
-			"+$REPO_UPSTREAM_BRANCH:upstream-HEAD"
+			"+upstreams/$DEFAULT_GIT_BRANCH:upstream-HEAD"
+		logmust git show-ref repo-HEAD
+		logmust git show-ref upstream-HEAD
 	else
 		logmust git fetch --no-tags "$PACKAGE_GIT_URL" \
 			"+$PACKAGE_GIT_BRANCH:repo-HEAD" --depth=1
+		logmust git show-ref repo-HEAD
 	fi
 
 	logmust git checkout repo-HEAD
@@ -890,6 +871,55 @@ function merge_with_upstream_default() {
 	logmust git merge --no-edit --no-stat "$upstream_ref"
 	logmust git show-ref repo-HEAD
 	logmust touch "$WORKDIR/repo-updated"
+}
+
+#
+# Check if git credentials are set for pushing update. If running in
+# interactive mode, it will prompt the user for credentials if they are not
+# provided in env.
+#
+function check_git_credentials_set() {
+	if [[ -z "$PUSH_GIT_USER" ]] || [[ -z "$PUSH_GIT_PASSWORD" ]]; then
+		if [[ -t 1 ]]; then
+			if [[ "$DRYRUN" == "false" ]]; then
+				echo_bold "WARNING: this is NOT a dry-run, you are pushing to" \
+					"a production branch"
+			fi
+			echo "Please enter git credentials to push to remote ($DEFAULT_PACKAGE_GIT_URL)."
+			read -r -p "Username: " PUSH_GIT_USER
+			read -r -s -p "Password: " PUSH_GIT_PASSWORD
+			export PUSH_GIT_USER
+			export PUSH_GIT_PASSWORD
+		else
+			die "PUSH_GIT_USER and PUSH_GIT_PASSWORD must be set."
+		fi
+	fi
+}
+
+#
+# Push a local ref to a remote ref of the default remote repository for the
+# package.
+#
+function push_to_remote() {
+	local local_ref="$1"
+	local remote_ref="$2"
+	local force="${3:-false}"
+
+	local flags=""
+	$force && flags="-f"
+
+	logmust check_git_credentials_set
+
+	check_env DEFAULT_PACKAGE_GIT_URL PUSH_GIT_USER PUSH_GIT_PASSWORD
+	local git_url_with_creds="${DEFAULT_PACKAGE_GIT_URL/https:\/\//https:\/\/${PUSH_GIT_USER}:${PUSH_GIT_PASSWORD}@}"
+	local git_url_with_fake_creds="${DEFAULT_PACKAGE_GIT_URL/https:\/\//https:\/\/${PUSH_GIT_USER}:<redacted>@}"
+
+	logmust cd "$WORKDIR/repo"
+	check_git_ref "$local_ref"
+
+	echo "RUNNING: git push $flags $git_url_with_fake_creds $local_ref:$remote_ref"
+	git push $flags "$git_url_with_creds" "$local_ref:$remote_ref" ||
+		die "push failed"
 }
 
 #
