@@ -471,6 +471,17 @@ function get_package_config_from_env() {
 	echo_bold "------------------------------------------------------------"
 }
 
+function create_workdir() {
+	check_env WORKDIR
+	logmust sudo rm -rf "$WORKDIR"
+	logmust mkdir "$WORKDIR"
+	logmust rm -f "$TOP/workdir"
+	logmust ln -s "$WORKDIR" "$TOP/workdir"
+}
+
+#
+# apt install packages.
+#
 function install_pkgs() {
 	for attempt in {1..3}; do
 		echo "Running: sudo env DEBIAN_FRONTEND=noninteractive " \
@@ -915,20 +926,6 @@ function dpkg_buildpackage_default() {
 }
 
 #
-# Store some metadata about what was this package built from. When running
-# buildlist.sh, build_info for all packages is ingested by the metapackage
-# and installed into /lib/delphix-buildinfo/<package-list>.info.
-#
-function store_git_info() {
-	logmust pushd "$WORKDIR/repo"
-	echo "Git hash: $(git rev-parse HEAD)" >"$WORKDIR/build_info" ||
-		die "storing git info failed"
-	echo "Git repo: $PACKAGE_GIT_URL" >>"$WORKDIR/build_info"
-	echo "Git branch: $PACKAGE_GIT_BRANCH" >>"$WORKDIR/build_info"
-	logmust popd
-}
-
-#
 # Returns the default (usually latest) kernel version for a given platform.
 # Result is placed into _RET.
 #
@@ -1088,4 +1085,52 @@ function install_gcc8() {
 		/usr/bin/gcc-7 700 --slave /usr/bin/g++ g++ /usr/bin/g++-7
 	logmust sudo update-alternatives --install /usr/bin/gcc gcc \
 		/usr/bin/gcc-8 800 --slave /usr/bin/g++ g++ /usr/bin/g++-8
+}
+
+#
+# Store git-related build info for the package after the build is done.
+# Note that some of this metadata is used by the Jenkins build so be careful
+# when modifying it.
+#
+function store_git_info() {
+	logmust pushd "$WORKDIR/repo"
+	local git_hash
+	git_hash="$(git rev-parse HEAD)" || die "Failed retrieving git hash"
+	echo "$git_hash" >"$WORKDIR/artifacts/GIT_HASH"
+
+	cat <<-EOF >>"$WORKDIR/artifacts/BUILD_INFO"
+		Git hash: $git_hash
+		Git repo: $PACKAGE_GIT_URL
+		Git branch: $PACKAGE_GIT_BRANCH
+	EOF
+	logmust popd
+}
+
+#
+# Store build info metadata for the package after the build is done.
+# Note that some of this metadata is used by the Jenkins build so be careful
+# when modifying it.
+#
+function store_build_info() {
+	if [[ -d "$WORKDIR/repo/.git" ]]; then
+		logmust store_git_info
+	fi
+
+	if [[ -n "$KERNEL_VERSIONS_METADATA" ]]; then
+		echo -ne "$KERNEL_VERSIONS_METADATA" >"$WORKDIR/artifacts/KERNEL_VERSIONS" ||
+			die 'Failed to store kernel versions metadata'
+	fi
+
+	if [[ -n "$PACKAGE_DEPENDENCIES_METADATA" ]]; then
+		echo -ne "$PACKAGE_DEPENDENCIES_METADATA" >"$WORKDIR/artifacts/PACKAGE_DEPENDENCIES" ||
+			die 'Failed to store package dependencies metadata'
+	fi
+
+	if [[ -f "$TOP/PACKAGE_MIRROR_URL_MAIN" ]]; then
+		logmust cp "$TOP/PACKAGE_MIRROR_URL_MAIN" "$WORKDIR/artifacts/PACKAGE_MIRROR_URL_MAIN"
+	fi
+
+	if [[ -f "$TOP/PACKAGE_MIRROR_URL_SECONDARY" ]]; then
+		logmust cp "$TOP/PACKAGE_MIRROR_URL_SECONDARY" "$WORKDIR/artifacts/PACKAGE_MIRROR_URL_MAIN"
+	fi
 }
