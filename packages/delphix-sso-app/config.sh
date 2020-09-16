@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright 2019 Delphix
+# Copyright 2019, 2020 Delphix
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -17,20 +17,16 @@
 # shellcheck disable=SC2034
 
 DEFAULT_PACKAGE_GIT_URL="https://gitlab.delphix.com/app/saml-app.git"
-JDK_PATH_FILE="$TOP/packages/adoptopenjdk/tmp/artifacts/JDK_PATH"
 PACKAGE_DEPENDENCIES="adoptopenjdk"
 
 function prepare() {
-	java_package_exists=$(dpkg-query --show adoptopenjdk-java8-jdk >/dev/null 2>&1)
-	if [[ ! $java_package_exists && ! -f $JDK_PATH_FILE ]]; then
-		echo_bold "java8 not installed. Building package 'adoptopenjdk' first."
-		logmust "$TOP/buildpkg.sh" adoptopenjdk
-	fi
+	logmust install_pkgs "$DEPDIR"/adoptopenjdk/*.deb
 }
 
 function build() {
 	local java_home
-	java_home=$(cat "$JDK_PATH_FILE")
+	java_home=$(cat "$DEPDIR/adoptopenjdk/JDK_PATH") ||
+		die "Failed to read $DEPDIR/adoptopenjdk/JDK_PATH"
 	logmust cd "$WORKDIR/repo"
 	logmust sudo ./gradlew "-Dorg.gradle.java.home=$java_home" distDeb
 	logmust sudo mv ./build/distributions/*deb "$WORKDIR/artifacts/"

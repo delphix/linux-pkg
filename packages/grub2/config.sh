@@ -28,13 +28,9 @@ SKIP_COPYRIGHTS_CHECK=true
 # Install build dependencies for the package.
 #
 function prepare() {
-	if ! dpkg-query --show libzfslinux-dev >/dev/null 2>&1; then
-		echo_bold "libzfs not installed. Building package 'zfs' first."
-		logmust "$TOP/buildpkg.sh" zfs
-	fi
-
+	# Install libzfs which is required to build grub
+	logmust install_pkgs "$DEPDIR"/zfs/{libnvpair1linux,libuutil1linux,libzfs2linux,libzpool2linux,libzfslinux-dev}_*.deb
 	logmust install_build_deps_from_control_file
-	return
 }
 
 #
@@ -54,5 +50,4 @@ function build() {
 #
 function update_upstream() {
 	logmust update_upstream_from_git
-	return
 }

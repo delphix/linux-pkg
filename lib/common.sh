@@ -23,6 +23,13 @@ export DEBIAN_FRONTEND=noninteractive
 export REPO_UPSTREAM_BRANCH="upstreams/master"
 export SUPPORTED_KERNEL_FLAVORS="generic aws gcp azure oracle"
 
+#
+# Used when fetching artifacts for external dependencies. Can be overridden
+# for testing purposes to use jenkins-ops.<developer> instead.
+#
+export JENKINS_OPS_DIR="${JENKINS_OPS_DIR:-jenkins-ops}"
+export _BASE_S3_URL="s3://snapshot-de-images/builds/${JENKINS_OPS_DIR}/devops-gate/master"
+
 export UBUNTU_DISTRIBUTION="bionic"
 
 # shellcheck disable=SC2086
@@ -458,6 +465,9 @@ function install_pkgs() {
 	die "apt-get install failed after $attempt attempts"
 }
 
+#
+# Install build dependencies listed in the debian/control file of the package.
+#
 function install_build_deps_from_control_file() {
 	logmust pushd "$WORKDIR/repo"
 	logmust sudo env DEBIAN_FRONTEND=noninteractive mk-build-deps --install \
@@ -466,6 +476,9 @@ function install_build_deps_from_control_file() {
 	logmust popd
 }
 
+#
+# Returns a list of all known packages in _RET_LIST.
+#
 function list_all_packages() {
 	local pkg
 
@@ -479,6 +492,9 @@ function list_all_packages() {
 	done
 }
 
+#
+# Read a package-list file and return listed packages in _RET_LIST.
+#
 function read_package_list() {
 	local file="$1"
 
@@ -557,19 +573,36 @@ function install_shfmt() {
 	echo "shfmt version $(shfmt -version) is installed."
 }
 
+#
+# Install kernel headers packages for all target kernels.
+# The kernel packages are fetched from S3.
+#
 function install_kernel_headers() {
 	logmust determine_target_kernels
-	check_env KERNEL_VERSIONS
+	check_env KERNEL_VERSIONS DEPDIR
 
-	local kernel
-	local headers_pkgs=""
+	logmust list_linux_kernel_packages
+	# Note: linux packages returned in _RET_LIST
 
-	for kernel in $KERNEL_VERSIONS; do
-		headers_pkgs="$headers_pkgs linux-headers-$kernel"
+	#
+	# On some platforms there are 2 headers packages and both must be
+	# installed. Here's an example on AWS:
+	#  - linux-headers-5.3.0-1030-aws_5.3.0-1030.32~18.04.1_amd64.deb
+	#  - linux-aws-5.3-headers-5.3.0-1030_5.3.0-1030.32~18.04.1_all.deb
+	#
+	local pkg
+	for pkg in "${_RET_LIST[@]}"; do
+		logmust install_pkgs "$DEPDIR/$pkg/"*-headers-*.deb
 	done
 
-	# shellcheck disable=SC2086
-	logmust install_pkgs $headers_pkgs
+	#
+	# Verify that headers are installed for all kernel versions
+	# stored in KERNEL_VERSIONS
+	#
+	local kernel
+	for kernel in $KERNEL_VERSIONS; do
+		logmust dpkg-query -l "linux-headers-$kernel" >/dev/null
+	done
 }
 
 function default_revision() {
@@ -591,10 +624,57 @@ function default_revision() {
 }
 
 #
+# Fetch artifacts from S3 for all packages listed in PACKAGE_DEPENDENCIES which
+# is defined in the package's config.
+#
+function fetch_dependencies() {
+	export DEPDIR="$WORKDIR/dependencies"
+	logmust mkdir "$DEPDIR"
+	logmust cd "$DEPDIR"
+
+	if [[ -z "$PACKAGE_DEPENDENCIES" ]]; then
+		echo "Package has no linux-pkg dependencies to fetch."
+		return
+	fi
+
+	local base_url="$_BASE_S3_URL/linux-pkg/$DEFAULT_GIT_BRANCH/build-package"
+
+	local bucket="${_BASE_S3_URL#s3://}"
+	bucket=${bucket%%/*}
+
+	local dep s3urlvar s3url
+	for dep in $PACKAGE_DEPENDENCIES; do
+		echo "Fetching artifacts for dependency '$dep' ..."
+		get_package_prefix "$dep"
+		s3urlvar="${_RET}_S3_URL"
+		if [[ -n "${!s3urlvar}" ]]; then
+			s3url="${!s3urlvar}"
+			echo "S3 URL of package dependency '$dep' provided" \
+				"externally"
+			echo "$s3urlvar=$s3url"
+		else
+			s3url="$base_url/$dep/post-push"
+			(logmust aws s3 cp --only-show-errors "$s3url/latest" .) ||
+				die "Artifacts for dependency '$dep' missing." \
+					"Dependency must be built first."
+			logmust cat latest
+			s3url="s3://$bucket/$(cat latest)"
+			logmust rm latest
+		fi
+		[[ "$s3url" != */ ]] && s3url="$s3url/"
+		logmust mkdir "$dep"
+		logmust aws s3 ls "$s3url"
+		logmust aws s3 cp --only-show-errors --recursive "$s3url" "$dep/"
+		echo_bold "Fetched artifacts for '$dep' from $s3url"
+		PACKAGE_DEPENDENCIES_METADATA="${PACKAGE_DEPENDENCIES_METADATA}$dep: $s3url\\n"
+	done
+}
+
+#
 # Fetch package repository into $WORKDIR/repo
 #
 function fetch_repo_from_git() {
-	check_env PACKAGE_GIT_URL PACKAGE_GIT_BRANCH
+	check_env PACKAGE_GIT_URL PACKAGE_GIT_BRANCH DEFAULT_GIT_BRANCH
 
 	logmust mkdir "$WORKDIR/repo"
 	logmust cd "$WORKDIR/repo"
@@ -631,6 +711,11 @@ function generate_commit_message_from_dsc() {
 	cat "$dsc" >>"$WORKDIR/commit-message"
 }
 
+#
+# Fetches branch upstreams/<branch> from our default repository into local
+# upstream-HEAD branch, then attempts to update it with changes from
+# the source package UPSTREAM_SOURCE_PACKAGE, fetched from apt.
+#
 function update_upstream_from_source_package() {
 	check_env PACKAGE_GIT_BRANCH UPSTREAM_SOURCE_PACKAGE
 
@@ -669,6 +754,7 @@ function update_upstream_from_source_package() {
 	else
 		logmust generate_commit_message_from_dsc
 		logmust git commit -F "$WORKDIR/commit-message"
+		logmust git show-ref upstream-HEAD
 
 		logmust touch "$WORKDIR/upstream-updated"
 	fi
@@ -676,6 +762,11 @@ function update_upstream_from_source_package() {
 	logmust cd "$WORKDIR"
 }
 
+#
+# Fetches branch upstreams/<branch> from our default repository into local
+# upstream-HEAD branch, then attempts to update it with changes from
+# the remote repository specified by UPSTREAM_GIT_URL and UPSTREAM_GIT_BRANCH.
+#
 function update_upstream_from_git() {
 	check_env UPSTREAM_GIT_URL UPSTREAM_GIT_BRANCH
 	logmust cd "$WORKDIR/repo"
@@ -705,6 +796,7 @@ function update_upstream_from_git() {
 		# then we definitely want to be notified.
 		#
 		logmust git merge --no-edit --ff-only --no-stat FETCH_HEAD
+		logmust git show-ref upstream-HEAD
 
 		logmust touch "$WORKDIR/upstream-updated"
 	fi
@@ -733,6 +825,10 @@ function set_changelog() {
 	fi
 }
 
+#
+# Default dpkg_buildpackage function for building packages. Before running the
+# build, it updates the version of the package in the changelog.
+#
 function dpkg_buildpackage_default() {
 	logmust cd "$WORKDIR/repo"
 	logmust set_changelog
@@ -759,7 +855,7 @@ function store_git_info() {
 # Returns the default (usually latest) kernel version for a given platform.
 # Result is placed into _RET.
 #
-function get_kernel_for_platform() {
+function get_kernel_version_for_platform_from_apt() {
 	local platform="$1"
 	local package
 
@@ -797,51 +893,113 @@ function get_kernel_for_platform() {
 }
 
 #
+# Given a kernel version, fetch all necessary linux kernel packages
+# into WORKDIR/artifacts. Also store kernel version into KERNEL_VERSION.
+#
+function fetch_kernel_from_apt_for_version() {
+	local kernel_version="$1"
+
+	logmust cd "$WORKDIR/artifacts"
+	logmust apt-get download \
+		"linux-image-${kernel_version}" \
+		"linux-image-${kernel_version}-dbgsym" \
+		"linux-modules-${kernel_version}" \
+		"linux-headers-${kernel_version}" \
+		"linux-tools-${kernel_version}"
+
+	#
+	# Fetch direct dependencies of the downloaded debs. Some of those
+	# dependencies have a slightly different naming scheme than the other
+	# kernel packages.
+	#
+	local deb dep deps
+	for deb in *.deb; do
+		deps=$(dpkg-deb -f "$deb" Depends | tr -d ' ' | tr ',' ' ') ||
+			die "failed to get dependencies for $deb"
+		for dep in $deps; do
+			case "$dep" in
+			*-headers-* | *-tools-*)
+				logmust apt-get download "$dep"
+				;;
+			esac
+		done
+	done
+
+	echo "$kernel_version" >KERNEL_VERSION
+}
+
+#
+# Find latest linux kernel available in apt for the given platform, and
+# download all the necessary linux-kernel packages.
+#
+function fetch_kernel_from_apt_for_platform() {
+	local platform="$1"
+
+	local kernel_version
+	logmust get_kernel_version_for_platform_from_apt "$platform"
+	kernel_version="$_RET"
+
+	logmust fetch_kernel_from_apt_for_version "$kernel_version"
+}
+
+#
+# Fetch linux kernel packages from apt for the given kernel version. Also
+# fetch the pre-built linux-modules package from artifactory. The pre-built
+# package should have the same name as the one downloaded from apt but
+# a higher revision number so that it will be picked over the default one
+# downloaded from apt during the build of the appliance.
+#
+function fetch_kernel_from_artifactory() {
+	local kernel_version="$1"
+	local artifactory_deb="$2"
+
+	logmust fetch_kernel_from_apt_for_version "$kernel_version"
+
+	local url="http://artifactory.delphix.com/artifactory"
+	url="$url/linux-pkg/linux-prebuilt/${artifactory_deb}"
+
+	logmust cd "$WORKDIR/artifacts"
+	logmust wget -nv "$url"
+}
+
+#
 # Determine which kernel versions to build modules for and store
 # the value into KERNEL_VERSIONS, unless it is already set.
 #
-# We determine the target kernel versions based on the value passed for
-# TARGET_PLATFORMS. Here is a list of accepted values for TARGET_PLATFORMS:
-#  a) <empty>: to build for all supported platforms
-#  b) "aws gcp ...": to build for the default kernel version of those platforms.
-#  c) "4.15.0-1010-aws ...": to build for specific kernel versions
-#  d) mix of b) and c)
+# We determine the target kernel versions based on the kernel package
+# dependencies fetched through fetch_dependencies().
 #
 function determine_target_kernels() {
 	if [[ -n "$KERNEL_VERSIONS" ]]; then
-		echo "Kernel versions to use to build modules:"
-		echo "  $KERNEL_VERSIONS"
+		echo_bold "Kernel versions to use to build modules:"
+		echo_bold "  $KERNEL_VERSIONS"
 		return 0
 	fi
 
-	local supported_platforms="generic aws gcp azure oracle"
-	local platform
+	[[ -n "$DEPDIR" ]] || die "determine_target_kernels() can only be" \
+		"called after fetch_dependencies() stage has run."
 
-	if [[ -z "$TARGET_PLATFORMS" ]]; then
-		echo "TARGET_PLATFORMS not set, defaulting to: $supported_platforms"
-		TARGET_PLATFORMS="$supported_platforms"
-	fi
+	logmust list_linux_kernel_packages
+	# note: list of kernel packages returned in _RET_LIST
 
-	local kernel
-	for kernel in $TARGET_PLATFORMS; do
-		for platform in $supported_platforms; do
-			if [[ "$kernel" == "$platform" ]]; then
-				logmust get_kernel_for_platform "$platform"
-				kernel="$_RET"
-				break
-			fi
-		done
+	local pkg kernel
+	for pkg in "${_RET_LIST[@]}"; do
+		logmust test -d "$DEPDIR/$pkg"
 		#
-		# Check that the target kernel is valid
+		# When Linux kernel packages are built, they must store the
+		# kernel version into a file named 'KERNEL_VERSION'.
 		#
-		apt-cache show "linux-image-${kernel}" >/dev/null 2>&1 ||
-			die "Invalid target kernel '$kernel'"
-
+		(logmust test -f "$DEPDIR/$pkg/KERNEL_VERSION") ||
+			die "KERNEL_VERSION file missing from dependency '$pkg'"
+		kernel="$(cat "$DEPDIR/$pkg/KERNEL_VERSION")"
+		[[ -n "$kernel" ]] || die "invalid value '$kernel'" \
+			"in $DEPDIR/$pkg/KERNEL_VERSION"
 		KERNEL_VERSIONS="$KERNEL_VERSIONS $kernel"
+		KERNEL_VERSIONS_METADATA="${KERNEL_VERSIONS_METADATA}${pkg}: ${kernel}\\n"
 	done
 
-	echo "Kernel versions to use to build modules:"
-	echo "  $KERNEL_VERSIONS"
+	echo_bold "Kernel versions to use to build modules:"
+	echo_bold "  $KERNEL_VERSIONS"
 }
 
 #

@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright 2018 Delphix
+# Copyright 2018, 2020 Delphix
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@ PACKAGE_DEPENDENCIES="python-rtslib-fb"
 UPSTREAM_SOURCE_PACKAGE=targetcli-fb
 
 function prepare() {
+	logmust install_pkgs "$DEPDIR"/python-rtslib-fb/python3-rtslib-fb*.deb
 	logmust install_build_deps_from_control_file
 }
 
