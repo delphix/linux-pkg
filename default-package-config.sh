@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright 2018 Delphix
+# Copyright 2018, 2020 Delphix
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -27,12 +27,8 @@ function fetch() {
 	logmust fetch_repo_from_git
 }
 
-function store_build_info() {
-	if [[ -d "$WORKDIR/repo/.git" ]]; then
-		logmust store_git_info
-	else
-		echo "No build info available" >"$WORKDIR/build_info"
-	fi
+function merge_with_upstream() {
+	logmust merge_with_upstream_default
 }
 
 #
@@ -93,9 +89,17 @@ function kernel_build() {
 	# the end of the new one to maintain the mapping between
 	# Canonical's releases and our releases.
 	#
-	local canonical_abinum delphix_abinum
-	canonical_abinum=$(fakeroot debian/rules printenv | grep abinum | cut -d= -f2 | tr -d '[:space:]')
+	local canonical_abinum delphix_abinum kernel_release kernel_version
+	canonical_abinum=$(fakeroot debian/rules printenv | grep -E '^abinum ' | cut -d= -f2 | tr -d '[:space:]')
 	delphix_abinum="dlpx-$(date -u +"%Y%m%dt%H%M%S")-$(git rev-parse --short HEAD)-${canonical_abinum}"
+	kernel_release=$(fakeroot debian/rules printenv | grep -E '^release ' | cut -d= -f2 | tr -d '[:space:]')
+
+	#
+	# We record the kernel version into a file. This field is consumed
+	# by other kernel packages, such as zfs, during their build.
+	#
+	kernel_version="${kernel_release}-${delphix_abinum}-${platform}"
+	echo "$kernel_version" >"$WORKDIR/artifacts/KERNEL_VERSION"
 
 	#
 	# skipdbg=false
@@ -107,7 +111,7 @@ function kernel_build() {
 	#   we set it to false to avoid any misconfigurations down
 	#   the line.
 	#
-	local debian_rules_args="skipdbg=false uefi_signed=false abinum=${delphix_abinum} ${debian_rules_extra_args}"
+	local debian_rules_args="skipdbg=false uefi_signed=false disable_d_i=true flavours=$platform abinum=${delphix_abinum} ${debian_rules_extra_args}"
 
 	#
 	# Clean up everything generated so far and recreate the
@@ -132,10 +136,16 @@ function kernel_build() {
 	local build_deps_tool="apt-get -o Debug::pkgProblemResolver=yes --no-install-recommends --yes"
 	logmust sudo mk-build-deps --install debian/control --tool "${build_deps_tool}"
 
-	logmust fakeroot debian/rules "binary-${platform}" ${debian_rules_args}
+	logmust fakeroot debian/rules "binary" ${debian_rules_args}
 
 	logmust cd "$WORKDIR"
 	logmust mv ./*deb "artifacts/"
+
+	#
+	# Make sure that we recorded the kernel version properly by checking
+	# one of the .debs produced
+	#
+	logmust test -f "artifacts/linux-image-${kernel_version}_"*.deb
 }
 
 #
@@ -195,7 +205,7 @@ function kernel_update_upstream() {
 	# out the latest upstream tag to sync with.
 	#
 	local kernel_version abinum
-	logmust get_kernel_for_platform "${platform}"
+	logmust get_kernel_version_for_platform_from_apt "${platform}"
 	kernel_version=$(echo "$_RET" | cut -d '-' -f 1)
 	abinum=$(echo "$_RET" | cut -d '-' -f 2)
 
@@ -258,8 +268,60 @@ function kernel_update_upstream() {
 	local upstream_tag
 	upstream_tag=$(echo "${upstream_tag_info}" | awk -F / '{print $3}')
 	[[ -z "${upstream_tag}" ]] && die "could not extract upstream tag name from the tag info"
-	echo "note: upstream tag: ${upstream_tag}"
-	logmust git fetch upstream "${upstream_tag}"
+
+	logmust git fetch upstream "+refs/tags/${upstream_tag}:refs/tags/${upstream_tag}"
+
+	local upstream_tag_commit
+	upstream_tag_commit="$(git rev-parse "refs/tags/${upstream_tag}")" ||
+		die "couldn't get commit of tag ${upstream_tag}"
+	echo "note: upstream tag: ${upstream_tag}, commit ${upstream_tag_commit}"
+
+	#
+	# Check if the commit of the latest tag from upstream matches
+	# what we have cached in our repository at upstreams/<branch>,
+	# which we fetch to upstream-HEAD.
+	#
+	local local_upstream_commit
+	local_upstream_commit=$(git rev-parse upstream-HEAD)
+	[[ -z "${local_upstream_commit}" ]] && die "could not find upstream-HEAD's commit"
+	echo "note: upstreams/${DEFAULT_GIT_BRANCH} commit: ${local_upstream_commit}"
+
+	if [[ "${upstream_tag_commit}" == "${local_upstream_commit}" ]]; then
+		echo "NOTE: upstream for $PACKAGE is already up-to-date."
+	else
+		logmust git reset --hard "refs/tags/${upstream_tag}"
+		echo "NOTE: upstream updated to refs/tags/${upstream_tag}"
+
+		#
+		# Store name of upstream tag so that we can push it to our
+		# repository for reference purposes.
+		#
+		echo "refs/tags/${upstream_tag}" >"$WORKDIR/upstream-tag" ||
+			die "failed to write to $WORKDIR/upstream-tag"
+
+		logmust touch "$WORKDIR/upstream-updated"
+	fi
+
+	logmust cd "$WORKDIR"
+}
+
+#
+# This merges local changes in repo-HEAD with upstream changes in upstream-HEAD.
+# As opposed to the default merge function merge_with_upstream_default(), this
+# uses git cherry-pick to rebase our changes on top of the upstream changes.
+#
+function kernel_merge_with_upstream() {
+	local repo_ref="refs/heads/repo-HEAD"
+	local upstream_ref="refs/heads/upstream-HEAD"
+
+	logmust cd "$WORKDIR/repo"
+
+	check_git_ref "$upstream_ref" "$repo_ref"
+
+	if git merge-base --is-ancestor "$upstream_ref" "$repo_ref"; then
+		echo "NOTE: $PACKAGE is already up-to-date with upstream."
+		return 0
+	fi
 
 	#
 	# Ensure that there is a commit marking the start of
@@ -276,29 +338,20 @@ function kernel_update_upstream() {
 	[[ -z "${dlpx_patch_end}" ]] && die "could not find repo-HEAD's head commit"
 
 	#
-	# Compare that commit with the head commit of the
-	# upstream tag. If the commits are the same then
-	# there is nothing for us to do as we are using
-	# the most up-to-date tag as the base for our set
-	# of patches. On the other hand, if the commits
-	# differ then it means that the upstream has been
-	# updated, at which point we need to cherry-pick
-	# our patches on top of the new upstream.
+	# We rebase all the Delphix commits on top of the new upstream-HEAD
+	# by using git cherry-pick. Note that we also save the previous
+	# tip of the active branch to repo-HEAD-saved as this reference will be
+	# checked later by push-merge.sh.
 	#
-	local upstream_head_commit
-	upstream_head_commit=$(git rev-parse upstream-HEAD)
-	[[ -z "${upstream_head_commit}" ]] && die "could not find upstream-HEAD's head commit"
 
-	if [[ "${current_ubuntu_commit}" == "${upstream_head_commit}" ]]; then
-		echo "NOTE: upstream for $PACKAGE is already up-to-date."
-	else
-		# shellcheck disable=SC2086
-		logmust git cherry-pick ${dlpx_patch_start}^..${dlpx_patch_end}
+	logmust git branch repo-HEAD-saved repo-HEAD
+	logmust git branch -D repo-HEAD
+	logmust git checkout -q -b repo-HEAD upstream-HEAD
 
-		logmust touch "$WORKDIR/upstream-updated"
-	fi
+	# shellcheck disable=SC2086
+	logmust git cherry-pick ${dlpx_patch_start}^..${dlpx_patch_end}
 
-	logmust cd "$WORKDIR"
+	logmust touch "$WORKDIR/repo-updated"
 }
 
 function post_build_checks() {

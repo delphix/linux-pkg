@@ -15,20 +15,19 @@
 # limitations under the License.
 #
 
-# shellcheck disable=SC2034
-DEFAULT_PACKAGE_GIT_URL="https://github.com/delphix/linux-kernel-azure.git"
+#
+# We currently support getting the linux kernel from 3 different sources:
+#  1. Building it from code: see config.delphix.sh
+#  2. Dowloading from apt: see config.archive.sh
+#  3. Pre-built kernel stored in artifactory: see config.prebuilt.sh
+#
 
-UPSTREAM_GIT_URL="https://git.launchpad.net/~canonical-kernel/ubuntu/+source/linux-azure/+git/bionic"
-UPSTREAM_GIT_BRANCH="@PLACEHOLDER-WORKAROUND@"
-
-function prepare() {
-	kernel_prepare
-}
-
-function build() {
-	kernel_build "azure"
-}
-
-function update_upstream() {
-	kernel_update_upstream "azure"
-}
+linux_package_source="${LINUX_KERNEL_PACKAGE_SOURCE:-$DEFAULT_LINUX_KERNEL_PACKAGE_SOURCE}"
+case "$linux_package_source" in
+delphix | archive | prebuilt)
+	logmust source "${BASH_SOURCE%/*}/config.${linux_package_source}.sh"
+	;;
+default)
+	die "invalid linux-kernel package source '$linux_package_source'"
+	;;
+esac

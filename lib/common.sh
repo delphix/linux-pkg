@@ -32,6 +32,14 @@ export _BASE_S3_URL="s3://snapshot-de-images/builds/${JENKINS_OPS_DIR}/devops-ga
 
 export UBUNTU_DISTRIBUTION="bionic"
 
+#
+# We currently support getting the linux kernel from 3 different sources:
+#  1. "delphix": building it from code
+#  2. "archive": dowloading from apt
+#  3. "prebuilt": pre-built kernel stored in artifactory
+#
+export DEFAULT_LINUX_KERNEL_PACKAGE_SOURCE="archive"
+
 # shellcheck disable=SC2086
 function enable_colors() {
 	[[ -t 1 ]] && flags="" || flags="-T xterm"
@@ -216,7 +224,16 @@ function reset_package_config_variables() {
 	local hook
 	local var
 
-	for hook in prepare fetch build checkstyle update_upstream; do
+	local hooks="
+	prepare
+	fetch
+	build
+	checkstyle
+	update_upstream
+	merge_with_upstream
+	"
+
+	for hook in $hooks; do
 		unset "$hook"
 	done
 
@@ -236,6 +253,7 @@ function reset_package_config_variables() {
 	WORKDIR
 	PKGDIR
 	PACKAGE_PREFIX
+	FORCE_PUSH_ON_UPDATE
 	SKIP_COPYRIGHTS_CHECK
 	"
 
@@ -560,7 +578,6 @@ function list_linux_kernel_packages() {
 			_RET_LIST+=("linux-kernel-$kernel")
 		done
 	fi
-
 	return 0
 }
 
@@ -802,6 +819,66 @@ function update_upstream_from_git() {
 	fi
 
 	logmust cd "$WORKDIR"
+}
+
+#
+# Returns true if upstreams/<branch> needs to be merged into <branch> for the
+# active package, where <branch> is the branch being updated, i.e.
+# DEFAULT_GIT_BRANCH.
+#
+function is_merge_needed() {
+	local repo_ref="refs/heads/repo-HEAD"
+	local upstream_ref="refs/heads/upstream-HEAD"
+
+	logmust pushd "$WORKDIR/repo"
+	check_git_ref "$upstream_ref" "$repo_ref"
+
+	if git merge-base --is-ancestor "$upstream_ref" "$repo_ref"; then
+		echo "Upstream is already merged into repo-HEAD"
+		_RET=false
+	else
+		_RET=true
+	fi
+	logmust popd
+}
+
+#
+# Default function for merging upstreams/<branch> into <branch>, where <branch>
+# is the branch being updated, i.e. DEFAULT_GIT_BRANCH. Note that this function
+# does not actually look at the upstream repository itself, but relies on
+# local branches repo-HEAD and upstream-HEAD to be present.
+#
+# If merge was needed, file $WORKDIR/repo-updated is created and previous tip
+# of <branch> is saved in repo-HEAD-saved. The repo-updated file lets the
+# caller (typically Jenkins) know if a merge was necessary. The repo-HEAD-saved
+# ref should be compared to the remote branch when it is time to push the
+# merge; if they differ it means that the remote branch was modified and
+# so the merge should be aborted -- this can happen if a PR was merged by a
+# developer while auto-update was running.
+#
+function merge_with_upstream_default() {
+	local repo_ref="refs/heads/repo-HEAD"
+	local upstream_ref="refs/heads/upstream-HEAD"
+
+	logmust cd "$WORKDIR/repo"
+	check_git_ref "$upstream_ref" "$repo_ref"
+
+	logmust git checkout -q repo-HEAD
+
+	if git merge-base --is-ancestor "$upstream_ref" HEAD; then
+		echo "NOTE: $PACKAGE is already up-to-date with upstream."
+		return 0
+	fi
+
+	#
+	# Do a backup of the repo-HEAD branch so that it can be compared to the
+	# remote when time comes to do a push.
+	#
+	logmust git branch repo-HEAD-saved
+
+	logmust git merge --no-edit --no-stat "$upstream_ref"
+	logmust git show-ref repo-HEAD
+	logmust touch "$WORKDIR/repo-updated"
 }
 
 #
