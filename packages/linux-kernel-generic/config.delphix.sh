@@ -19,7 +19,8 @@
 DEFAULT_PACKAGE_GIT_URL="https://github.com/delphix/linux-kernel-generic.git"
 
 UPSTREAM_GIT_URL="https://git.launchpad.net/~ubuntu-kernel/ubuntu/+source/linux/+git/bionic"
-UPSTREAM_GIT_BRANCH="@PLACEHOLDER-WORKAROUND@"
+# Note: UPSTREAM_GIT_BRANCH is not used here
+UPSTREAM_GIT_BRANCH="none"
 
 #
 # Force push required when syncing with upstream because we perform a rebase.

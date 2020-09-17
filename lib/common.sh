@@ -1135,10 +1135,10 @@ function store_build_info() {
 	fi
 
 	if [[ -f "$TOP/PACKAGE_MIRROR_URL_MAIN" ]]; then
-		logmust cp "$TOP/PACKAGE_MIRROR_URL_MAIN" "$WORKDIR/artifacts/PACKAGE_MIRROR_URL_MAIN"
+		logmust cp "$TOP/PACKAGE_MIRROR_URL_MAIN" "$WORKDIR/artifacts/"
 	fi
 
 	if [[ -f "$TOP/PACKAGE_MIRROR_URL_SECONDARY" ]]; then
-		logmust cp "$TOP/PACKAGE_MIRROR_URL_SECONDARY" "$WORKDIR/artifacts/PACKAGE_MIRROR_URL_MAIN"
+		logmust cp "$TOP/PACKAGE_MIRROR_URL_SECONDARY" "$WORKDIR/artifacts/"
 	fi
 }

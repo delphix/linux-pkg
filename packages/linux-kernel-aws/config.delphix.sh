@@ -19,7 +19,8 @@
 DEFAULT_PACKAGE_GIT_URL="https://github.com/delphix/linux-kernel-aws.git"
 
 UPSTREAM_GIT_URL="https://git.launchpad.net/~canonical-kernel/ubuntu/+source/linux-aws/+git/bionic"
-UPSTREAM_GIT_BRANCH="@PLACEHOLDER-WORKAROUND@"
+# Note: UPSTREAM_GIT_BRANCH is not used here
+UPSTREAM_GIT_BRANCH="none"
 
 #
 # Force push required when syncing with upstream because we perform a rebase.

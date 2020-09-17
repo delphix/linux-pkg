@@ -110,6 +110,9 @@ function kernel_build() {
 	#   any intention and logic to provide signatures for now
 	#   we set it to false to avoid any misconfigurations down
 	#   the line.
+	# disable_d_i=true
+	#   This prevents udeb packages from being built as they are
+	#   not consumed by the Delphix Appliance.
 	#
 	local debian_rules_args="skipdbg=false uefi_signed=false disable_d_i=true flavours=$platform abinum=${delphix_abinum} ${debian_rules_extra_args}"
 

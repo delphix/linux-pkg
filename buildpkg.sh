@@ -22,7 +22,7 @@ logmust check_running_system
 
 function usage() {
 	[[ $# != 0 ]] && echo "$(basename "$0"): $*"
-	echo "Usage: $(basename "$0")  [-ch] [-g pkg_git_url]"
+	echo "Usage: $(basename "$0") [-ch] [-g pkg_git_url]"
 	echo "         [-b pkg_git_branch] [-v pkg_version] [-r pkg_revision]"
 	echo "         package"
 	echo ""
