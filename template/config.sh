@@ -61,7 +61,7 @@ function prepare() {
 	#
 	#logmust install_pkgs build-dep-pkg1 build-dep-pkg2 ...
 	#logmust install_build_deps_from_control_file
-	return
+	echo 'insert code here'
 }
 
 #
@@ -70,7 +70,7 @@ function prepare() {
 #
 function build() {
 	#
-	# Those are the default functions to build the package:
+	# This is the default functions to build the package:
 	#
 	logmust dpkg_buildpackage_default
 }
@@ -85,5 +85,5 @@ function update_upstream() {
 	#
 	#logmust update_upstream_from_source_package
 	#logmust update_upstream_from_git
-	return
+	echo 'insert code here'
 }
