@@ -1,6 +1,6 @@
-#!/usr/bin/make -f
+#!/bin/bash
 #
-# Copyright 2018 Delphix
+# Copyright 2020 Delphix
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,14 +14,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+# shellcheck disable=SC2034
 
-%:
-	dh $@
+DEFAULT_PACKAGE_GIT_URL="none"
 
-override_dh_auto_test:
-	#
-	# Don't run 'make test' during the build step; we'll enforce
-	# testing via another mechanism, so running it during package
-	# builds is unnecessary.
-	#
+function fetch() {
+	# Nothing to do
+	return
+}
 
+function build() {
+	logmust fetch_kernel_from_apt_for_platform "generic"
+}

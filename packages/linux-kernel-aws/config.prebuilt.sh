@@ -1,5 +1,6 @@
+#!/bin/bash
 #
-# Copyright 2018 Delphix
+# Copyright 2020 Delphix
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -13,14 +14,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+# shellcheck disable=SC2034
 
-Source: @@PACKAGE@@
-Section: metapackages
-Priority: optional
-Maintainer: Delphix Engineering <eng@delphix.com>
-Build-Depends: debhelper (>= 10)
-Standards-Version: 4.1.2
+DEFAULT_PACKAGE_GIT_URL="none"
 
-Package: @@PACKAGE@@
-Architecture: any
-Description: Provides build metadata for packages built by linux-pkg.
+function fetch() {
+	# Nothing to do
+	return
+}
+
+function build() {
+	logmust fetch_kernel_from_artifactory "5.3.0-1033-aws" \
+		"6.0.5.0/dx1/linux-modules-5.3.0-1033-aws_5.3.0-1033.dx1_amd64.deb"
+}

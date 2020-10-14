@@ -14,13 +14,14 @@ projects.
 1. [Environment Variables](#environment-variables)
 1. [Package Definition](#package-definition)
     * [Package Variables](#package-variables)
-    * [Package Hooks](#package-hooks)
+    * [Package Hooks](#package-stages-and-hooks)
     * [Package Environment Variables](#package-environment-variables)
     * [Package WORKDIR](#package-workdir)
 1. [Adding New Packages](#adding-new-packages)
     * [Third-party package](#third-party-package)
     * [In-house package](#in-house-package)
 1. [Testing your changes](#testing-your-changes)
+1. [Package Lists](#package-lists)
 1. [Versions and Branches](#versions-and-branches)
 1. [Contributing](#contributing)
 1. [Statement of Support](#statement-of-support)
@@ -64,7 +65,7 @@ cd linux-pkg
 ./setup.sh
 ```
 
-### Step 3. Build a package or a package list
+### Step 3. Build a package
 
 We can now build an arbitrary package. Any package in the
 [packages directory](./packages) would do. Let's pick `cloud-init` as an
@@ -74,34 +75,22 @@ example:
 ./buildpkg.sh cloud-init
 ```
 
-Packages will be stored in directory `packages/cloud-init/tmp/artifacts/`.
-
-Linux-pkg also allows you to build a pre-defined list of packages. Package
-lists can be found in the [package-lists directory](./package-lists/build/).
-Let's try to build the "userland" package list:
-
-```
-./buildlist.sh userland
-```
-
-Note that the build of the "userland" list can take close to an hour. The
-artifacts for all the packages built will be located in directory `artifacts/`.
+Build artifacts will be stored in directory
+`packages/cloud-init/tmp/artifacts/`.
 
 ## Project Summary
 
-There are two main tasks that are performed by this framework: building lists
-of packages so that they can be later included in
-[appliance-build](https://github.com/delphix/appliance-build), and keeping each
-package up-to-date with its upstream project by updating the appropriate git
-branches.
+There are two main tasks that are performed by this framework: building
+packages and keeping each package up-to-date with its upstream project by
+updating the appropriate git branches.
 
 ### Building packages
 
-This task is relatively straight forward. Every package listed in the target
-package list is built and a metapackage is created with the build info of each
-package that was built.
-You can see section [Scripts > buildlist.sh](#buildlistsh) below for more
-details.
+This task is relatively straight forward. What linux-pkg calls a "package" is
+really a project (usually a git project) that has a build recipe and that
+produces one or more debian packages and some other metadata files.
+
+See [Scripts > updatelist.sh](#buildpkgsh) below.
 
 ### Updating third-party packages
 
@@ -128,34 +117,42 @@ of the package tuned to work with our Ubuntu distribution.
 
 When updating a package, we first check if the **upstreams/master** branch is
 up-to-date, by fetching the latest version of the upstream git repository or the
-Ubuntu source package. If changes are detected, we update **upstreams/master**.
+Ubuntu source package. If changes are detected, we update the
+**upstreams/master** branch and push the changes to GitHub.
 
 The second step is to check if the **master** branch is up-to-date with
 **upstreams/master**. If it is already up-to-date, then we are done. If not,
 then we attempt merging **upstreams/master** into **master**.
 
-If the merge is successful, then we attempt building the **master** branch. The
-merge is considered failed if the build fails, which means that the **master**
-branch of the main repository will not be updated.
+If the merge is successful, then we push the changes to a staging branch on
+GitHub, called **projects/auto-update/master/merging**. The intent is for
+a different system to fetch those changes, build them, and then launch tests.
 
-Note that any updates are pushed independently to the **upstreams/master** and
-**master** branches of the Delphix repository for the package.
+See [Scripts > sync-with-upstream.sh](#sync-with-upstreamsh) below.
 
-Although for now we only support auto-updating the **master** branch, the
-framework is designed so that other branches could also be auto-updated.
+Once the merge has been tested, [Scripts > push-merge.sh](#push-mergesh) is
+called on the original VM to push the changes to the **master** branch on
+GitHub.
 
-For additional details, you can see section
-[Scripts > updatelist.sh](#updatelistsh) below.
+Note that the example above targets the **master** branch, but the same
+workflow could apply to other branches, like **6.0/stage**, although it is
+not currently in use.
 
 ## Scripts
 
 A set of scripts were created in this repository to allow easily building and
 updating packages both manually and through automation (e.g. Jenkins).
 
+### query-packages.sh
+
+This script can be called on most unix-based systems to query metadata on the
+packages built by linux-pkg. This script does not install anything on the
+system, so it can be run anywhere without any side effects.
+
 ### setup.sh
 
 Installs dependencies for the build framework. Needs to be run once to configure
-the system, before any other scripts.
+the system, before any other scripts (except query-packages.sh).
 
 ### buildpkg.sh
 
@@ -167,97 +164,71 @@ Builds a single package. Package name must match a directory under
 ```
 
 The build will look at `packages/<package>/config.sh` for instructions on where
-to fetch the package from and how build it. The build will be performed in
+to fetch the package from and how to build it. The build will be performed in
 `packages/<package>/tmp/`, and build artifacts for this package will be stored
 in the `artifacts` sub-directory.
 
-`buildpkg.sh` includes additional options. The most common of them is `-u`,
-which will update the package with upstream. See section
-[Updating third-party packages](#updating-third-party-packages) for more info.
+Note that if the build of the package depends on build artifacts from another
+linux-pkg package, those will be fetched from a predetermined S3 location.
 
-### buildlist.sh
+### checkupdates.sh
 
-Builds a list of packages and the assossiated metapackage. The list of packages
-is read from [package-lists/build/{list}.pkgs](./package-lists/build/) and
-builds the packages listed there by invoking `buildpkg.sh` on each one of them.
-Once they are all built, it builds the metapackage, which stores the build info
-for each package that was built -- info such as git hash, git url and git
-branch.
-
+Usage:
 ```
-./buildlist.sh <package list>
+./checkupdates.sh <package>
 ```
 
-`buildlist.sh` doesn't take build options but can be configured by passing
-various environment variables.
-See section [Environment Variables](#environment-variables) for more details.
+This checks if a package has updates in the upstream project that haven't been
+pulled into the **upstreams/master** branch, or if the **upstreams/master**
+branch has commits that haven't been merged into the **master** branch.
 
-Packages are built sequentially in the order defined in the pkgs file. If a
-package fails to build, the script exits immediately.
+If updates are available, the file `<WORKDIR>/update-available` will be created.
 
-### jenkins-buildlist.sh
+The intention of this script is to inform the caller whether an update job
+should be called for the given package.
 
-This is a wrapper script around `buildlist.sh` and was designed
-to be called by Jenkins. Any environment variables that are passed to
-`jenkins-buildlist.sh` are propagated to the child script. In addition,
-`jenkins-buildlist.sh` interprets environment variables specified in section
-[Environment variables specific to jenkins-buildlist](#environment-variables-specific-to-jenkins-buildlist).
+### sync-with-upstream.sh
 
-### updatelist.sh
-
-Updates all the packages listed in package list
-[package-lists/update/{list}.pkgs](./package-lists/update/):
-
+Usage:
 ```
-./updatelist.sh [-n] <package list>
+./sync-with-upstream.sh <package>
 ```
 
-Here are the steps for updating one package:
+This script has 2 tasks:
+1. Check if the upstream project has updates that are not pulled into the
+**upstreams/master** branch of the package, and if so then update that branch
+and push changes to GitHub.
+2. Merge **upstreams/master** into **master** and push the changes to a staging
+branch on GitHub, called **projects/auto-update/master/merging**. Another
+system should use that branch to build the package, and then run the appropriate
+integration tests.
 
-1. Run `buildpkg.sh -u <package>`. This will attempt to update the
-   **upstreams/master** branch, and then attempt to merge **upstreams/master**
-   into **master**. If changes are detected on **master**, then the package will
-   be built. If a package is listed in
-   [package-lists/auto-merge-blacklist.pkgs](./package-lists/auto-merge-blacklist.pkgs),
-   then `-M` will be passed to `buildpkg.sh` and we will not attempt updating
-   **master**.
+After testing has been completed, `push-merge.sh <package>` should be called on
+the same system to push the merge to the **master** branch.
 
-1. If changes are detected for **upstreams/master** or **master**, push them to
-   the default repository for the package (e.g. `github.com/delphix/<package>`).
-   This is done by invoking `push-updates.sh` for each branch. Note that
-   **upstreams/master** will be updated even if merge with **master** failed,
-   allowing developers to later perform the merge manually.
+Note that the DRYRUN environment variable must be set when running this script.
+If DRYRUN is set to "true", then changes are not pushed to GitHub in step 1,
+and staged changes are pushed to **projects/auto-update/master/merging-dryrun**
+in step 2 instead of the non-dryrun branch. The intention is that when testing
+changes to the logic we want to be able to run most of the logic, but without
+affecting the production branches.
 
-Each package is processed independently, so a failure to update one package
-doesn't affect the update of other packages. A report is generated at the end.
+### push-merge.sh
 
-`updatelist.sh` can be run in dry-run mode by passing `-n` so that package
-updates are not pushing to the target repository. Its behaviour can also be
-configured by passing various environment variables. See section
-[Environment Variables](#environment-variables) for more details.
-
-### jenkins-updatelist.sh
-
-This is a wrapper script around `updatelist.sh` and was designed to be called
-by Jenkins. Any environment variables that are passed to `jenkins-buildlist.sh`
-are propagated to the child script.
-
-### push-updates.sh
-
-This script pushes branch updates to the default repository for the package. It
-should be called after running `buildpkg.sh -u <package>`. The script should be
-invoked with:
-
+Usage:
 ```
-./push-update.sh -u|-m <package>
+./push-merge.sh <package>
 ```
 
-Running it with `-u` will update **upstreams/master** and running it with `-m`
-will update **master**.
+This must be called on a system that has previously called
+`sync-with-upstream.sh` for the same package. It will push the merge that was
+previously prepared by `sync-with-upstream.sh` to the production **master**
+branch, after checking that the **master** branch hasn't been modified since
+`sync-with-upstream.sh` was called.
 
-Note that credentials for a user that has permissions to push to the target
-repository must be passed. Passing the `-n` option does a dry-run, meaning that
-the target repository won't be updated (`-n` will be passed to `git push`).
+Like for `sync-with-upstream.sh`, the DRYRUN environment variable must be set
+to run this script. However, the script will fail unless DRYRUN is set to
+"false" given that there is not much that can be tested in dry-run mode.
 
 ## Environment Variables
 
@@ -268,61 +239,75 @@ of some of the scripts defined above.
   we are running on the appropriate Ubuntu distribution in AWS.
   Affects all scripts.
 
-* **DRY_RUN**: Set to "true" to prevent `updatelist.sh` from updating production
-  package repositories. `updatelist.sh` will invoke `push-updates.sh` with `-n`.
+* **DRYRUN**: Must be set to either "true" of "false" when running script
+  [sync-with-upstream.sh](#sync-with-upstreamsh), and to "false" when running
+  script [push-merge.sh](#push-mergesh).
 
 * **PUSH_GIT_USER, PUSH_GIT_PASSWORD**: Set to the git credentials used to push
-  updates to package repositories. Affects `updatelist.sh` and
-  `push-updates.sh`.
+  updates to package repositories. Affects scripts
+  [sync-with-upstream.sh](#sync-with-upstreamsh) and
+  [push-merge.sh](#push-mergesh).
 
 * **DEFAULT_REVISION**: Default revision to use for packages that do not have a
   revision defined. If not set, it will be auto-generated from the timestamp.
-  Applies to `buildpkg.sh` and `buildlist.sh`.
+  Applies to [buildpkg.sh](#buildpkgsh).
 
-* **DEFAULT_BRANCH**: Default git branch to use when fetching a package that
-  does not have a branch explicitly defined. If not set, it will default to
-  "master". Applies to `buildpkg.sh` and `buildlist.sh`.
+* **DEFAULT_GIT_BRANCH**: The product branch that is being built or updated is
+  typically stored in the file `branch.config`, however it can be overridden via
+  DEFAULT_GIT_BRANCH. The product branch is used in multiple instances. When
+  running [setup.sh](#setupsh), it will determine what linux-package-mirror
+  link to use when fetching packages from apt (although those links can be
+  overridden via DELPHIX_PACKAGE_MIRROR_MAIN and
+  DELPHIX_PACKAGE_MIRROR_SECONDARY). When running [buildpkg.sh](#buildpkgsh),
+  it will determine which branch to fetch from the package's repository, unless
+  it is overridden via `-b`; if the package has build-dependencies on other
+  linux-pkg packages, those dependencies will be fetched from an S3 url that is
+  versioned based on the product branch (although the package dependencies
+  URLs can be overridden via package_S3_URL variables). Finally, when running
+  [sync-with-upstream.sh](#sync-with-upstreamsh) or
+  [push-merge.sh](#push-mergesh) it defines what branch of the package is
+  being updated.
 
-* **CHECKSTYLE**: Applies to `buildlist.sh`. Passes `-c` to `buildpkg.sh` when
-  `CHECKSTYLE` is "true" to execute the `checkstyle` hook when building a package.
-  See [Package Definition](#package-definition) section for more details about
-  the hook.
+* **TARGET_KERNEL_FLAVOURS**: Some packages have build dependencies on the
+  linux kernel. Those packages have `PACKAGE_DEPENDENCIES="@linux-kernel"` in
+  their `config.sh`. By default, those packages are built for all the supported
+  kernel flavours (see SUPPORTED_KERNEL_FLAVORS in `common.sh`), however it is
+  possible to restrict which kernel flavours those packages are built for.
 
-* **TARGET_PLATFORMS**: Some packages build kernel modules. This specifies which
-  kernel versions to build those packages for and accepts a space-separated list
-  of values. If the value is a platform, such as "aws" or "generic", then it
-  will auto-determine the default kernel version for the provided platform. If
-  `TARGET_PLATFORMS` is unset or "default", then it will build for all supported
-  platforms.
-
-* **UPDATE_PACKAGE_NAME**: Applies to `updatelist.sh` only. If this variable is
-  set then `updatelist.sh` only updates the package specified by this variable.
-
-* **{PACKAGE}_GIT_URL, {PACKAGE}_GIT_BRANCH, {PACKAGE}_VERSION,
-  {PACKAGE}_REVISION**: Can be used to override defaults for a given package.
-  `{PACKAGE}` is the package name in upper case with `-` converted to `_`. For
+* **package_GIT_URL, package_GIT_BRANCH, package_VERSION,
+  package_REVISION**: Can be used to override defaults for a given package.
+  `package` is the package name in upper case with `-` converted to `_`. For
   instance `CLOUD_INIT_GIT_BRANCH=feature1` would set the branch to fetch
   package `cloud-init` from to `feature1`. This is useful when running
   `buildlist.sh` to override defaults for multiple packages. Applies to both
   `buildlist.sh` and `buildpkg.sh`.
 
-### Environment variables specific to jenkins-buildlist
+* **package_S3_URL**: Similar to the package_VAR variables above. This is used
+  to override the default S3 location for where package build-dependencies are
+  fetched for a given linux-pkg package. For instance, if you are building
+  bpftrace, which has `PACKAGE_DEPENDENCIES="bcc"` in its config, the
+  `fetch_dependencies()` stage in the build will fetch the latest build
+  artifacts of the bcc package from a predetermined S3 location. If you pass
+  `BCC_S3_URL=s3://path/to/custom/bcc/artifacts` then those artifacts will be
+  fetched insteasd.
 
-* **SINGLE_PACKAGE_NAME**: When running `jenkins-buildlist.sh`, other
-  `SINGLE_PACKAGE_{*}` parameters mentioned below are used to override the
-  defaults for this package.
+* **DELPHIX_PACKAGE_MIRROR_MAIN, DELPHIX_PACKAGE_MIRROR_SECONDARY**: When
+  the [setup.sh](#setupsh) script is run, it will configure the apt sources
+  to point to versioned delphix mirrors of the Ubuntu archive (MAIN mirror)
+  and of some auxiliary archives (SECONDARY mirror). Delphix has many snapshots
+  of those mirrors at different points in time, and if you want to use a custom
+  snapshot, you can pass it in those environment variables.
 
-* **SINGLE_PACKAGE_GIT_URL, SINGLE_PACKAGE_GIT_BRANCH, SINGLE_PACKAGE_VERSION,
-  SINGLE_PACKAGE_REVISION**: Applies to `jenkins-buildlist.sh` only. Those are
-  equivalent to the `{PACKAGE}_{*}` variables described previously but apply to
-  the package passed in `SINGLE_PACKAGE_NAME`. They are added for convenience
-  when using Jenkins.
-
-* **CUSTOM_BUILDER_ENV**: Applies to `jenkins-buildlist.sh` only. This is a
-  multi-line field that takes one `{PACKAGE}_{*}=value` entry per line and is
-  parsed by `jenkins-buildlist.sh` to set the specified `{PACKAGE}_{*}`
-  environment variables. This can be used to set any number of `{PACKAGE}_{*}`
-  variables from Jenkins.
+* **JENKINS_OPS_DIR**: When fetching artifacts from other linux-pkg packages
+  that are marked as dependencies of a package, by default we look for a
+  specific S3 path that contains production package artifacts generated by
+  post-push jobs of the ops Jenkins agent. The production ops Jenkins agent
+  stores artifacts in the special `jenkins-ops` sub-directory. When using
+  a developer ops Jenkins agent, it stores build artifacts in a different S3
+  sub-directory: `jenkins-ops.<developer>`. By setting JENKINS_OPS_DIR to that
+  sub-directory you can instruct linux-pkg to fetch artifacts of build
+  dependencies produced by the developer Jenkins instance instead of the
+  production one.
 
 ## Package Definition
 
@@ -344,6 +329,13 @@ Here is a list of variables that can be defined for a package:
   `https://` URL. One exception is if the source of the package being built
   isn't fetched from git. In this case, set this to "none".
 
+* **PACKAGE_DEPENDENCIES**: (Optional) If the build of this package requires
+  fetching artifacts from other linux-pkg packages, those should be specified
+  in PACKAGE_DEPENDENCIES, as a space-separated list. The dependencies will
+  be fetched in the `fetch_dependencies()` step into `<WORKDIR>/<dep>/` where
+  "dep" is the dependency's name. A special value can be passed for packages
+  that target all the supported flavours of the linux-kernel: `@linux-kernel`.
+
 * **DEFAULT_PACKAGE_GIT_BRANCH**: (DEPRECATED) Default git branch to use when
   fetching from or pushing to `DEFAULT_PACKAGE_GIT_URL`. This should be
   typically left unset. The branch to fetch the package from defaults
@@ -355,88 +347,124 @@ Here is a list of variables that can be defined for a package:
 
 * **DEFAULT_PACKAGE_VERSION**: (Optional) The version of the package is set to
   this value when it is built. **Note:** If this field is not set, then you
-  should provide a mechanism in the [build](#build) hook to auto-determine the
-  version from the source code.
+  should provide a mechanism in the [build](#build-hook) hook to auto-determine
+  the version from the source code.
+  WARNING: This parameter will be removed in the near future, as we will rely on
+  the changelog contained in the package's repository to get the package version
+  in the future.
 
 * **DEFAULT_PACKAGE_REVISION**: (Optional) The revision of the package is set to
   this value when it is built (note that the full version of a package is
   "_VERSION-REVISION_"). If unset, it defaults to value of environment variable
   DEFAULT_REVISION.
+  WARNING: This parameter is currently unused and will be removed in the near
+  future.
 
 * **UPSTREAM_SOURCE_PACKAGE**: (Optional) Third-party packages that have an
-  [update_upstream](#update-upstream) hook and are updated from an Ubuntu source
-  package should set this to the name of the source package.
+  [update_upstream](#update-upstream-hook) hook and are updated from an Ubuntu
+  source package should set this to the name of the source package.
 
 * **UPSTREAM_GIT_URL, UPSTREAM_GIT_BRANCH**: (Optional) Third-party packages
-  that have an [update_upstream](#update-upstream) hook and are updated from a
-  git repository should set this to the upstream git url and branch.
+  that have an [update_upstream](#update-upstream-hook) hook and are updated
+  from a git repository should set this to the upstream git url and branch.
 
-### Package hooks
+* **FORCE_PUSH_ON_UPDATE**: (Optional) This applies to some third-party packages
+  that have an [update_upstream](#update-upstream-hook) hook. Most third-party
+  packages are synced with upstream by performing a simple "git-merge" command,
+  so when the merge is pushed it can be done with "git push". However some
+  packages, like the linux-kernel ones, perform a rebase instead, and so the
+  merge must be force-pushed instead. If you want to use force push to push
+  an auto-merge, set FORCE_PUSH_ON_UPDATE to "true". Note that a safety check
+  is always performed prior to doing the push to make that the target branch
+  has not changed since the auto-merge commit was generated, however disabling
+  force-push by default is an extra precaution.
 
-This is a list of hooks that can be defined for a package. Those are simply bash
-functions that are called by `buildpkg.sh`.
+* **SKIP_COPYRIGHTS_CHECK**: (Optional) By default, at the end of a package's
+  build we check that each produced deb contains a copyright file, unless
+  SKIP_COPYRIGHTS_CHECK is set to "true".
 
-#### Prepare
+### Package stages and hooks
 
-The `prepare()` hook is optional. It is called before calling the build hook and
-normally installs the build dependencies for the package.
+When operations are performed on a package by build or auto-update scripts,
+such as [buildpkg.sh](#buildpkgsh) or
+[sync-with-upstream.sh](#sync-with-upstreamsh), those operations are usually
+split into high-level tasks called "stages". Some of those stages can be
+modified or must be defined in a package's config file, so we refer to them
+here as "hooks". Hooks that have a default definition are stored in
+the `default-package-config.sh` file.
 
-#### Fetch
+Other "stages" are not meant to be modified and aren't functionally different
+from regular function calls, we want to give them more visibility in the build
+process as they are deemed as important high-levels tasks, so they are called
+via the `stage()` helper function.
+
+#### Fetch (hook)
 
 The `fetch()` hook is optional, as a default is provided and should be used. It
 is called when fetching the source code of the package to build or to update.
-The repository is cloned into `packages/<package>/tmp/repo` and checked out as
+The repository is cloned into `<WORKDIR>/repo` and checked out as
 branch **repo-HEAD**. If we are performing a package update, then we also
 fetch the **upstreams/master** branch into **upstream-HEAD**. The default
 should only be overridden when not fetching the package source from git.
 
-#### Build
+#### Prepare (hook)
+
+The `prepare()` hook is optional. It is called before calling the build hook and
+normally installs the build dependencies for the package.
+
+#### Build (hook)
 
 The `build()` hook is mandatory. It is responsible for building the package and
 storing the build products into `packages/<package>/tmp/artifacts/`.
 
+#### Update Upstream (hook)
+
+The `update_upstream()` hook should only be defined for third party packages
+that can be auto-updated. It is responsible for fetching the latest upstream
+source code on top of branch **upstream-HEAD** of our fetched repository in
+`<WORKDIR>/repo`. Note that any changes should be rebased on top of
+the **upstreams/master** branch. If changes are detected, file
+`<WORKDIR>/upstream-updated` should be created.
+
+#### Merge With Upstream (hook)
+
+The `merge_with_upstream()` hook is called after the `update_upstream()` hook
+when a package is updated via [sync-with-upstream.sh](#sync-with-upstreamsh).
+Whereas `update_upstream()` updates the **upstream-HEAD** branch,
+`merge_with_upstream` then merges the **upstream-HEAD** branch into the
+**repo-HEAD** branch. For most third-party packages this can be left unset as
+the default will be used. For packages that have a more complex merge strategy,
+such as the linux-kernel packages, this hook can be used.
+
+#### Checkstyle (hook)
+
+The `checkstyle()` hook is optional. It is called before building the package if
+`-c` is provided to `buildpkg.sh`. Note that this hook isn't currently used by
+our build automation and is more of a prototype for an idea.
+
+#### Fetch Dependencies
+
+`fetch_dependencies` is an immutable stage. It is called for fetching build
+artifacts from other linux-pkg packages that are required for performing the
+build. See the PACKAGE_DEPENDENCIES package variable for mroe info.
+
 #### Store Build Info
 
-The `store_build_info()` hook is optional. It is called right after the
-build hook. It is responsible of creating the `<WORKDIR>/build_info` file that
-contains information about the source of the code used to build the package.
-
-A default hook is provided in `default-package-config.sh` and will
-be used if it is not overriden. If the package comes from a git repository,
-the default hook will store the git hash, branch and repository of the
-package's source.
-
-`build_info` files for each package are consumed by the
-[metapackage](./build-info-pkg) when running [buildlist.sh](#buildlistsh).
+`store_build_info()` is an immutable stage. It is called after the `build()`
+stage. It is responsible for storing some build info / metadata, such as the
+git hash used to perform the build. Some of the build info that is stored is
+used by build automation, so care must be exercised when modifying it.
 
 #### Post Build Checks
 
-The `post_build_checks()` hook is optional. It is responsible for checking if
-the debian package being built has copyright file associated with it in the
-right location. This file will be used to generate the license information for
-the appliance.
+`post_build_checks()` is an immutable stage. It is responsible for performing
+post-build checks that are common to all packages.
 
-A default hook is provided in `default-package-config.sh` and will
-be used if it is not overriden. The packages that are eligible to skip this check
-should define `SKIP_COPYRIGHTS_CHECK=true` in their respective `config.sh` files.
-
-#### Checkstyle
-
-The `checkstyle()` hook is optional. It is called before building the package if
-`-c` is provided to `buildpkg.sh`.
-
-#### Update Upstream
-
-The `update_upstream()` hook should only be defined for third party packages
-that need to be auto-updated. It is responsible for fetching the latest upstream
-source code on top of branch **upstream-HEAD** of our fetched repository in
-`packages/<package>/tmp/repo`. Note that any changes should be rebased on top of
-the **upstreams/master** branch. If changes are detected, file
-`packages/<package>/tmp/upstream-updated` should be created.
-
-After the `update_upstream()` hook is called, and if changes are detected,
-`buildpkg.sh` will proceed to merge the **upstream-HEAD** branch into
-**repo-HEAD** and build the resulting code.
+One of the checks verifies that each debian package produced has a copyright
+file associated with it in the right location. This file is used elsewhere in
+the product to generate the license information for the appliance. This check
+can be skipped for a package by defining `SKIP_COPYRIGHTS_CHECK=true` in its
+config file.
 
 ### Package environment variables
 
@@ -461,7 +489,9 @@ variables are set-up by the framework. Here is a quick list:
 ### Package WORKDIR
 
 Each package is being fetched, built and updated in directory
-`linux-pkg/packages/<package>/tmp/`, referred to as `WORKDIR`.
+`linux-pkg/packages/<package>/tmp/`, referred to as `WORKDIR`. Whenever a
+script is called to operate a package, the WORKDIR directory is recreated and
+a `linux-pkg/workdir` symlink is created that points to this WORKDIR.
 
 The following sub-directories are created in `WORKDIR`:
 
@@ -472,15 +502,14 @@ The following sub-directories are created in `WORKDIR`:
 * **source**: where the source package is fetched when updating upstream from
   a source package.
 
+The following files are created in `WORKDIR`:
+
+* **upstream_tag**: During a package's auto-update, we may wish to also push
+  a tag fetched from the upstream repository for informational purposes. If so,
+  the `upstream_tag` file should be created and contain the name of the tag
+  that needs to be pushed.
+
 The following files are used as status indicators in `WORKDIR`:
-
-* **building**: created when package is being built, deleted on success.
-
-* **updating-upstream**: created when updating upstream branch, deleted on
-  success.
-
-* **merging**: created when package is being merged with upstream branch,
-  deleted on success.
 
 * **upstream-updated**: created if **upstream-HEAD** has updates that should
   be pushed.
@@ -488,18 +517,16 @@ The following files are used as status indicators in `WORKDIR`:
 * **repo-updated**: created if **repo-HEAD** has updates that should be pushed,
   following a merge.
 
-* **build_info**: created by the `store_build_info()` package hook.
-
 ## Adding new packages
 
 When considering adding a new package, the workflow will depend on whether the
 package is a [third-party package](#third-party-package) or
 [in-house package](#in-house-package).
 
-**Note For Delphix Employees**:
+**Note:**:
 If you are thinking of adding a new package to this framework, you should first
 read the
-[Delphix Open-Source Policy](https://docs.delphix.com/cto/ip-strategy/outbound-open-source).
+[Delphix Open-Source Policy](https://docs.delphix.com/en/ip-strategy/outbound-open-source).
 
 ### Third-party package
 
@@ -551,14 +578,23 @@ branch that points to the **master** branch; you can then update
 `DEFAULT_PACKAGE_GIT_URL` in config.sh to your forked git repository and skip
 to step 6.
 
-You can fetch the upstream source code by running:
+You can fetch the upstream source code from an Ubuntu source package by running:
 
 ```
-./buildpkg.sh -i <package>
+cd packages/<package>/tmp/
+mkdir source
+cd source
+apt-get source <upstream-source-package>
+cd ..
+mv source/"<upstream-source-package>"*/ repo
+cd repo
+git init
+git checkout -b repo-HEAD
+git add -f .
+git commit -m '<insert commit message here>'
 ```
-
-This will automatically fetch the code into `packages/<package>/tmp/repo` and
-initialize it as a git repository.
+TODO: create a command that will run the steps above. It used to be done by
+`buildpkg.sh -i`, but this logic has been removed.
 
 #### Step 4. Create a developer repository
 
@@ -573,20 +609,11 @@ e.g.
 DEFAULT_PACKAGE_GIT_URL="https://github.com/<developer>/<package>"
 ```
 
-Note that the branch will default to **master** unless
-`DEFAULT_PACKAGE_GIT_BRANCH` is also provided.
-
 #### Step 5. Push to your developer repository
 
-Next step is to push the upstream code to the newly created repository using the
-`push-update.sh` script. The script will need to be called twice: once for the
-**upstreams/master** branch and once for the **master** branch. It will also
-prompt you for your git credentials.
-
-```
-./push-updates -u <package>
-./push-updates -m <package>
-```
+Next step is to push the upstream code to the newly created repository to your
+developer repository. You should push the initial commit to both the **master**
+branch and the **upstreams/master** branch.
 
 #### Step 6. Build the package
 
@@ -599,8 +626,10 @@ that will install those build dependencies. For an Ubuntu source package, those
 dependencies can be installed by calling
 `install_build_deps_from_control_file()`.
 For other packages, you can usually find the build dependencies in the project's
-README. It is recommended to use the `install_pkgs()` function to install
-packages.
+README. It is recommended to edit the `debian/control` file of the package
+to list the required build dependencies, so that 
+`install_build_deps_from_control_file()` can be used. Otherwise, you can also
+use the `install_pkgs()` lib function to install packages.
 
 Next step is to add a [build()](#build) hook. It is recommended to use the
 `dpkg_buildpackage_default()` function.
@@ -632,8 +661,8 @@ Once this is all ready, you can try building the package by running:
 #### Step 7. Make the package auto-updatable
 
 If you want the package to be automatically updated with upstream (strongly
-recommended), you'll need to add the [update_upstream()](#update-upstream) hook
-to `config.sh`. You should use the following functions provided by
+recommended), you'll need to add the [update_upstream()](#update-upstream-hook)
+hook to `config.sh`. You should use the following functions provided by
 [lib/common.sh](./lib/common.sh):
 
 * `update_upstream_from_source_package()` if `UPSTREAM_SOURCE_PACKAGE` is set.
@@ -723,28 +752,15 @@ require a debian metadirectory.
 
 #### Add package to package-lists
 
-* Add the new package to the appropriate build list in
-  [package-lists/build/](./package-lists/build/).
-  Most packages that will be deployed on the Delphix Appliance should be added
-  to the [userland.pkgs](./package-lists/build/userland.pkgs) list.
-
-* If this is a third-party package that is to be auto-updated by
-  `updatelist.sh`, it should also be added to
-  [package-lists/update/userland.pkgs](./package-lists/update/userland.pkgs).
-
-* To make sure that the new package is included in the Delphix Appliance by
-  appliance-build, it should be added as a dependency to an existing package
-  such as `delphix-platform` or `delphix-virtualization`.
+See the [Package Lists](#package-lists) section for more info.
 
 #### Make the package official
-
-**Note**: this step only applies to Delphix.
 
 Once your new package builds and has been tested in the product, the next step
 is to create an official repository for it.
 
 1. First, you should read
-   [Delphix Open-Source Policy](https://docs.delphix.com/cto/ip-strategy/outbound-open-source)
+   [Delphix Open-Source Policy](https://docs.delphix.com/en/ip-strategy/outbound-open-source)
    if you haven't already, and provide the necessary info so that a
    `github.com/delphix/<package>` repository can be created for it. You'll need
    to push the **master** branch from your developer repository, as well as the
@@ -768,34 +784,50 @@ package managed by linux-pkg:
 
 1. Run `git-ab-pre-push` from your package's repository.
 
-More instructions available
-[here](https://docs.google.com/document/d/1pD0AusWAIbqXalx-B5nhrrHBfMme6wHvJG9c7O_wqb4/view).
+TODO: complete section
 
 ### Testing changes to linux-pkg
 
-If you are adding a new package, changing the linux-pkg framework, or changing
-the build definition (config.sh file) of a package, you should perform the
-following steps:
+TODO: complete section
 
-1. On your build VM, in the linux-pkg repository, run checkstyle:
+## Package Lists
 
-   ```
-   make clean
-   make check
-   ```
+Package lists are basically just lists of packages defined in linux-pkg.
+They are mainly consumed by the Jenkins build infrastructure by calling
+the [./query-packages.sh](./query-packages.sh) utility. Jenkins needs to know
+which packages to build and include for a given version of the Delphix
+appliance.
 
-1. Run the Jenkins build jobs for the
-   [userland](http://selfservice.jenkins.delphix.com/job/devops-gate/job/master/job/linux-pkg-build/job/master/job/kernel/job/pre-push/)
-   and
-   [kernel](http://selfservice.jenkins.delphix.com/job/devops-gate/job/master/job/linux-pkg-build/job/master/job/userland/job/pre-push/)
-   build lists.
+Package lists are stored under [./package-lists](./package-lists), in two
+sub-directories: `build` and `update`. The `build` directory contains packages
+that are built and consumed by the Delphix Appliance, while the `update`
+directory contains a list of packages that are automatically synced with
+the upstream projects.
 
-1. Run the Jenkins update job for the
-   [userland](http://selfservice.jenkins.delphix.com/job/devops-gate/job/master/job/linux-pkg-update/job/master/job/userland/job/update/)
-   update list.
+There are two physical `build` lists:
 
-More instructions available
-[here](https://docs.google.com/document/d/1pD0AusWAIbqXalx-B5nhrrHBfMme6wHvJG9c7O_wqb4/view).
+* `main.pkgs`: this is the default list for packages that are to be added to the
+  Delphix Appliance.
+
+* `kernel-modules.pkgs`: this list is similar to the `main` list but contains
+  packages that have a dependency on the multiple flavours of the linux kernel
+  that are supported by the Delphix Appliance.
+
+There's also a virtual build list, called "linux-kernel", which lists all the
+linux kernel packages built by linux-pkg (one for each supported flavour of
+the linux kernel). You can list the contents of the virtual list by running:
+
+```
+./query-packages.sh list linux-kernel
+```
+
+There is a single `update` list called `main.pkgs`, which contains all the
+packages that are auto-updated nightly by Jenkins. Note that zfs is not in
+that list as it has a dedicated Jenkins job that tracks the upstream
+repository and launches as soon as there are new changes.
+
+Most third-party packages should have an `update_upstream()` hook defined and
+be added to that list.
 
 ## Versions and Branches
 
@@ -815,7 +847,7 @@ linux-pkg repository itself follows the Delphix branching policy outlined
 [here](https://docs.delphix.com/pages/viewpage.action?spaceKey=RE&title=New+Branching+Mechanism).
 When creating a new branch or release for the Delphix Appliance, an external
 script should create the relevant branch or tag for each repository. The
-branch or tag should then be passed to the build in the `DEFAULT_BRANCH`
+branch or tag should then be passed to the build in the `DEFAULT_GIT_BRANCH`
 environment variable.
 
 ### Future work
@@ -824,15 +856,6 @@ When building packages for an older version of the Delphix Appliance, the build
 image will need to be picked accordingly. We are currently using
 `bootstrap-18-04`, but this will not be the case anymore once we switch to a
 newer Ubuntu distribution.
-
-Regarding auto-update of third-party packages, we'll most likely want to enable
-support for other branches than master, especially _stage_ ones. This way we'd
-be able to automatically pull in security updates for our third-party packages
-that track Ubuntu source packages.
-
-This means that we will also need integration with our Ubuntu package mirrors.
-The auto-update process will need to track the proper archive when fetching
-source packages.
 
 ## Contributing
 

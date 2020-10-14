@@ -20,16 +20,10 @@ DEFAULT_PACKAGE_GIT_URL="https://github.com/delphix/recovery-environment.git"
 DEFAULT_PACKAGE_VERSION=1.0.0
 PACKAGE_DEPENDENCIES="zfs"
 
-ZFS_DEB_PATH="$TOP/packages/zfs/tmp/artifacts"
 function prepare() {
-	if [ ! "$(ls -A "$ZFS_DEB_PATH")" ]; then
-		logmust "$TOP/buildpkg.sh" zfs
-	fi
-
 	logmust install_build_deps_from_control_file
 	logmust mkdir "$WORKDIR/repo/external-debs/"
-	logmust cp "$ZFS_DEB_PATH/"*.deb "$WORKDIR/repo/external-debs/"
-	return
+	logmust cp "$DEPDIR/zfs/"*.deb "$WORKDIR/repo/external-debs/"
 }
 
 function build() {

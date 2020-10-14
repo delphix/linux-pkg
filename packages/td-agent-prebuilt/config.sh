@@ -18,11 +18,10 @@
 
 DEFAULT_PACKAGE_GIT_URL=none
 SKIP_COPYRIGHTS_CHECK=true
-package="td-agent_3.5.0-delphix-2019.09.18.20_amd64.deb"
 
 function fetch() {
 	logmust cd "$WORKDIR/artifacts"
-
+	local package="td-agent_3.5.0-delphix-2019.09.18.20_amd64.deb"
 	local url="http://artifactory.delphix.com/artifactory"
 
 	logmust wget -nv "$url/linux-pkg/td-agent/$package" -O "$package"
