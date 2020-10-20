@@ -19,7 +19,7 @@ cd "$(dirname "${BASH_SOURCE[0]}")" || exit 1
 TOP="$PWD"
 source "$TOP/lib/common.sh"
 
-ALL_OUTPUT_FIELDS=(name git-url dependencies)
+ALL_OUTPUT_FIELDS=(name git-url dependencies can-update)
 
 function usage() {
 	local output_fields="${ALL_OUTPUT_FIELDS[*]}"
@@ -38,6 +38,7 @@ function usage() {
 		echo "    special values to the list command:"
 		echo "      all: displays all known packages"
 		echo "      appliance: displays all packages used by appliance"
+		echo "      linux-kernel: displays all linux kernel packages"
 		echo ""
 		echo "    -o  Comma delimited output fields."
 		echo "        Possible values: ${output_fields// /, }."
@@ -50,19 +51,43 @@ function usage() {
 function print_package() {
 	local pkgname="$1"
 	local outarray=()
+	local deps_array=()
+	#
+	# Run this in a sub-shell so that functions and variables sourced from
+	# load_package_config() are reset each time we load a new package.
+	#
 	(
 		local field
+		local dep
 		load_package_config "$pkgname" >/dev/null
 		for field in "${ACTIVE_OUTPUT_FIELDS[@]}"; do
 			case "$field" in
 			name) outarray+=("$pkgname") ;;
 			git-url) outarray+=("${DEFAULT_PACKAGE_GIT_URL:-none}") ;;
-			dependencies) outarray+=(none) ;;
+			dependencies)
+				for dep in $PACKAGE_DEPENDENCIES; do
+					check_package_exists "$dep"
+					deps_array+=("$dep")
+				done
+				if [[ ${#deps_array[@]} -eq 0 ]]; then
+					outarray+=(none)
+				else
+					# comma-separated list of dependencies
+					outarray+=("$(
+						IFS=,
+						echo "${deps_array[*]}"
+					)")
+				fi
+				;;
+			can-update)
+				type -t "update_upstream" >/dev/null &&
+					outarray+=(true) || outarray+=(false)
+				;;
 			esac
 		done
 		IFS=$'\t'
 		echo "${outarray[*]}"
-	)
+	) || die "Failed to print info for package '$pkgname'"
 }
 
 function query_list() {
@@ -77,14 +102,18 @@ function query_list() {
 		list_all_packages >/dev/null
 	elif [[ $list == appliance ]]; then
 		# concatenate kernel and userland packages
-		read_package_list "$TOP/package-lists/build/kernel.pkgs" >/dev/null
+		read_package_list "$TOP/package-lists/build/kernel-modules.pkgs" >/dev/null
 		local kernel_list=("${_RET_LIST[@]}")
-		read_package_list "$TOP/package-lists/build/userland.pkgs" >/dev/null
+		list_linux_kernel_packages >/dev/null
+		kernel_list+=("${_RET_LIST[@]}")
+		read_package_list "$TOP/package-lists/build/main.pkgs" >/dev/null
 		_RET_LIST+=("${kernel_list[@]}")
 		# check that there are no duplicates
 		dups=$(printf '%s\n' "${_RET_LIST[@]}" | sort | uniq -d)
 		[[ -z $dups ]] || die "Some apliance packages appear in both" \
 			"build/kernel.pkgs and build/userland.pkgs:\\n${dups}"
+	elif [[ $list == linux-kernel ]]; then
+		list_linux_kernel_packages >/dev/null
 	else
 		read_package_list "$TOP/package-lists/${list}" >/dev/null
 	fi

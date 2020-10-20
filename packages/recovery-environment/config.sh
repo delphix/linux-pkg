@@ -18,6 +18,7 @@
 
 DEFAULT_PACKAGE_GIT_URL="https://github.com/delphix/recovery-environment.git"
 DEFAULT_PACKAGE_VERSION=1.0.0
+PACKAGE_DEPENDENCIES="zfs"
 
 ZFS_DEB_PATH="$TOP/packages/zfs/tmp/artifacts"
 function prepare() {

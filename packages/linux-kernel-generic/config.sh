@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright 2019 Delphix
+# Copyright 2020 Delphix
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,25 +14,27 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+
 # shellcheck disable=SC2034
+DEFAULT_PACKAGE_GIT_URL="https://github.com/delphix/linux-kernel-generic.git"
 
-DEFAULT_PACKAGE_GIT_URL="https://github.com/delphix/makedumpfile.git"
-# Note: we get the package version programatically in our build() hook
-
-UPSTREAM_SOURCE_PACKAGE="makedumpfile"
+UPSTREAM_GIT_URL="https://git.launchpad.net/~ubuntu-kernel/ubuntu/+source/linux/+git/bionic"
+UPSTREAM_GIT_BRANCH="@PLACEHOLDER-WORKAROUND@"
 
 function prepare() {
-	logmust install_build_deps_from_control_file
+	kernel_prepare
 }
 
 function build() {
-	logmust cd "$WORKDIR/repo"
-	if [[ -z "$PACKAGE_VERSION" ]]; then
-		logmust eval PACKAGE_VERSION="1:$(grep '^VERSION=' Makefile | cut -d "=" -f 2)"
-	fi
-	logmust dpkg_buildpackage_default
+	#
+	# flavours=generic
+	#   By default the generic kernel variant from Canonical
+	#   builds both the generic and the low-latency kernel.
+	#   We don't care about the latter.
+	#
+	kernel_build "generic" "flavours=generic"
 }
 
 function update_upstream() {
-	logmust update_upstream_from_source_package
+	kernel_update_upstream "generic"
 }
