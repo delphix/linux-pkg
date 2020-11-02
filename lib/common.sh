@@ -990,6 +990,15 @@ function fetch_kernel_from_apt_for_version() {
 		"linux-tools-${kernel_version}"
 
 	#
+	# For the azure kernel, we also want to get the linux-cloud-tools
+	# package. Not that we cannot do this indiscriminately since some
+	# kernel flavors do not come with a linux-cloud-tools package.
+	#
+	if [[ "$kernel_version" == *azure ]]; then
+		logmust apt-get download "linux-cloud-tools-${kernel_version}"
+	fi
+
+	#
 	# Fetch direct dependencies of the downloaded debs. Some of those
 	# dependencies have a slightly different naming scheme than the other
 	# kernel packages.
