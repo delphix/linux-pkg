@@ -1004,12 +1004,12 @@ function fetch_kernel_from_apt_for_version() {
 	# kernel packages.
 	#
 	local deb dep deps
-	for deb in *.deb; do
+	for deb in *deb; do
 		deps=$(dpkg-deb -f "$deb" Depends | tr -d ' ' | tr ',' ' ') ||
 			die "failed to get dependencies for $deb"
 		for dep in $deps; do
 			case "$dep" in
-			*-headers-* | *-tools-*)
+			*-headers-* | *-tools-* | *-dbgsym)
 				logmust apt-get download "$dep"
 				;;
 			esac
