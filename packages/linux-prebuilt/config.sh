@@ -30,25 +30,25 @@ function _verify_kernel_version() {
 
 #
 # Note: the linux-prebuilt package was created explicitly for the Delphix
-# Appliance version 6.0.3.0. However, this fix could also apply to some later
+# Appliance version 6.0.5.0. However, this fix could also apply to some later
 # versions of the product as long as we keep the linux-package-mirror frozen.
 # See https://github.com/delphix/linux-pkg/pull/96 for more context.
 #
 # It goes into details for why we do this.
 #
 function fetch() {
-	local pkg_generic="linux-modules-5.3.0-53-generic_5.3.0-53.dx2_amd64.deb"
-	local kvers_generic="5.3.0-53-generic"
-	local pkg_aws="linux-modules-5.3.0-1019-aws_5.3.0-1019.dx2_amd64.deb"
-	local kvers_aws="5.3.0-1019-aws"
-	local pkg_azure="linux-modules-5.3.0-1022-azure_5.3.0-1022.dx2_amd64.deb"
-	local kvers_azure="5.3.0-1022-azure"
-	local pkg_gcp="linux-modules-5.3.0-1020-gcp_5.3.0-1020.dx2_amd64.deb"
-	local kvers_gcp="5.3.0-1020-gcp"
-	local pkg_oracle="linux-modules-5.3.0-1018-oracle_5.3.0-1018.dx2_amd64.deb"
-	local kvers_oracle="5.3.0-1018-oracle"
+	local pkg_generic="linux-modules-5.4.0-42-generic_5.4.0-42.dx1_amd64.deb"
+	local kvers_generic="5.4.0-42-generic"
+	local pkg_aws="linux-modules-5.3.0-1033-aws_5.3.0-1033.dx1_amd64.deb"
+	local kvers_aws="5.3.0-1033-aws"
+	local pkg_azure="linux-modules-5.3.0-1035-azure_5.3.0-1035.dx1_amd64.deb"
+	local kvers_azure="5.3.0-1035-azure"
+	local pkg_gcp="linux-modules-5.4.0-1021-gcp_5.4.0-1021.dx1_amd64.deb"
+	local kvers_gcp="5.4.0-1021-gcp"
+	local pkg_oracle="linux-modules-5.4.0-1021-oracle_5.4.0-1021.dx1_amd64.deb"
+	local kvers_oracle="5.4.0-1021-oracle"
 	local url="http://artifactory.delphix.com/artifactory"
-	url="$url/linux-pkg/linux-prebuilt/6.0.3.0/dx2"
+	url="$url/linux-pkg/linux-prebuilt/6.0.5.0/dx1"
 
 	logmust cd "$WORKDIR/artifacts"
 
