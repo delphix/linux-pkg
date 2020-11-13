@@ -857,19 +857,17 @@ function merge_with_upstream_default() {
 # provided in env.
 #
 function check_git_credentials_set() {
-	if [[ -z "$PUSH_GIT_USER" ]] || [[ -z "$PUSH_GIT_PASSWORD" ]]; then
+	if [[ -z "$PUSH_GIT_TOKEN" ]] && [[ -z "$PUSH_GIT_USER" || -z "$PUSH_GIT_PASSWORD" ]]; then
 		if [[ -t 1 ]]; then
 			if [[ "$DRYRUN" == "false" ]]; then
 				echo_bold "WARNING: this is NOT a dry-run, you are pushing to" \
 					"a production branch"
 			fi
-			echo "Please enter git credentials to push to remote ($DEFAULT_PACKAGE_GIT_URL)."
-			read -r -p "Username: " PUSH_GIT_USER
-			read -r -s -p "Password: " PUSH_GIT_PASSWORD
-			export PUSH_GIT_USER
-			export PUSH_GIT_PASSWORD
+			echo "Please enter git token to push to remote ($DEFAULT_PACKAGE_GIT_URL)."
+			read -r -s -p "Token: " PUSH_GIT_TOKEN
+			export PUSH_GIT_TOKEN
 		else
-			die "PUSH_GIT_USER and PUSH_GIT_PASSWORD must be set."
+			die "PUSH_GIT_TOKEN or PUSH_GIT_USER & PUSH_GIT_PASSWORD must be set."
 		fi
 	fi
 }
@@ -888,9 +886,20 @@ function push_to_remote() {
 
 	logmust check_git_credentials_set
 
-	check_env DEFAULT_PACKAGE_GIT_URL PUSH_GIT_USER PUSH_GIT_PASSWORD
-	local git_url_with_creds="${DEFAULT_PACKAGE_GIT_URL/https:\/\//https:\/\/${PUSH_GIT_USER}:${PUSH_GIT_PASSWORD}@}"
-	local git_url_with_fake_creds="${DEFAULT_PACKAGE_GIT_URL/https:\/\//https:\/\/${PUSH_GIT_USER}:<redacted>@}"
+	check_env DEFAULT_PACKAGE_GIT_URL
+
+	local git_url_with_creds
+	local git_url_with_fake_creds
+
+	if [[ -n "$PUSH_GIT_TOKEN" ]]; then
+		git_url_with_creds="${DEFAULT_PACKAGE_GIT_URL/https:\/\//https:\/\/${PUSH_GIT_TOKEN}@}"
+		git_url_with_fake_creds="${DEFAULT_PACKAGE_GIT_URL/https:\/\//https:\/\/${PUSH_GIT_TOKEN:0:4}******@}"
+	elif [[ -n "$PUSH_GIT_USER" && -n "$PUSH_GIT_PASSWORD" ]]; then
+		git_url_with_creds="${DEFAULT_PACKAGE_GIT_URL/https:\/\//https:\/\/${PUSH_GIT_USER}:${PUSH_GIT_PASSWORD}@}"
+		git_url_with_fake_creds="${DEFAULT_PACKAGE_GIT_URL/https:\/\//https:\/\/${PUSH_GIT_USER}:******@}"
+	else
+		die "Either PUSH_GIT_TOKEN or PUSH_GIT_USER & PUSH_GIT_PASSWORD must be provided"
+	fi
 
 	logmust cd "$WORKDIR/repo"
 	check_git_ref "$local_ref"
