@@ -21,6 +21,7 @@ export DEBIAN_FRONTEND=noninteractive
 
 # TODO: allow updating upstream for other branches than master
 export REPO_UPSTREAM_BRANCH="upstreams/master"
+export SUPPORTED_KERNEL_FLAVORS="generic aws gcp azure oracle"
 
 export UBUNTU_DISTRIBUTION="bionic"
 
@@ -221,12 +222,14 @@ function reset_package_config_variables() {
 	DEFAULT_PACKAGE_GIT_BRANCH
 	DEFAULT_PACKAGE_GIT_VERSION
 	DEFAULT_PACKAGE_GIT_REVISION
+	PACKAGE_DEPENDENCIES
 	UPSTREAM_SOURCE_PACKAGE
 	UPSTREAM_GIT_URL
 	UPSTREAM_GIT_BRANCH
 	WORKDIR
 	PKGDIR
 	PACKAGE_PREFIX
+	SKIP_COPYRIGHTS_CHECK
 	"
 
 	for var in $vars; do
@@ -299,6 +302,24 @@ function load_package_config() {
 		[[ "$DEFAULT_PACKAGE_GIT_URL" == "none" ]] ||
 		die "$PACKAGE: DEFAULT_PACKAGE_GIT_URL must begin with " \
 			"https:// or be set to 'none'"
+
+	local dependency
+	local deps_array=()
+	for dependency in $PACKAGE_DEPENDENCIES; do
+		#
+		# Check for special value @linux-kernel which resolves to
+		# all flavors of linux kernel packages.
+		#
+		if [[ $dependency == '@linux-kernel' ]]; then
+			logmust list_linux_kernel_packages
+			deps_array+=("${_RET_LIST[@]}")
+			continue
+		fi
+		(check_package_exists "$dependency") ||
+			die "Invalid package dependency '$dependency'"
+		deps_array+=("$dependency")
+	done
+	PACKAGE_DEPENDENCIES="${deps_array[*]}"
 
 	#
 	# Check for variables related to update_upstream() hook
@@ -499,6 +520,32 @@ function get_package_list_file() {
 		done
 		die
 	fi
+}
+
+#
+# List all target kernel packages. By default, it returns all the kernel
+# flavors supported and built by linux-pkg, however this can be overridden
+# via TARGET_KERNEL_FLAVORS, which can be useful when testing changes against
+# a specific, or even mainline kernel.
+#
+function list_linux_kernel_packages() {
+	local kernel
+
+	_RET_LIST=()
+	if [[ -n "$TARGET_KERNEL_FLAVORS" ]]; then
+		for kernel in $TARGET_KERNEL_FLAVORS; do
+			(check_package_exists "linux-kernel-$kernel") ||
+				die "Invalid entry '$kernel' in TARGET_KERNEL_FLAVORS"
+			_RET_LIST+=("linux-kernel-$kernel")
+		done
+	else
+		for kernel in $SUPPORTED_KERNEL_FLAVORS; do
+			check_package_exists "linux-kernel-$kernel"
+			_RET_LIST+=("linux-kernel-$kernel")
+		done
+	fi
+
+	return 0
 }
 
 function install_shfmt() {

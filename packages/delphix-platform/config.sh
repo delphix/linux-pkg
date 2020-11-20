@@ -19,12 +19,6 @@
 DEFAULT_PACKAGE_GIT_URL="https://github.com/delphix/delphix-platform.git"
 DEFAULT_PACKAGE_VERSION="1.0.0"
 
-function checkstyle() {
-	logmust cd "$WORKDIR/repo"
-	logmust ansible-playbook bootstrap/playbook.yml
-	logmust ./scripts/docker-run.sh make check
-}
-
 function build() {
 	logmust cd "$WORKDIR/repo"
 	logmust ansible-playbook bootstrap/playbook.yml

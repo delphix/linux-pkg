@@ -30,12 +30,21 @@ read -r -a fields <<<"$(./query-packages.sh single -o git-url zfs 2>&1)"
 test ${#fields[@]} -eq 1
 test "${fields[0]}" == 'https://github.com/delphix/zfs.git'
 
+# Expect: "bpftrace	bcc	true	https://github.com/delphix/bpftrace.git"
+read -r -a fields <<<"$(./query-packages.sh single -o name,dependencies,can-update,git-url bpftrace 2>&1)"
+test ${#fields[@]} -eq 4
+test "${fields[0]}" == 'bpftrace'
+test "${fields[1]}" == 'bcc'
+test "${fields[2]}" == 'true'
+test "${fields[3]}" == 'https://github.com/delphix/bpftrace.git'
+
 # Expect that "list all" outputs all directory names under packages/
 diff <(ls -1 packages | sort) <(./query-packages.sh list all 2>&1 | sort)
 
-# Expect that outputing git-url for all packages works and that the output
+# Expect that outputing dependencies & git-url for all packages works and that the output
 # length corresponds to the number of packages.
-test "$(ls -1 packages | wc -l)" -eq "$(./query-packages.sh list -o name,git-url all 2>&1 | wc -l)"
+test "$(ls -1 packages | wc -l)" -eq \
+	"$(./query-packages.sh list -o name,dependencies,can-update,git-url all 2>&1 | wc -l)"
 
 # Check that all package lists under package-lists\ can be loaded and that each
 # line of the output of the command actually refers to a package.
@@ -47,8 +56,24 @@ find package-lists -name '*.pkgs' | while read -r list; do
 	) >/dev/null
 done
 
-# Check that querying "appliance" list works
+# Check that querying the built-in "appliance" list works
 ./query-packages.sh list appliance >/dev/null
+
+# Check that querying lists used by the Delphix build works.
+./query-packages.sh list build/main.pkgs >/dev/null
+./query-packages.sh list build/kernel-modules.pkgs >/dev/null
+./query-packages.sh list linux-kernel >/dev/null
+./query-packages.sh list update/main.pkgs >/dev/null
+
+# Check that overriding TARGET_KERNEL_FLAVORS changes which kernel packages are
+# returned.
+test "$(./query-packages.sh list linux-kernel | wc -l | awk '{print $1}')" -gt 1
+test "$(TARGET_KERNEL_FLAVORS=generic ./query-packages.sh list linux-kernel)" == "linux-kernel-generic"
+
+# Check that when a package has multiple dependencies they are printed in the
+# expected format.
+test "$(TARGET_KERNEL_FLAVORS="generic aws" ./query-packages.sh single -o dependencies zfs)" == \
+	"linux-kernel-generic,linux-kernel-aws"
 
 # Check that the output from the appliance list contains zfs and
 # delphix-platform packages. Note, we explicitly do not use grep -q here as it

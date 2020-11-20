@@ -18,6 +18,7 @@
 # shellcheck disable=SC2034
 DEFAULT_PACKAGE_GIT_URL="https://github.com/delphix/drgn.git"
 DEFAULT_PACKAGE_VERSION=1.0.0
+PACKAGE_DEPENDENCIES="libkdumpfile"
 
 UPSTREAM_GIT_URL="https://github.com/osandov/drgn.git"
 UPSTREAM_GIT_BRANCH="master"
