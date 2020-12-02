@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright 2019 Delphix
+# Copyright 2019, 2020 Delphix
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -32,11 +32,6 @@ function build() {
 	fi
 
 	logmust dpkg_buildpackage_default
-
-	# java-package supporting adoptopenjdk needs to be installed to
-	# create jdk debian package from jdk tarball when building adoptopenjdk
-	# package
-	logmust install_pkgs "$WORKDIR/artifacts"/*.deb
 }
 
 function update_upstream() {

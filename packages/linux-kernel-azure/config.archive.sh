@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright 2018, 2019 Delphix
+# Copyright 2020 Delphix
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -16,28 +16,13 @@
 #
 # shellcheck disable=SC2034
 
-DEFAULT_PACKAGE_GIT_URL="https://github.com/delphix/cloud-init.git"
-# Note: we get the package version programatically in build()
+DEFAULT_PACKAGE_GIT_URL="none"
 
-UPSTREAM_SOURCE_PACKAGE=cloud-init
-
-function prepare() {
-	logmust install_build_deps_from_control_file
-}
-
-function checkstyle() {
-	logmust cd "$WORKDIR/repo"
-	logmust make style-check
+function fetch() {
+	# Nothing to do
+	return
 }
 
 function build() {
-	logmust cd "$WORKDIR/repo"
-	if [[ -z "$PACKAGE_VERSION" ]]; then
-		logmust eval PACKAGE_VERSION="$(python3 tools/read-version)"
-	fi
-	logmust dpkg_buildpackage_default
-}
-
-function update_upstream() {
-	logmust update_upstream_from_source_package
+	logmust fetch_kernel_from_apt_for_platform "azure"
 }

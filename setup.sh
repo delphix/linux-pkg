@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright 2018 Delphix
+# Copyright 2018, 2020 Delphix
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -25,17 +25,27 @@ logmust determine_default_git_branch
 # mirror url is passed in, then the latest mirror snapshot is used.
 #
 configure_apt_sources() {
-	local package_mirror_url=''
-	if [[ -n "$DELPHIX_PACKAGE_MIRROR_MAIN" ]]; then
-		package_mirror_url="$DELPHIX_PACKAGE_MIRROR_MAIN"
-	else
+	local package_mirror_url
+	local primary_url="$DELPHIX_PACKAGE_MIRROR_MAIN"
+	local secondary_url="$DELPHIX_PACKAGE_MIRROR_SECONDARY"
+
+	if [[ -z "$primary_url" ]] || [[ -z "$secondary_url" ]]; then
 		local latest_url="http://linux-package-mirror.delphix.com/"
 		latest_url+="${DEFAULT_GIT_BRANCH}/latest/"
 		package_mirror_url=$(curl -LfSs -o /dev/null -w '%{url_effective}' \
 			"$latest_url" || die "Could not curl $latest_url")
-
-		package_mirror_url+="ubuntu"
+		# Remove trailing slash, if present.
+		package_mirror_url="${package_mirror_url%/}"
+		[[ -z "$primary_url" ]] && primary_url="${package_mirror_url}/ubuntu"
+		[[ -z "$secondary_url" ]] && secondary_url="${package_mirror_url}/ppas"
 	fi
+
+	#
+	# Store the package mirror in a file so that it can be added to a
+	# package build's metadata via store_build_info().
+	#
+	echo "$primary_url" >"$TOP/PACKAGE_MIRROR_URL_MAIN"
+	echo "$secondary_url" >"$TOP/PACKAGE_MIRROR_URL_SECONDARY"
 
 	#
 	# Remove other sources in sources.list.d if they are present.
@@ -46,18 +56,23 @@ configure_apt_sources() {
 	)
 
 	sudo bash -c "cat <<-EOF >/etc/apt/sources.list
-deb ${package_mirror_url} ${UBUNTU_DISTRIBUTION} main restricted universe multiverse
-deb-src ${package_mirror_url} ${UBUNTU_DISTRIBUTION} main restricted universe multiverse
+		deb ${primary_url} ${UBUNTU_DISTRIBUTION} main restricted universe multiverse
+		deb-src ${primary_url} ${UBUNTU_DISTRIBUTION} main restricted universe multiverse
 
-deb ${package_mirror_url} ${UBUNTU_DISTRIBUTION}-updates main restricted universe multiverse
-deb-src ${package_mirror_url} ${UBUNTU_DISTRIBUTION}-updates main restricted universe multiverse
+		deb ${primary_url} ${UBUNTU_DISTRIBUTION}-updates main restricted universe multiverse
+		deb-src ${primary_url} ${UBUNTU_DISTRIBUTION}-updates main restricted universe multiverse
 
-deb ${package_mirror_url} ${UBUNTU_DISTRIBUTION}-security main restricted universe multiverse
-deb-src ${package_mirror_url} ${UBUNTU_DISTRIBUTION}-security main restricted universe multiverse
+		deb ${primary_url} ${UBUNTU_DISTRIBUTION}-security main restricted universe multiverse
+		deb-src ${primary_url} ${UBUNTU_DISTRIBUTION}-security main restricted universe multiverse
 
-deb ${package_mirror_url} ${UBUNTU_DISTRIBUTION}-backports main restricted universe multiverse
-deb-src ${package_mirror_url} ${UBUNTU_DISTRIBUTION}-backports main restricted universe multiverse
-EOF" || die "/etc/apt/sources.list could not be updated"
+		deb ${primary_url} ${UBUNTU_DISTRIBUTION}-backports main restricted universe multiverse
+		deb-src ${primary_url} ${UBUNTU_DISTRIBUTION}-backports main restricted universe multiverse
+
+		deb ${secondary_url} ${UBUNTU_DISTRIBUTION} main multiverse universe
+		deb ${secondary_url} ${UBUNTU_DISTRIBUTION}-updates main multiverse universe
+		EOF" || die "/etc/apt/sources.list could not be updated"
+
+	logmust sudo apt-key add "$TOP/resources/delphix-secondary-mirror.key"
 }
 
 logmust check_running_system

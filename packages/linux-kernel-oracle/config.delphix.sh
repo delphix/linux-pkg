@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright 2018, 2019 Delphix
+# Copyright 2020 Delphix
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,30 +14,31 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+
 # shellcheck disable=SC2034
+DEFAULT_PACKAGE_GIT_URL="https://github.com/delphix/linux-kernel-oracle.git"
 
-DEFAULT_PACKAGE_GIT_URL="https://github.com/delphix/cloud-init.git"
-# Note: we get the package version programatically in build()
+UPSTREAM_GIT_URL="https://git.launchpad.net/~canonical-kernel/ubuntu/+source/linux-oracle/+git/bionic"
+# Note: UPSTREAM_GIT_BRANCH is not used here
+UPSTREAM_GIT_BRANCH="none"
 
-UPSTREAM_SOURCE_PACKAGE=cloud-init
+#
+# Force push required when syncing with upstream because we perform a rebase.
+#
+FORCE_PUSH_ON_UPDATE=true
 
 function prepare() {
-	logmust install_build_deps_from_control_file
-}
-
-function checkstyle() {
-	logmust cd "$WORKDIR/repo"
-	logmust make style-check
+	logmust kernel_prepare
 }
 
 function build() {
-	logmust cd "$WORKDIR/repo"
-	if [[ -z "$PACKAGE_VERSION" ]]; then
-		logmust eval PACKAGE_VERSION="$(python3 tools/read-version)"
-	fi
-	logmust dpkg_buildpackage_default
+	logmust kernel_build "oracle"
 }
 
 function update_upstream() {
-	logmust update_upstream_from_source_package
+	logmust kernel_update_upstream "oracle"
+}
+
+function merge_with_upstream() {
+	logmust kernel_merge_with_upstream
 }

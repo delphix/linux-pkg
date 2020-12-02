@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright 2018 Delphix
+# Copyright 2018, 2020 Delphix
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -32,9 +32,6 @@ function build() {
 	PACKAGE_VERSION=$(dpkg-parsechangelog | sed -rne 's,^Version: (.*),\1,p')
 
 	logmust dpkg_buildpackage_default
-
-	# Install libbcc which is required to build bpftrace
-	logmust install_pkgs "$WORKDIR/artifacts"/libbcc_*.deb
 }
 
 function update_upstream() {
