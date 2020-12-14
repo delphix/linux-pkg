@@ -254,7 +254,9 @@ of some of the scripts defined above.
 
 * **DEFAULT_GIT_BRANCH**: The product branch that is being built or updated is
   typically stored in the file `branch.config`, however it can be overridden via
-  DEFAULT_GIT_BRANCH. The product branch is used in multiple instances. When
+  DEFAULT_GIT_BRANCH. It can either be set to a development branch, such as
+  "master" or "6.0/stage", or a release tag, such as "release/6.0.6.0".
+  The product branch is used in multiple instances. When
   running [setup.sh](#setupsh), it will determine what linux-package-mirror
   link to use when fetching packages from apt (although those links can be
   overridden via DELPHIX_PACKAGE_MIRROR_MAIN and
@@ -308,6 +310,14 @@ of some of the scripts defined above.
   sub-directory you can instruct linux-pkg to fetch artifacts of build
   dependencies produced by the developer Jenkins instance instead of the
   production one.
+
+* **DEPENDENCIES_BASE_URL**: When fetching artifacts from other linux-pkg
+  packages that are marked as dependencies of a package, we look for a
+  specific s3 path based on what product branch or version we are building for,
+  which is defined by DEFAULT_GIT_BRANCH. If DEPENDENCIES_BASE_URL is left
+  unset, then the path will be determined automatically. DEPENDENCIES_BASE_URL
+  is most useful when set to the input-artifacts of a previous appliance-build
+  run, i.e. "s3://.../input-artifacts/combined-packages/packages".
 
 ## Package Definition
 

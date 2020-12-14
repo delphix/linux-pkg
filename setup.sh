@@ -31,11 +31,15 @@ configure_apt_sources() {
 
 	if [[ -z "$primary_url" ]] || [[ -z "$secondary_url" ]]; then
 		local latest_url="http://linux-package-mirror.delphix.com/"
-		latest_url+="${DEFAULT_GIT_BRANCH}/latest/"
-		package_mirror_url=$(curl -LfSs -o /dev/null -w '%{url_effective}' \
-			"$latest_url" || die "Could not curl $latest_url")
-		# Remove trailing slash, if present.
-		package_mirror_url="${package_mirror_url%/}"
+		if is_release_branch; then
+			package_mirror_url="${latest_url}${DEFAULT_GIT_BRANCH}"
+		else
+			latest_url+="${DEFAULT_GIT_BRANCH}/latest/"
+			package_mirror_url=$(curl -LfSs -o /dev/null -w '%{url_effective}' \
+				"$latest_url" || die "Could not curl $latest_url")
+			# Remove trailing slash, if present.
+			package_mirror_url="${package_mirror_url%/}"
+		fi
 		[[ -z "$primary_url" ]] && primary_url="${package_mirror_url}/ubuntu"
 		[[ -z "$secondary_url" ]] && secondary_url="${package_mirror_url}/ppas"
 	fi
