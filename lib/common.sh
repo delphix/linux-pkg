@@ -26,7 +26,6 @@ export SUPPORTED_KERNEL_FLAVORS="generic aws gcp azure oracle"
 # for testing purposes to use jenkins-ops.<developer> instead.
 #
 export JENKINS_OPS_DIR="${JENKINS_OPS_DIR:-jenkins-ops}"
-export _BASE_S3_URL="s3://snapshot-de-images/builds/${JENKINS_OPS_DIR}/devops-gate/master"
 
 export UBUNTU_DISTRIBUTION="bionic"
 
@@ -142,6 +141,11 @@ function determine_default_git_branch() {
 		"$DEFAULT_GIT_BRANCH set in branch.config."
 
 	export DEFAULT_GIT_BRANCH
+}
+
+function is_release_branch() {
+	check_env DEFAULT_GIT_BRANCH
+	[[ "$DEFAULT_GIT_BRANCH" == release/* ]]
 }
 
 function check_package_exists() {
@@ -608,6 +612,69 @@ function default_revision() {
 	echo "delphix-$(date '+%Y.%m.%d.%H')"
 }
 
+function determine_dependencies_base_url() {
+	[[ -n "$DEPENDENCIES_BASE_URL" ]] && return
+
+	check_env DEFAULT_GIT_BRANCH
+
+	#
+	# The location of package artifacts depends on whether a release tag
+	# or a development branch is being built.
+	#
+	if is_release_branch; then
+		local version="${DEFAULT_GIT_BRANCH#release/}"
+		local url="s3://release-de-images/internal-artifacts/$version"
+		local suv
+		suv="$(aws s3 ls "$url/" | awk '{print $2}' | tr -d '/' | sort -V | tail -n 1)"
+		[[ -n "$suv" ]] || die "No artifacts found at $url"
+		DEPENDENCIES_BASE_URL="$url/$suv/input-artifacts/combined-packages/packages"
+	else
+		DEPENDENCIES_BASE_URL="s3://snapshot-de-images/builds/$JENKINS_OPS_DIR/devops-gate/master/linux-pkg/$DEFAULT_GIT_BRANCH/build-package"
+	fi
+
+	#
+	# Make sure the dependencies directory actually exists
+	#
+	logmust aws s3 ls "$DEPENDENCIES_BASE_URL"
+
+	export DEPENDENCIES_BASE_URL
+}
+
+function get_package_dependency_s3_url() {
+	local dep="$1"
+
+	logmust determine_dependencies_base_url
+
+	#
+	# The base url can be either pointing to:
+	# 1. Input artifacts from a previously built Delphix Appliance, or
+	# 2. A build-package/<package> directory that stores many builds of the
+	#    same package and a "latest" link that points to the latest build
+	#    for that package.
+	# In case 1 the artifacts are right there under the base url, whereas
+	# in case 2 we first need to dereference the "latest" link.
+	#
+	# The user can provide their own DEPENDENCIES_BASE_URL based on a
+	# previous Delphix Appliance build or have it determined automatically
+	# by determine_dependencies_base_url() based on the product branch
+	# being built.
+	#
+	if [[ "$DEPENDENCIES_BASE_URL" == */build-package ]]; then
+		local s3url="$DEPENDENCIES_BASE_URL/$dep/post-push"
+		(logmust aws s3 cp --only-show-errors "$s3url/latest" .) ||
+			die "Artifacts for dependency '$dep' missing." \
+				"Dependency must be built first."
+		logmust cat latest
+		local bucket="${DEPENDENCIES_BASE_URL#s3://}"
+		bucket=${bucket%%/*}
+		s3url="s3://$bucket/$(cat latest)"
+		logmust rm latest
+		_RET="$s3url"
+	else
+		_RET="$DEPENDENCIES_BASE_URL/$dep"
+	fi
+}
+
 #
 # Fetch artifacts from S3 for all packages listed in PACKAGE_DEPENDENCIES which
 # is defined in the package's config.
@@ -622,11 +689,6 @@ function fetch_dependencies() {
 		return
 	fi
 
-	local base_url="$_BASE_S3_URL/linux-pkg/$DEFAULT_GIT_BRANCH/build-package"
-
-	local bucket="${_BASE_S3_URL#s3://}"
-	bucket=${bucket%%/*}
-
 	local dep s3urlvar s3url
 	for dep in $PACKAGE_DEPENDENCIES; do
 		echo "Fetching artifacts for dependency '$dep' ..."
@@ -638,13 +700,8 @@ function fetch_dependencies() {
 				"externally"
 			echo "$s3urlvar=$s3url"
 		else
-			s3url="$base_url/$dep/post-push"
-			(logmust aws s3 cp --only-show-errors "$s3url/latest" .) ||
-				die "Artifacts for dependency '$dep' missing." \
-					"Dependency must be built first."
-			logmust cat latest
-			s3url="s3://$bucket/$(cat latest)"
-			logmust rm latest
+			logmust get_package_dependency_s3_url "$dep"
+			s3url="$_RET"
 		fi
 		[[ "$s3url" != */ ]] && s3url="$s3url/"
 		logmust mkdir "$dep"
