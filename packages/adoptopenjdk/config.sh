@@ -19,8 +19,9 @@
 DEFAULT_PACKAGE_GIT_URL=none
 PACKAGE_DEPENDENCIES="make-jpkg"
 
-tarfile="OpenJDK8U-jdk_x64_linux_hotspot_8u262b10.tar.gz"
-jdk_path="/usr/lib/jvm/adoptopenjdk-java8-jdk-amd64"
+_tarfile="OpenJDK8U-jdk_x64_linux_hotspot_8u262b10.tar.gz"
+_tarfile_sha256="733755fd649fad6ae91fc083f7e5a5a0b56410fb6ac1815cff29f744b128b1b1"
+_jdk_path="/usr/lib/jvm/adoptopenjdk-java8-jdk-amd64"
 
 function prepare() {
 	logmust install_pkgs "$DEPDIR"/make-jpkg/*.deb
@@ -29,15 +30,15 @@ function prepare() {
 function fetch() {
 	logmust cd "$WORKDIR/"
 
-	local url="http://artifactory.delphix.com/artifactory"
+	local url="http://artifactory.delphix.com/artifactory/java-binaries/linux/jdk/8/$_tarfile"
 
-	logmust wget -nv "$url/java-binaries/linux/jdk/8/$tarfile" -O "$tarfile"
+	logmust fetch_file_from_artifactory "$url" "$_tarfile_sha256"
 }
 
 function build() {
 	logmust cd "$WORKDIR/"
 
-	logmust env DEB_BUILD_OPTIONS=nostrip fakeroot make-jpkg "$tarfile" <<<y
+	logmust env DEB_BUILD_OPTIONS=nostrip fakeroot make-jpkg "$_tarfile" <<<y
 
 	logmust mv ./*deb "$WORKDIR/artifacts/"
 	#
@@ -49,7 +50,7 @@ function build() {
 	# packages, such as the app-gate, decide to fetch and install Java from
 	# the Linux-pkg bundle.
 	#
-	logmust bash -c "echo $jdk_path >'$WORKDIR/artifacts/JDK_PATH'"
+	logmust bash -c "echo $_jdk_path >'$WORKDIR/artifacts/JDK_PATH'"
 
-	echo "Tar file: $tarfile" >"$WORKDIR/artifacts/BUILD_INFO"
+	echo "Tar file: $_tarfile" >"$WORKDIR/artifacts/BUILD_INFO"
 }

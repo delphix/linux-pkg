@@ -1116,7 +1116,26 @@ function fetch_kernel_from_artifactory() {
 	url="$url/linux-pkg/linux-prebuilt/${artifactory_deb}"
 
 	logmust cd "$WORKDIR/artifacts"
-	logmust wget -nv "$url"
+	fetch_file_from_artifactory "$url"
+}
+
+function fetch_file_from_artifactory() {
+	local url="$1"
+	local sha256_expected="$2"
+	local file sha256_actual
+
+	[[ -n "$url" ]] || die "url argument is missing."
+	file="$(basename "$url")"
+
+	logmust wget -nv "$url" -O "$file"
+
+	if [[ -n "$sha256_expected" ]]; then
+		sha256_actual="$(sha256sum "$file" | awk '{print $1}')"
+		if [[ "$sha256_expected" != "$sha256_actual" ]]; then
+			die "SHA256 mismatch. Expected: $sha256_expected," \
+				"Actual: $sha256_actual"
+		fi
+	fi
 }
 
 #
