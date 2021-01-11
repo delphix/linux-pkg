@@ -220,24 +220,24 @@ function kernel_update_upstream() {
 	# Note that "generic" (used mainly ESX) is a special
 	# case as we are currently using the HWE kernel image.
 	#
-	local tag_prefix
+	local tag_prefix_flavour
 	if [[ "${platform}" == generic ]] &&
 		[[ "$UBUNTU_DISTRIBUTION" == bionic ]]; then
-		tag_prefix="Ubuntu-hwe-${kernel_version}-${abinum}"
+		tag_prefix_flavour="Ubuntu-hwe"
 	elif [[ "${platform}" == aws ]] ||
 		[[ "${platform}" == azure ]] ||
 		[[ "${platform}" == gcp ]] ||
 		[[ "${platform}" == oracle ]]; then
-
-		local kvers_major kvers_minor short_kvers
-		kvers_major=$(echo "${kernel_version}" | cut -d '.' -f 1)
-		kvers_minor=$(echo "${kernel_version}" | cut -d '.' -f 2)
-		short_kvers="${kvers_major}.${kvers_minor}"
-
-		tag_prefix="Ubuntu-${platform}-${short_kvers}-${kernel_version}-${abinum}"
+		tag_prefix_flavour="Ubuntu-${platform}"
 	else
 		die "assertion: unexpected platform: ${platform}"
 	fi
+
+	local tag_prefix kvers_major kvers_minor short_kvers
+	kvers_major=$(echo "${kernel_version}" | cut -d '.' -f 1)
+	kvers_minor=$(echo "${kernel_version}" | cut -d '.' -f 2)
+	short_kvers="${kvers_major}.${kvers_minor}"
+	tag_prefix="${tag_prefix_flavour}-${short_kvers}-${kernel_version}-${abinum}"
 	echo "note: upstream tag prefix used: ${tag_prefix}"
 
 	#
