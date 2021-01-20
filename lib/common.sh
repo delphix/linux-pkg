@@ -35,7 +35,7 @@ export UBUNTU_DISTRIBUTION="bionic"
 #  2. "archive": dowloading from apt
 #  3. "prebuilt": pre-built kernel stored in artifactory
 #
-export DEFAULT_LINUX_KERNEL_PACKAGE_SOURCE="archive"
+export DEFAULT_LINUX_KERNEL_PACKAGE_SOURCE="delphix"
 
 # shellcheck disable=SC2086
 function enable_colors() {
