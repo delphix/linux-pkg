@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright 2019 Delphix
+# Copyright 2019, 2020 Delphix
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@
 
 DEFAULT_PACKAGE_GIT_URL="https://github.com/delphix/zfs.git"
 DEFAULT_PACKAGE_VERSION="0.8.0"
+PACKAGE_DEPENDENCIES="@linux-kernel"
 
 UPSTREAM_GIT_URL="https://github.com/zfsonlinux/zfs.git"
 UPSTREAM_GIT_BRANCH="master"
@@ -162,9 +163,6 @@ function build() {
 	done
 	logmust cd "$WORKDIR"
 	logmust mv "all-packages/"*.deb "artifacts/"
-
-	# Install libzfs which is required to build grub
-	logmust install_pkgs "$WORKDIR/artifacts"/{libnvpair1linux,libuutil1linux,libzfs2linux,libzpool2linux,libzfslinux-dev}_*.deb
 }
 
 function update_upstream() {

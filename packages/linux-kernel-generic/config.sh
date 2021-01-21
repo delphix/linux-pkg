@@ -14,18 +14,20 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-# shellcheck disable=SC2034
 
-DEFAULT_PACKAGE_GIT_URL="https://github.com/delphix/recovery-environment.git"
-DEFAULT_PACKAGE_VERSION=1.0.0
-PACKAGE_DEPENDENCIES="zfs"
+#
+# We currently support getting the linux kernel from 3 different sources:
+#  1. Building it from code: see config.delphix.sh
+#  2. Dowloading from apt: see config.archive.sh
+#  3. Pre-built kernel stored in artifactory: see config.prebuilt.sh
+#
 
-function prepare() {
-	logmust install_build_deps_from_control_file
-	logmust mkdir "$WORKDIR/repo/external-debs/"
-	logmust cp "$DEPDIR/zfs/"*.deb "$WORKDIR/repo/external-debs/"
-}
-
-function build() {
-	logmust dpkg_buildpackage_default
-}
+linux_package_source="${LINUX_KERNEL_PACKAGE_SOURCE:-$DEFAULT_LINUX_KERNEL_PACKAGE_SOURCE}"
+case "$linux_package_source" in
+delphix | archive | prebuilt)
+	logmust source "${BASH_SOURCE%/*}/config.${linux_package_source}.sh"
+	;;
+default)
+	die "invalid linux-kernel package source '$linux_package_source'"
+	;;
+esac

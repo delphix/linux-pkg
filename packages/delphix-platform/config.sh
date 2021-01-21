@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright 2018 Delphix
+# Copyright 2018, 2020 Delphix
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -18,12 +18,6 @@
 
 DEFAULT_PACKAGE_GIT_URL="https://github.com/delphix/delphix-platform.git"
 DEFAULT_PACKAGE_VERSION="1.0.0"
-
-function checkstyle() {
-	logmust cd "$WORKDIR/repo"
-	logmust ansible-playbook bootstrap/playbook.yml
-	logmust ./scripts/docker-run.sh make check
-}
 
 function build() {
 	logmust cd "$WORKDIR/repo"

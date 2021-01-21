@@ -45,13 +45,6 @@ function build() {
 	# the Linux-pkg bundle.
 	#
 	logmust bash -c "echo $jdk_path >'$WORKDIR/artifacts/JDK_PATH'"
-	#
-	# Install the Java package on this system so that other linux-pkg
-	# packages can use it.
-	#
-	logmust install_pkgs "$WORKDIR/artifacts/"*.deb
-}
 
-function store_build_info() {
-	echo "Tar file: $tarfile" >"$WORKDIR/build_info"
+	echo "Tar file: $tarfile" >"$WORKDIR/artifacts/BUILD_INFO"
 }

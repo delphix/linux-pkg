@@ -1,6 +1,6 @@
-#!/bin/bash -eu
+#!/bin/bash
 #
-# Copyright 2019 Delphix
+# Copyright 2020 Delphix
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,14 +14,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+# shellcheck disable=SC2034
 
-cd "$(dirname "${BASH_SOURCE[0]}")"
+DEFAULT_PACKAGE_GIT_URL="none"
 
-rm -rf lib
-rm -rf artifacts
-rm -f debian/control
-rm -f debian/changelog
-rm -rf debian/.debhelper/
-rm -rf debian/delphix-buildinfo*
-rm -f debian/files
-rm -f debian/debhelper-build-stamp
+function fetch() {
+	# Nothing to do
+	return
+}
+
+function build() {
+	logmust fetch_kernel_from_artifactory "5.4.0-1021-gcp" \
+		"6.0.5.0/dx1/linux-modules-5.4.0-1021-gcp_5.4.0-1021.dx1_amd64.deb"
+}

@@ -24,12 +24,7 @@
 default:
 	@echo 'This Makefile is only used for cleaning the repository and'
 	@echo 'running the style checks. To build packages, first run'
-	@echo './setup.sh, then run ./buildlist.sh <list> by passing the'
-	@echo 'appropriate package list. For instance to build the "userland"'
-	@echo 'package list, run:'
-	@echo '  ./setup.sh && ./buildlist.sh userland'
-	@echo 'You can also build a single package with:'
-	@echo '  ./setup.sh && ./buildpkg.sh <pkg>'
+	@echo './setup.sh, then run ./buildpkg.sh <package>.
 	@echo 'Refer to the README for more info.'
 
 clean:
@@ -37,7 +32,6 @@ clean:
 	@rm -rf artifacts
 	@rm -f *.buildinfo *.changes *.deb
 	@rm -rf update-status
-	@build-info-pkg/clean.sh
 
 shellcheck:
 	shellcheck --exclude=SC1090,SC1091 \

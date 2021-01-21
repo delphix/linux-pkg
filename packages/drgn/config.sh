@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright 2019 Delphix
+# Copyright 2019, 2020 Delphix
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@
 # shellcheck disable=SC2034
 DEFAULT_PACKAGE_GIT_URL="https://github.com/delphix/drgn.git"
 DEFAULT_PACKAGE_VERSION=1.0.0
+PACKAGE_DEPENDENCIES="libkdumpfile"
 
 UPSTREAM_GIT_URL="https://github.com/osandov/drgn.git"
 UPSTREAM_GIT_BRANCH="master"
@@ -28,11 +29,7 @@ function prepare() {
 	# drgn itself, but it is a hard requirement in our use-case as
 	# we do want to use drgn for kdump-compressed crash dumps.
 	#
-	if ! dpkg-query --show libkdumpfile >/dev/null 2>&1; then
-		echo_bold "libkdumpfile not installed. Building package 'libkdumpfile' first."
-		logmust "$TOP/buildpkg.sh" libkdumpfile
-	fi
-
+	logmust install_pkgs "$DEPDIR"/libkdumpfile/*.deb
 	logmust install_build_deps_from_control_file
 }
 

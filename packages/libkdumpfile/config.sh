@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright 2019 Delphix
+# Copyright 2019, 2020 Delphix
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -28,9 +28,6 @@ function prepare() {
 
 function build() {
 	logmust dpkg_buildpackage_default
-
-	# Install libkdumpfile, it's needed to build drgn
-	logmust install_pkgs "$WORKDIR/artifacts"/*.deb
 }
 
 function update_upstream() {

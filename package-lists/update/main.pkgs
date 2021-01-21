@@ -15,9 +15,13 @@ bpftrace
 cloud-init
 crash
 drgn
+grub2
 libkdumpfile
+makedumpfile
 nfs-utils
 python-rtslib-fb
 targetcli-fb
-td-agent
-grub2
+
+# Do not attempt to auto-update td-agent for now as breaking changes were
+# introduced upstream.
+#td-agent

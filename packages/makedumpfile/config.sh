@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright 2019 Delphix
+# Copyright 2019, 2020 Delphix
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -28,11 +28,9 @@ function prepare() {
 function build() {
 	logmust cd "$WORKDIR/repo"
 	if [[ -z "$PACKAGE_VERSION" ]]; then
-		logmust eval PACKAGE_VERSION="$(grep '^VERSION=' Makefile | cut -d "=" -f 2)"
+		logmust eval PACKAGE_VERSION="1:$(grep '^VERSION=' Makefile | cut -d "=" -f 2)"
 	fi
 	logmust dpkg_buildpackage_default
-	# we only need makedumpfile package
-	logmust rm -f "$WORKDIR/artifacts/"kdump-tools_*_amd64.deb
 }
 
 function update_upstream() {
