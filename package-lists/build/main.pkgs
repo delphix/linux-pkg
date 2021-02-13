@@ -12,6 +12,7 @@ crash-python
 crypt-blowfish
 delphix-platform
 delphix-sso-app
+docker-python-image
 drgn
 gdb-python
 grub2
