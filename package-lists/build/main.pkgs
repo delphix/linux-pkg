@@ -13,6 +13,7 @@ crypt-blowfish
 delphix-platform
 delphix-sso-app
 drgn
+docker-python-image
 gdb-python
 grub2
 libkdumpfile
