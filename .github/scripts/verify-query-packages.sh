@@ -63,7 +63,6 @@ done
 ./query-packages.sh list build/main.pkgs >/dev/null
 ./query-packages.sh list build/kernel-modules.pkgs >/dev/null
 ./query-packages.sh list linux-kernel >/dev/null
-./query-packages.sh list update/main.pkgs >/dev/null
 
 # Check that overriding TARGET_KERNEL_FLAVORS changes which kernel packages are
 # returned.
@@ -86,3 +85,5 @@ test "$(TARGET_KERNEL_FLAVORS="generic aws" ./query-packages.sh single -o depend
 # This redoes the "list all" test from above
 cd packages
 diff <(ls -1 | sort) <(../query-packages.sh list all 2>&1 | sort)
+
+echo "All tests passed"
