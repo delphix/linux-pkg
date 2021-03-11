@@ -18,6 +18,7 @@ grub2
 libkdumpfile
 make-jpkg
 makedumpfile
+masking
 nfs-utils
 performance-diagnostics
 ptools
