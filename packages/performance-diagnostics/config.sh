@@ -18,7 +18,6 @@
 #
 
 DEFAULT_PACKAGE_GIT_URL="https://github.com/delphix/performance-diagnostics.git"
-DEFAULT_PACKAGE_VERSION="1.0.0"
 
 function prepare() {
 	logmust install_build_deps_from_control_file
