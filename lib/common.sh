@@ -470,7 +470,7 @@ function install_pkgs() {
 		echo "Running: sudo env DEBIAN_FRONTEND=noninteractive " \
 			"apt-get install -y $*"
 		sudo env DEBIAN_FRONTEND=noninteractive apt-get install \
-			-y "$@" && return
+			-y --allow-downgrades "$@" && return
 		echo "apt-get install failed, retrying."
 		sleep 10
 	done
