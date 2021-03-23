@@ -468,9 +468,22 @@ function create_workdir() {
 function install_pkgs() {
 	for attempt in {1..3}; do
 		echo "Running: sudo env DEBIAN_FRONTEND=noninteractive " \
-			"apt-get install -y $*"
+			"apt-get install -y --allow-downgrades $*"
+
+		#
+		# We use the "--allow-downgrades" for the case of a
+		# package needing to install the "unzip" debian package
+		# that we build via the "misc-debs" linux-pkg package.
+		# The "misc-debs" based "unzip" package may have an
+		# older version than what's already installed on the
+		# system, so we need to "--allow-downgrades" in order to
+		# install that specific package; further, that specific
+		# package is required to build the "virtualization"
+		# debian packages.
+		#
 		sudo env DEBIAN_FRONTEND=noninteractive apt-get install \
 			-y --allow-downgrades "$@" && return
+
 		echo "apt-get install failed, retrying."
 		sleep 10
 	done
