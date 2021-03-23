@@ -89,7 +89,7 @@ function die() {
 }
 
 function logmust() {
-	echo Running: "$@"
+	[[ "$LOGGING" == "false" ]] || echo Running: "$@" >&2
 	"$@" || die "failed command '$*'"
 }
 
