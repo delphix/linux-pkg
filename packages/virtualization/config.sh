@@ -37,7 +37,8 @@ function prepare() {
 		libxcb-shm0 \
 		python-jira \
 		python-requests \
-		rsync
+		rsync \
+		virtualenv
 
 	logmust install_pkgs \
 		"$DEPDIR"/adoptopenjdk/*.deb \
