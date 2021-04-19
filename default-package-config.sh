@@ -61,7 +61,8 @@ function kernel_build() {
 	#       debian/rules command, the rightmost declaration
 	#       is the one that is actually used.
 	#
-	local debian_rules_extra_args="$2"
+	shift
+	local debian_rules_extra_args=("$@")
 
 	logmust cd "$WORKDIR/repo"
 
@@ -91,7 +92,7 @@ function kernel_build() {
 	#
 	local canonical_abinum delphix_abinum kernel_release kernel_version
 	canonical_abinum=$(fakeroot debian/rules printenv | grep -E '^abinum ' | cut -d= -f2 | tr -d '[:space:]')
-	delphix_abinum="dlpx-$(date -u +"%Y%m%dt%H%M%S")-$(git rev-parse --short HEAD)-${canonical_abinum}"
+	delphix_abinum="${canonical_abinum}-$(date -u +"dx%Y%m%d%H")-$(git rev-parse --short HEAD)"
 	kernel_release=$(fakeroot debian/rules printenv | grep -E '^release ' | cut -d= -f2 | tr -d '[:space:]')
 
 	#
@@ -113,20 +114,35 @@ function kernel_build() {
 	# disable_d_i=true
 	#   This prevents udeb packages from being built as they are
 	#   not consumed by the Delphix Appliance.
+	# do_dkms_*=false
+	#   This disables the build of various out-of-tree kernel modules
+	#   that we do not use in our product or that we provide separately.
 	#
-	local debian_rules_args="skipdbg=false uefi_signed=false disable_d_i=true flavours=$platform abinum=${delphix_abinum} ${debian_rules_extra_args}"
+	local debian_rules_args=(
+		"skipdbg=false"
+		"uefi_signed=false"
+		"disable_d_i=true"
+		"do_zfs=false"
+		"do_dkms_nvidia=false"
+		"do_dkms_nvidia_server=false"
+		"do_dkms_vbox=false"
+		"do_dkms_wireguard=false"
+		"flavours=$platform"
+		"abinum=${delphix_abinum}"
+	)
+	debian_rules_args+=("${debian_rules_extra_args[@]}")
 
 	#
 	# Clean up everything generated so far and recreate the
 	# final control file with the arguments that we want.
 	#
-	logmust fakeroot debian/rules clean ${debian_rules_args}
+	logmust fakeroot debian/rules clean "${debian_rules_args[@]}"
 
 	#
 	# Print the environment configuration solely for
 	# debugging purposes.
 	#
-	logmust fakeroot debian/rules printenv ${debian_rules_args}
+	logmust fakeroot debian/rules printenv "${debian_rules_args[@]}"
 
 	#
 	# The default value of the tool argument for mk-build-deps
@@ -139,7 +155,7 @@ function kernel_build() {
 	local build_deps_tool="apt-get -o Debug::pkgProblemResolver=yes --no-install-recommends --yes"
 	logmust sudo mk-build-deps --install debian/control --tool "${build_deps_tool}"
 
-	logmust fakeroot debian/rules "binary" ${debian_rules_args}
+	logmust fakeroot debian/rules "binary" "${debian_rules_args[@]}"
 
 	logmust cd "$WORKDIR"
 	logmust mv ./*deb "artifacts/"
@@ -220,24 +236,24 @@ function kernel_update_upstream() {
 	# Note that "generic" (used mainly ESX) is a special
 	# case as we are currently using the HWE kernel image.
 	#
-	local tag_prefix
+	local tag_prefix_flavour
 	if [[ "${platform}" == generic ]] &&
 		[[ "$UBUNTU_DISTRIBUTION" == bionic ]]; then
-		tag_prefix="Ubuntu-hwe-${kernel_version}-${abinum}"
+		tag_prefix_flavour="Ubuntu-hwe"
 	elif [[ "${platform}" == aws ]] ||
 		[[ "${platform}" == azure ]] ||
 		[[ "${platform}" == gcp ]] ||
 		[[ "${platform}" == oracle ]]; then
-
-		local kvers_major kvers_minor short_kvers
-		kvers_major=$(echo "${kernel_version}" | cut -d '.' -f 1)
-		kvers_minor=$(echo "${kernel_version}" | cut -d '.' -f 2)
-		short_kvers="${kvers_major}.${kvers_minor}"
-
-		tag_prefix="Ubuntu-${platform}-${short_kvers}-${kernel_version}-${abinum}"
+		tag_prefix_flavour="Ubuntu-${platform}"
 	else
 		die "assertion: unexpected platform: ${platform}"
 	fi
+
+	local tag_prefix kvers_major kvers_minor short_kvers
+	kvers_major=$(echo "${kernel_version}" | cut -d '.' -f 1)
+	kvers_minor=$(echo "${kernel_version}" | cut -d '.' -f 2)
+	short_kvers="${kvers_major}.${kvers_minor}"
+	tag_prefix="${tag_prefix_flavour}-${short_kvers}-${kernel_version}-${abinum}"
 	echo "note: upstream tag prefix used: ${tag_prefix}"
 
 	#
@@ -274,8 +290,18 @@ function kernel_update_upstream() {
 
 	logmust git fetch upstream "+refs/tags/${upstream_tag}:refs/tags/${upstream_tag}"
 
+	#
+	# Note that we add '^{}' at the end to dereference the tag recursively
+	# until it arrives to an actual commit. This is needed in case the
+	# tag points to an anotated tag object which contains extra information
+	# such as a PGP signature. That annoted tag will in turn reference the
+	# actual commit, which will be returned when appending ^{}.
+	# upstream-HEAD will be pointing to the commit directly rather than the
+	# annoted tag object, so if we want to compare the two we need to query
+	# for the dereferenced commit. See 'git help gitrevisions' for more info.
+	#
 	local upstream_tag_commit
-	upstream_tag_commit="$(git rev-parse "refs/tags/${upstream_tag}")" ||
+	upstream_tag_commit="$(git rev-parse "refs/tags/${upstream_tag}^{}")" ||
 		die "couldn't get commit of tag ${upstream_tag}"
 	echo "note: upstream tag: ${upstream_tag}, commit ${upstream_tag_commit}"
 

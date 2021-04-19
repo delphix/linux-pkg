@@ -19,6 +19,12 @@ cd "$(dirname "${BASH_SOURCE[0]}")" || exit 1
 TOP="$PWD"
 source "$TOP/lib/common.sh"
 
+#
+# Disable "logmust" output as that is unnecessary here, and actually
+# trips up some of our testing (e.g. verify-query-packages.sh).
+#
+export LOGGING=false
+
 ALL_OUTPUT_FIELDS=(name git-url dependencies can-update)
 
 function usage() {

@@ -17,6 +17,11 @@ crash
 drgn
 grub2
 libkdumpfile
+linux-kernel-aws
+linux-kernel-azure
+linux-kernel-gcp
+linux-kernel-generic
+linux-kernel-oracle
 makedumpfile
 nfs-utils
 python-rtslib-fb

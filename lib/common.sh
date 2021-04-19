@@ -35,7 +35,7 @@ export UBUNTU_DISTRIBUTION="bionic"
 #  2. "archive": dowloading from apt
 #  3. "prebuilt": pre-built kernel stored in artifactory
 #
-export DEFAULT_LINUX_KERNEL_PACKAGE_SOURCE="prebuilt"
+export DEFAULT_LINUX_KERNEL_PACKAGE_SOURCE="delphix"
 
 # shellcheck disable=SC2086
 function enable_colors() {
@@ -89,7 +89,7 @@ function die() {
 }
 
 function logmust() {
-	echo Running: "$@"
+	[[ "$LOGGING" == "false" ]] || echo Running: "$@" >&2
 	"$@" || die "failed command '$*'"
 }
 
@@ -470,7 +470,7 @@ function install_pkgs() {
 		echo "Running: sudo env DEBIAN_FRONTEND=noninteractive " \
 			"apt-get install -y $*"
 		sudo env DEBIAN_FRONTEND=noninteractive apt-get install \
-			-y "$@" && return
+			-y --allow-downgrades "$@" && return
 		echo "apt-get install failed, retrying."
 		sleep 10
 	done
