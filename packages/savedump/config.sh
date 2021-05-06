@@ -17,7 +17,6 @@
 
 # shellcheck disable=SC2034
 DEFAULT_PACKAGE_GIT_URL="https://github.com/delphix/savedump.git"
-DEFAULT_PACKAGE_VERSION=1.0.0
 
 function prepare() {
 	logmust install_pkgs \

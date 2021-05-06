@@ -18,7 +18,6 @@
 
 DEFAULT_PACKAGE_GIT_URL="https://github.com/delphix/targetcli-fb.git"
 PACKAGE_DEPENDENCIES="python-rtslib-fb"
-# Note: we get the package version programatically in build()
 
 UPSTREAM_SOURCE_PACKAGE=targetcli-fb
 
@@ -28,11 +27,6 @@ function prepare() {
 }
 
 function build() {
-	if [[ -z "$PACKAGE_VERSION" ]]; then
-		logmust cd "$WORKDIR/repo"
-		logmust eval PACKAGE_VERSION="$(./setup.py --version |
-			sed 's/fb//')"
-	fi
 	logmust dpkg_buildpackage_default
 }
 

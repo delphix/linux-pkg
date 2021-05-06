@@ -17,7 +17,6 @@
 # shellcheck disable=SC2034
 
 DEFAULT_PACKAGE_GIT_URL="https://github.com/delphix/python-rtslib-fb.git"
-# Note: we get the package version programatically in build()
 
 UPSTREAM_SOURCE_PACKAGE=python-rtslib-fb
 
@@ -26,10 +25,6 @@ function prepare() {
 }
 
 function build() {
-	if [[ -z "$PACKAGE_VERSION" ]]; then
-		logmust cd "$WORKDIR/repo"
-		logmust eval PACKAGE_VERSION="$(./setup.py --version)"
-	fi
 	logmust dpkg_buildpackage_default
 }
 
