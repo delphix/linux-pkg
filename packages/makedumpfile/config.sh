@@ -17,7 +17,6 @@
 # shellcheck disable=SC2034
 
 DEFAULT_PACKAGE_GIT_URL="https://github.com/delphix/makedumpfile.git"
-# Note: we get the package version programatically in our build() hook
 
 UPSTREAM_SOURCE_PACKAGE="makedumpfile"
 
@@ -26,10 +25,6 @@ function prepare() {
 }
 
 function build() {
-	logmust cd "$WORKDIR/repo"
-	if [[ -z "$PACKAGE_VERSION" ]]; then
-		logmust eval PACKAGE_VERSION="1:$(grep '^VERSION=' Makefile | cut -d "=" -f 2)"
-	fi
 	logmust dpkg_buildpackage_default
 }
 

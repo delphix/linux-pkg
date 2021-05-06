@@ -346,30 +346,6 @@ Here is a list of variables that can be defined for a package:
   "dep" is the dependency's name. A special value can be passed for packages
   that target all the supported flavours of the linux-kernel: `@linux-kernel`.
 
-* **DEFAULT_PACKAGE_GIT_BRANCH**: (DEPRECATED) Default git branch to use when
-  fetching from or pushing to `DEFAULT_PACKAGE_GIT_URL`. This should be
-  typically left unset. The branch to fetch the package from defaults
-  to the value of the environment variable `DEFAULT_BRANCH`, which itself
-  defaults to "master".
-  WARNING: do not set this parameter unless you know exactly what you are doing,
-  as our current versioning convention is to use DEFAULT_BRANCH for each
-  package. This parameter may be removed in the future.
-
-* **DEFAULT_PACKAGE_VERSION**: (Optional) The version of the package is set to
-  this value when it is built. **Note:** If this field is not set, then you
-  should provide a mechanism in the [build](#build-hook) hook to auto-determine
-  the version from the source code.
-  WARNING: This parameter will be removed in the near future, as we will rely on
-  the changelog contained in the package's repository to get the package version
-  in the future.
-
-* **DEFAULT_PACKAGE_REVISION**: (Optional) The revision of the package is set to
-  this value when it is built (note that the full version of a package is
-  "_VERSION-REVISION_"). If unset, it defaults to value of environment variable
-  DEFAULT_REVISION.
-  WARNING: This parameter is currently unused and will be removed in the near
-  future.
-
 * **UPSTREAM_SOURCE_PACKAGE**: (Optional) Third-party packages that have an
   [update_upstream](#update-upstream-hook) hook and are updated from an Ubuntu
   source package should set this to the name of the source package.
@@ -644,15 +620,6 @@ use the `install_pkgs()` lib function to install packages.
 Next step is to add a [build()](#build) hook. It is recommended to use the
 `dpkg_buildpackage_default()` function.
 
-Then you'll need to provide the version of the package. For packages created
-from an Ubuntu source package, it is advised to use the same version as was set
-in the source package. For other packages you can use any version you like (e.g.
-`1.0.0`). The version must be provided with:
-
-```
-DEFAULT_PACKAGE_VERSION="<version>"
-```
-
 Note that if you are using an Ubuntu source package, you should now be ready to
 build the package.
 
@@ -717,14 +684,10 @@ In `config.sh`, you'll need to define two variables:
 * `DEFAULT_PACKAGE_GIT_URL`: the `https://` git URL for the source code of the
   package.
 
-* `DEFAULT_PACKAGE_VERSION`: the version of the package. If unsure, just
-  use `1.0.0`.
-
 e.g.:
 
 ```
 DEFAULT_PACKAGE_GIT_URL="https://delphix.gitlab.com/<user>/<package>"
-DEFAULT_PACKAGE_VERSION="1.0.0"
 ```
 
 #### Step 2. Add package hooks

@@ -17,20 +17,11 @@
 # shellcheck disable=SC2034
 
 DEFAULT_PACKAGE_GIT_URL="https://github.com/delphix/make-jpkg.git"
-# Note we auto-detect version in build()
 
 UPSTREAM_GIT_URL=https://salsa.debian.org/java-team/java-package.git
 UPSTREAM_GIT_BRANCH=master
 
 function build() {
-	# Auto-detect version from upstream.
-	# Make sure it is a base version, without revision.
-	logmust cd "$WORKDIR/repo"
-	PACKAGE_VERSION=$(dpkg-parsechangelog --show-field Version)
-	if [[ "$PACKAGE_VERSION" == *-* ]]; then
-		die "Bad package version '$PACKAGE_VERSION': should not contain '-'"
-	fi
-
 	logmust dpkg_buildpackage_default
 }
 
