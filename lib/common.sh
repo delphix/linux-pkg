@@ -223,12 +223,9 @@ function reset_package_config_variables() {
 	local vars="
 	PACKAGE_GIT_URL
 	PACKAGE_GIT_BRANCH
-	PACKAGE_GIT_VERSION
-	PACKAGE_GIT_REVISION
+	PACKAGE_VERSION
+	PACKAGE_REVISION
 	DEFAULT_PACKAGE_GIT_URL
-	DEFAULT_PACKAGE_GIT_BRANCH
-	DEFAULT_PACKAGE_GIT_VERSION
-	DEFAULT_PACKAGE_GIT_REVISION
 	PACKAGE_DEPENDENCIES
 	UPSTREAM_SOURCE_PACKAGE
 	UPSTREAM_GIT_URL
@@ -364,7 +361,7 @@ function load_package_config() {
 
 #
 # Use different config sources to determine the values for:
-#   PACKAGE_GIT_URL, PACKAGE_GIT_BRANCH, PACKAGE_VERSION, PACKAGE_REVISION
+#   PACKAGE_GIT_URL, PACKAGE_GIT_BRANCH, PACKAGE_REVISION
 #
 # The sources for the config, in decreasing order of priority, are:
 #   1. Command line parameters passed to build script.
@@ -401,27 +398,11 @@ function get_package_config_from_env() {
 	elif [[ -n "${!var}" ]]; then
 		PACKAGE_GIT_BRANCH="${!var}"
 		echo "PACKAGE_GIT_BRANCH set to value of ${var}"
-	elif [[ -n "$DEFAULT_PACKAGE_GIT_BRANCH" ]]; then
-		PACKAGE_GIT_BRANCH="$DEFAULT_PACKAGE_GIT_BRANCH"
-		echo "PACKAGE_GIT_BRANCH set to value of" \
-			"DEFAULT_PACKAGE_GIT_BRANCH"
 	fi
 
 	if [[ -z "$PACKAGE_GIT_BRANCH" ]]; then
 		PACKAGE_GIT_BRANCH="$DEFAULT_GIT_BRANCH"
 		echo "PACKAGE_GIT_BRANCH set to value of DEFAULT_GIT_BRANCH"
-	fi
-
-	var="${PACKAGE_PREFIX}_VERSION"
-	if [[ -n "$PARAM_PACKAGE_VERSION" ]]; then
-		PACKAGE_VERSION="$PARAM_PACKAGE_VERSION"
-		echo "PACKAGE_VERSION passed from '-v'"
-	elif [[ -n "${!var}" ]]; then
-		PACKAGE_VERSION="${!var}"
-		echo "PACKAGE_VERSION set to value of ${var}"
-	elif [[ -n "$DEFAULT_PACKAGE_VERSION" ]]; then
-		PACKAGE_VERSION="$DEFAULT_PACKAGE_VERSION"
-		echo "PACKAGE_VERSION set to value of DEFAULT_PACKAGE_VERSION"
 	fi
 
 	var="${PACKAGE_PREFIX}_REVISION"
@@ -431,9 +412,6 @@ function get_package_config_from_env() {
 	elif [[ -n "${!var}" ]]; then
 		PACKAGE_REVISION="${!var}"
 		echo "PACKAGE_REVISION set to value of ${var}"
-	elif [[ -n "$DEFAULT_PACKAGE_REVISION" ]]; then
-		PACKAGE_REVISION="$DEFAULT_PACKAGE_REVISION"
-		echo "PACKAGE_REVISION set to value of DEFAULT_PACKAGE_REVISION"
 	fi
 
 	if [[ -z "$PACKAGE_REVISION" ]]; then
@@ -443,13 +421,11 @@ function get_package_config_from_env() {
 
 	export PACKAGE_GIT_URL
 	export PACKAGE_GIT_BRANCH
-	export PACKAGE_VERSION
 	export PACKAGE_REVISION
 
 	echo_bold "------------------------------------------------------------"
 	echo_bold "PACKAGE_GIT_URL:      $PACKAGE_GIT_URL"
 	echo_bold "PACKAGE_GIT_BRANCH:   $PACKAGE_GIT_BRANCH"
-	echo_bold "PACKAGE_VERSION:      $PACKAGE_VERSION"
 	echo_bold "PACKAGE_REVISION:     $PACKAGE_REVISION"
 	echo_bold "------------------------------------------------------------"
 }
@@ -971,8 +947,22 @@ function push_to_remote() {
 # If no changelog file exists, source package name can be passed in first arg.
 #
 function set_changelog() {
-	check_env PACKAGE_VERSION PACKAGE_REVISION
+	check_env PACKAGE_REVISION
 	local src_package="${1:-$PACKAGE}"
+
+	#
+	# If PACKAGE_VERSION hasn't been set already, then retrieve it from
+	# The changelog file. If the changelog file doesn't exist, which
+	# could be the case for in-house packages where we do not care about
+	# the version, then default to "1.0.0".
+	#
+	if [[ -z "$PACKAGE_VERSION" ]]; then
+		if [[ -f debian/changelog ]]; then
+			PACKAGE_VERSION="$(logmust dpkg-parsechangelog -S Version | awk -F'-' '{print $1}')"
+		else
+			PACKAGE_VERSION=1.0.0
+		fi
+	fi
 
 	logmust export DEBEMAIL="Delphix Engineering <eng@delphix.com>"
 	if [[ -f debian/changelog ]]; then
