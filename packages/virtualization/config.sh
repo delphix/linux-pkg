@@ -119,5 +119,6 @@ function build() {
 	#
 	logmust cd "$WORKDIR/repo/appliance"
 	logmust mkdir -p "$WORKDIR/artifacts/hostchecker2"
+	logmust cp -r bin/out/common/com.delphix.common/uem/tars "$WORKDIR/artifacts/hostchecker2"
 	logmust cp -v toolkit/toolkit-devkit.tar "$WORKDIR/artifacts"
 }
