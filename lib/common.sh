@@ -35,7 +35,7 @@ export UBUNTU_DISTRIBUTION="bionic"
 #  2. "archive": dowloading from apt
 #  3. "prebuilt": pre-built kernel stored in artifactory
 #
-export DEFAULT_LINUX_KERNEL_PACKAGE_SOURCE="prebuilt"
+export DEFAULT_LINUX_KERNEL_PACKAGE_SOURCE="delphix"
 
 # shellcheck disable=SC2086
 function enable_colors() {
@@ -89,7 +89,7 @@ function die() {
 }
 
 function logmust() {
-	echo Running: "$@"
+	[[ "$LOGGING" == "false" ]] || echo Running: "$@" >&2
 	"$@" || die "failed command '$*'"
 }
 
@@ -470,7 +470,7 @@ function install_pkgs() {
 		echo "Running: sudo env DEBIAN_FRONTEND=noninteractive " \
 			"apt-get install -y $*"
 		sudo env DEBIAN_FRONTEND=noninteractive apt-get install \
-			-y "$@" && return
+			-y --allow-downgrades "$@" && return
 		echo "apt-get install failed, retrying."
 		sleep 10
 	done
@@ -1116,7 +1116,26 @@ function fetch_kernel_from_artifactory() {
 	url="$url/linux-pkg/linux-prebuilt/${artifactory_deb}"
 
 	logmust cd "$WORKDIR/artifacts"
-	logmust wget -nv "$url"
+	fetch_file_from_artifactory "$url"
+}
+
+function fetch_file_from_artifactory() {
+	local url="$1"
+	local sha256_expected="$2"
+	local file sha256_actual
+
+	[[ -n "$url" ]] || die "url argument is missing."
+	file="$(basename "$url")"
+
+	logmust wget -nv "$url" -O "$file"
+
+	if [[ -n "$sha256_expected" ]]; then
+		sha256_actual="$(sha256sum "$file" | awk '{print $1}')"
+		if [[ "$sha256_expected" != "$sha256_actual" ]]; then
+			die "SHA256 mismatch. Expected: $sha256_expected," \
+				"Actual: $sha256_actual"
+		fi
+	fi
 }
 
 #

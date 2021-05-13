@@ -93,12 +93,14 @@ logmust sudo apt-get update
 #   build dependencies from a control file.
 # - install_shfmt and shellcheck are needed for - make check - to be able to
 #   make sure style checks are fine.
+# - jq is used to generate a JSON formatted metadata file by some packages.
 #
 logmust install_pkgs \
 	debhelper \
 	devscripts \
 	equivs \
-	shellcheck
+	shellcheck \
+	jq
 
 logmust install_shfmt
 

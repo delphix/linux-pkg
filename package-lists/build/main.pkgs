@@ -18,6 +18,8 @@ grub2
 libkdumpfile
 make-jpkg
 makedumpfile
+masking
+misc-debs
 nfs-utils
 performance-diagnostics
 ptools
@@ -26,4 +28,4 @@ recovery-environment
 savedump
 sdb
 targetcli-fb
-td-agent-prebuilt
+virtualization
