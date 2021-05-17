@@ -29,6 +29,7 @@ function prepare() {
 		autogen \
 		autotools-dev \
 		build-essential \
+		cargo \
 		debhelper \
 		devscripts \
 		dh-autoreconf \
@@ -48,8 +49,10 @@ function prepare() {
 		lsb-release \
 		lsscsi \
 		parted \
+		pkg-config \
 		po-debconf \
 		python3 \
+		rustc \
 		uuid-dev \
 		zlib1g-dev
 	logmust install_kernel_headers
