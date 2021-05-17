@@ -85,7 +85,7 @@ function build() {
 	#
 	logmust cd "$WORKDIR/repo/appliance"
 	logmust rsync -av packaging/build/distributions/ "$WORKDIR/artifacts/"
-	logmust cp -vr \
+	logmust rsync -av \
 		bin/out/common/com.delphix.common/uem/tars \
 		"$WORKDIR/artifacts/hostchecker2"
 	logmust cp -v \
