@@ -45,6 +45,16 @@ function prepare() {
 		"$DEPDIR"/crypt-blowfish/*.deb \
 		"$DEPDIR"/host-jdks/*.deb \
 		"$DEPDIR"/misc-debs/unzip_6.0-21ubuntu1_amd64.deb
+
+	#
+	# The virtualization build may fail due to OOM issues, thus we
+	# add a swap device to account for low memory situations. For
+	# more information, see TOOL-6432.
+	#
+	logmust dd if=/dev/zero of=/swapfile bs=1G count=1
+	logmust chmod 0600 /swapfile
+	logmust mkswap /swapfile
+	logmust swapon /swapfile
 }
 
 function build() {
