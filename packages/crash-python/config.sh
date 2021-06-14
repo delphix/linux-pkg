@@ -19,10 +19,7 @@
 DEFAULT_PACKAGE_GIT_URL="https://gitlab.delphix.com/os-platform/crash-python.git"
 
 function prepare() {
-	logmust install_pkgs \
-		git \
-		python3-distutils \
-		python3.6-dev
+	logmust install_build_deps_from_control_file
 }
 
 function build() {
