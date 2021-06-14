@@ -17,7 +17,6 @@
 # shellcheck disable=SC2034
 
 DEFAULT_PACKAGE_GIT_URL="https://github.com/delphix/nfs-utils.git"
-# Note: we get the package version programatically in build()
 
 UPSTREAM_SOURCE_PACKAGE=nfs-utils
 
@@ -26,11 +25,6 @@ function prepare() {
 }
 
 function build() {
-	logmust cd "$WORKDIR/repo"
-	if [[ -z "$PACKAGE_VERSION" ]]; then
-		vers="$(dpkg-parsechangelog --show-field Version)"
-		logmust eval PACKAGE_VERSION="$vers"
-	fi
 	logmust dpkg_buildpackage_default
 }
 

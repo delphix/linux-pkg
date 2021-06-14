@@ -17,7 +17,6 @@
 # shellcheck disable=SC2034
 
 DEFAULT_PACKAGE_GIT_URL="https://github.com/delphix/cloud-init.git"
-# Note: we get the package version programatically in build()
 
 UPSTREAM_SOURCE_PACKAGE=cloud-init
 
@@ -31,10 +30,6 @@ function checkstyle() {
 }
 
 function build() {
-	logmust cd "$WORKDIR/repo"
-	if [[ -z "$PACKAGE_VERSION" ]]; then
-		logmust eval PACKAGE_VERSION="$(python3 tools/read-version)"
-	fi
 	logmust dpkg_buildpackage_default
 }
 

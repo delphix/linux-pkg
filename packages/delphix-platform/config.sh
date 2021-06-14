@@ -17,13 +17,12 @@
 # shellcheck disable=SC2034
 
 DEFAULT_PACKAGE_GIT_URL="https://github.com/delphix/delphix-platform.git"
-DEFAULT_PACKAGE_VERSION="1.0.0"
 
 function build() {
 	logmust cd "$WORKDIR/repo"
 	logmust ansible-playbook bootstrap/playbook.yml
 	logmust ./scripts/docker-run.sh make packages \
-		VERSION="$PACKAGE_VERSION-$PACKAGE_REVISION"
+		VERSION="1.0.0-$PACKAGE_REVISION"
 	logmust sudo chown -R "$USER:" artifacts
 	logmust mv artifacts/*deb "$WORKDIR/artifacts/"
 }

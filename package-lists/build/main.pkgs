@@ -7,14 +7,15 @@ bcc
 bpftrace
 challenge-response
 cloud-init
-crash
 crash-python
 crypt-blowfish
 delphix-platform
 delphix-sso-app
 drgn
+docker-python-image
 gdb-python
 grub2
+host-jdks
 libkdumpfile
 make-jpkg
 makedumpfile
