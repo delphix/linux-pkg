@@ -494,12 +494,13 @@ function list_all_packages() {
 }
 
 #
-# Read a package-list file and return listed packages in _RET_LIST.
+# Read a new-line separated list from a file, removing extra whitespace
+# and comments. Return items in _RET_LIST.
 #
-function read_package_list() {
+function read_list() {
 	local file="$1"
 
-	local pkg
+	local item
 	local line
 
 	_RET_LIST=()
@@ -508,13 +509,26 @@ function read_package_list() {
 
 	while read -r line; do
 		# trim whitespace
-		pkg=$(echo "$line" | tr -d '[:space:]')
-		[[ -z "$pkg" ]] && continue
+		item=$(echo "$line" | tr -d '[:space:]')
+		[[ -z "$item" ]] && continue
 		# ignore comments
-		[[ ${pkg:0:1} == "#" ]] && continue
+		[[ ${item:0:1} == "#" ]] && continue
+		_RET_LIST+=("$item")
+	done <"$file" || die "Failed to read list: $file"
+}
+
+#
+# Read a package-list file and return listed packages in _RET_LIST.
+#
+function read_package_list() {
+	local file="$1"
+
+	local pkg
+
+	logmust read_list "$file"
+	for pkg in "${_RET_LIST[@]}"; do
 		check_package_exists "$pkg"
-		_RET_LIST+=("$pkg")
-	done <"$file" || die "Failed to read package list: $file"
+	done
 }
 
 #
