@@ -19,23 +19,7 @@
 DEFAULT_PACKAGE_GIT_URL="https://gitlab.delphix.com/os-platform/gdb-python.git"
 
 function prepare() {
-	logmust install_pkgs \
-		autoconf \
-		automake \
-		bison \
-		flex \
-		git \
-		liblzo2-dev \
-		libmpfr-dev \
-		libsnappy1v5 \
-		libtool \
-		pkg-config \
-		python3-distutils \
-		python3-future \
-		python3-pyelftools \
-		python3.6-dev \
-		texinfo \
-		zlib1g-dev
+	logmust install_build_deps_from_control_file
 }
 
 function build() {
