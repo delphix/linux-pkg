@@ -20,25 +20,8 @@ DEFAULT_PACKAGE_GIT_URL="https://gitlab.delphix.com/app/dlpx-app-gate.git"
 PACKAGE_DEPENDENCIES="adoptopenjdk crypt-blowfish host-jdks misc-debs"
 
 function prepare() {
-	logmust install_pkgs \
-		ant \
-		gcc \
-		libcairo2 \
-		libcurl4-openssl-dev \
-		libjbig0 \
-		libnss3-dev \
-		libnss3-dbg \
-		libnss3-tools \
-		libpam0g-dev \
-		libpixman-1-0 \
-		libssl-dev \
-		libtiff5 \
-		libxcb-render0 \
-		libxcb-shm0 \
-		python-jira \
-		python-requests \
-		rsync \
-		virtualenv
+	logmust read_list "$WORKDIR/repo/appliance/packaging/build-dependencies"
+	logmust install_pkgs "${_RET_LIST[@]}"
 
 	logmust install_pkgs \
 		"$DEPDIR"/adoptopenjdk/*.deb \
