@@ -39,7 +39,8 @@ function kernel_prepare() {
 	logmust install_pkgs \
 		equivs \
 		devscripts \
-		kernel-wedge
+		kernel-wedge \
+		dwarves # installs pahole(1) needed for BTF
 }
 
 #
