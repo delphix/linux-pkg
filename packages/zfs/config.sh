@@ -17,7 +17,6 @@
 # shellcheck disable=SC2034
 
 DEFAULT_PACKAGE_GIT_URL="https://github.com/delphix/zfs.git"
-DEFAULT_PACKAGE_VERSION="0.8.0"
 PACKAGE_DEPENDENCIES="@linux-kernel"
 
 UPSTREAM_GIT_URL="https://github.com/zfsonlinux/zfs.git"
@@ -86,10 +85,11 @@ function build() {
 	# in /sys/module/zfs/version. The version is set by modifying the META
 	# file.
 	#
+	PACKAGE_VERSION="$(grep -E '^Version:' META | awk '{print $2}')"
+	[[ -n "$PACKAGE_VERSION" ]] || die "Failed to retrieve package version"
+
 	local hash
 	logmust eval hash="$(git rev-parse --short HEAD)"
-	logmust sed -i "s/^Version:.*/Version:      $PACKAGE_VERSION/" META ||
-		die "failed to set version"
 	logmust sed -i "s/^Release:.*/Release:      $PACKAGE_REVISION-$hash/" \
 		META || die "failed to set version"
 	logmust set_changelog

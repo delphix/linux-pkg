@@ -17,7 +17,6 @@
 # shellcheck disable=SC2034
 
 DEFAULT_PACKAGE_GIT_URL="https://github.com/delphix/omnibus-td-agent.git"
-# Note: we get the package version programatically in build()
 
 UPSTREAM_GIT_URL=https://github.com/treasure-data/omnibus-td-agent.git
 UPSTREAM_GIT_BRANCH=master

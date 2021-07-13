@@ -26,17 +26,6 @@
 DEFAULT_PACKAGE_GIT_URL="https://example.com/my-package-repository.git"
 
 #
-# A version for the package must be provided in DEFAULT_PACKAGE_VERSION.
-# For an original Delphix package, the value for the version is not important,
-# so you can set it to anything (e.g. 1.0.0).
-# For a third-party package, this should match the version of the upstream
-# package. Note that an alternative is to leave DEFAULT_PACKAGE_VERSION
-# undefined and to programatically obtain PACKAGE_VERSION from the package's
-# source code.
-#
-#DEFAULT_PACKAGE_VERSION=1.0.0
-
-#
 # If you are adding a third-package from an upstream git project, uncomment
 # and fill the two lines below.
 #

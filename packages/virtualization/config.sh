@@ -17,7 +17,7 @@
 # shellcheck disable=SC2034
 
 DEFAULT_PACKAGE_GIT_URL="https://gitlab.delphix.com/app/dlpx-app-gate.git"
-PACKAGE_DEPENDENCIES="adoptopenjdk crypt-blowfish misc-debs"
+PACKAGE_DEPENDENCIES="adoptopenjdk crypt-blowfish host-jdks misc-debs"
 
 function prepare() {
 	logmust install_pkgs \
@@ -37,11 +37,13 @@ function prepare() {
 		libxcb-shm0 \
 		python-jira \
 		python-requests \
-		rsync
+		rsync \
+		virtualenv
 
 	logmust install_pkgs \
 		"$DEPDIR"/adoptopenjdk/*.deb \
 		"$DEPDIR"/crypt-blowfish/*.deb \
+		"$DEPDIR"/host-jdks/*.deb \
 		"$DEPDIR"/misc-debs/unzip_6.0-21ubuntu1_amd64.deb
 }
 

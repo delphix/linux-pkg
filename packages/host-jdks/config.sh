@@ -1,6 +1,6 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
-# Copyright 2020 Delphix
+# Copyright 2021 Delphix
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,16 +14,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-
 # shellcheck disable=SC2034
-DEFAULT_PACKAGE_GIT_URL="https://github.com/delphix/savedump.git"
 
-function prepare() {
-	logmust install_pkgs \
-		git \
-		python3-distutils
-}
+DEFAULT_PACKAGE_GIT_URL="https://github.com/delphix/host-jdks.git"
 
 function build() {
+	logmust mkdir -p "$WORKDIR/repo"
 	logmust dpkg_buildpackage_default
 }

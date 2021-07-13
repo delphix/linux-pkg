@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright 2018, 2020 Delphix
+# Copyright 2018, 2021 Delphix
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -23,7 +23,7 @@ logmust check_running_system
 function usage() {
 	[[ $# != 0 ]] && echo "$(basename "$0"): $*"
 	echo "Usage: $(basename "$0") [-ch] [-g pkg_git_url]"
-	echo "         [-b pkg_git_branch] [-v pkg_version] [-r pkg_revision]"
+	echo "         [-b pkg_git_branch] [-r pkg_revision]"
 	echo "         package"
 	echo ""
 	echo "  This script builds a package based on its config.sh. If '-u'"
@@ -36,7 +36,6 @@ function usage() {
 	echo "    -g  override default git url for the package."
 	echo "    -b  override default git branch for the package."
 	echo "    -c  also run package's checkstyle hook."
-	echo "    -v  override default version for package."
 	echo "    -r  override default revision for package."
 	echo "    -h  display this message and exit."
 	echo ""
@@ -45,15 +44,13 @@ function usage() {
 
 unset PARAM_PACKAGE_GIT_URL
 unset PARAM_PACKAGE_GIT_BRANCH
-unset PARAM_PACKAGE_VERSION
 unset PARAM_PACKAGE_REVISION
 
 do_checkstyle=false
-while getopts ':b:cg:hr:v:' c; do
+while getopts ':b:cg:hr:' c; do
 	case "$c" in
 	g) export PARAM_PACKAGE_GIT_URL="$OPTARG" ;;
 	b) export PARAM_PACKAGE_GIT_BRANCH="$OPTARG" ;;
-	v) export PARAM_PACKAGE_VERSION="$OPTARG" ;;
 	r) export PARAM_PACKAGE_REVISION="$OPTARG" ;;
 	c) do_checkstyle=true ;;
 	h) usage >&2 ;;
