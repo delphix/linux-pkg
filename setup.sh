@@ -104,12 +104,5 @@ logmust install_pkgs \
 
 logmust install_shfmt
 
-#
-# Starting with kernel 5.4, gcc 7 can no longer compile kernel modules, so
-# install gcc 8
-# https://bugs.launchpad.net/ubuntu/+source/linux/+bug/1849348
-#
-logmust install_gcc8
-
 logmust git config --global user.email "eng@delphix.com"
 logmust git config --global user.name "Delphix Engineering"

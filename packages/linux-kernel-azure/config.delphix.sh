@@ -18,7 +18,7 @@
 # shellcheck disable=SC2034
 DEFAULT_PACKAGE_GIT_URL="https://github.com/delphix/linux-kernel-azure.git"
 
-UPSTREAM_GIT_URL="https://git.launchpad.net/~canonical-kernel/ubuntu/+source/linux-azure/+git/bionic"
+UPSTREAM_GIT_URL="https://git.launchpad.net/~canonical-kernel/ubuntu/+source/linux-azure/+git/focal"
 # Note: UPSTREAM_GIT_BRANCH is not used here
 UPSTREAM_GIT_BRANCH="none"
 

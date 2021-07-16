@@ -18,7 +18,7 @@
 # shellcheck disable=SC2034
 DEFAULT_PACKAGE_GIT_URL="https://github.com/delphix/linux-kernel-generic.git"
 
-UPSTREAM_GIT_URL="https://git.launchpad.net/~ubuntu-kernel/ubuntu/+source/linux/+git/bionic"
+UPSTREAM_GIT_URL="https://git.launchpad.net/~ubuntu-kernel/ubuntu/+source/linux/+git/focal"
 # Note: UPSTREAM_GIT_BRANCH is not used here
 UPSTREAM_GIT_BRANCH="none"
 

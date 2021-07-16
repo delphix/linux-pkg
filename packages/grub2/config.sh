@@ -20,7 +20,7 @@ DEFAULT_PACKAGE_GIT_URL="https://github.com/delphix/grub2"
 PACKAGE_DEPENDENCIES="zfs"
 
 UPSTREAM_GIT_URL=https://git.launchpad.net/ubuntu/+source/grub2
-UPSTREAM_GIT_BRANCH=applied/ubuntu/bionic-updates
+UPSTREAM_GIT_BRANCH=applied/ubuntu/focal-updates
 
 SKIP_COPYRIGHTS_CHECK=true
 
