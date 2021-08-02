@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # Copyright 2018, 2020 Delphix
 #
@@ -444,9 +444,22 @@ function create_workdir() {
 function install_pkgs() {
 	for attempt in {1..3}; do
 		echo "Running: sudo env DEBIAN_FRONTEND=noninteractive " \
-			"apt-get install -y $*"
+			"apt-get install -y --allow-downgrades $*"
+
+		#
+		# We use the "--allow-downgrades" for the case of a
+		# package needing to install the "unzip" debian package
+		# that we build via the "misc-debs" linux-pkg package.
+		# The "misc-debs" based "unzip" package may have an
+		# older version than what's already installed on the
+		# system, so we need to "--allow-downgrades" in order to
+		# install that specific package; further, that specific
+		# package is required to build the "virtualization"
+		# debian packages.
+		#
 		sudo env DEBIAN_FRONTEND=noninteractive apt-get install \
 			-y --allow-downgrades "$@" && return
+
 		echo "apt-get install failed, retrying."
 		sleep 10
 	done
@@ -481,12 +494,13 @@ function list_all_packages() {
 }
 
 #
-# Read a package-list file and return listed packages in _RET_LIST.
+# Read a new-line separated list from a file, removing extra whitespace
+# and comments. Return items in _RET_LIST.
 #
-function read_package_list() {
+function read_list() {
 	local file="$1"
 
-	local pkg
+	local item
 	local line
 
 	_RET_LIST=()
@@ -495,13 +509,26 @@ function read_package_list() {
 
 	while read -r line; do
 		# trim whitespace
-		pkg=$(echo "$line" | tr -d '[:space:]')
-		[[ -z "$pkg" ]] && continue
+		item=$(echo "$line" | tr -d '[:space:]')
+		[[ -z "$item" ]] && continue
 		# ignore comments
-		[[ ${pkg:0:1} == "#" ]] && continue
+		[[ ${item:0:1} == "#" ]] && continue
+		_RET_LIST+=("$item")
+	done <"$file" || die "Failed to read list: $file"
+}
+
+#
+# Read a package-list file and return listed packages in _RET_LIST.
+#
+function read_package_list() {
+	local file="$1"
+
+	local pkg
+
+	logmust read_list "$file"
+	for pkg in "${_RET_LIST[@]}"; do
 		check_package_exists "$pkg"
-		_RET_LIST+=("$pkg")
-	done <"$file" || die "Failed to read package list: $file"
+	done
 }
 
 #

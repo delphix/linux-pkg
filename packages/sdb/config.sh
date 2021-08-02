@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # Copyright 2019 Delphix
 #
@@ -19,9 +19,7 @@
 DEFAULT_PACKAGE_GIT_URL="https://github.com/delphix/sdb.git"
 
 function prepare() {
-	logmust install_pkgs \
-		git \
-		python3-distutils
+	logmust install_build_deps_from_control_file
 }
 
 function build() {
