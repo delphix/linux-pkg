@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # Copyright 2019, 2020 Delphix
 #
@@ -20,7 +20,7 @@ DEFAULT_PACKAGE_GIT_URL="https://github.com/delphix/drgn.git"
 PACKAGE_DEPENDENCIES="libkdumpfile"
 
 UPSTREAM_GIT_URL="https://github.com/osandov/drgn.git"
-UPSTREAM_GIT_BRANCH="master"
+UPSTREAM_GIT_BRANCH="main"
 
 function prepare() {
 	#
