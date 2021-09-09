@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # Copyright 2018, 2020 Delphix
 #
@@ -19,8 +19,8 @@
 DEFAULT_PACKAGE_GIT_URL=none
 PACKAGE_DEPENDENCIES="make-jpkg"
 
-_tarfile="OpenJDK8U-jdk_x64_linux_hotspot_8u262b10.tar.gz"
-_tarfile_sha256="733755fd649fad6ae91fc083f7e5a5a0b56410fb6ac1815cff29f744b128b1b1"
+_tarfile="OpenJDK8U-jdk_x64_linux_hotspot_8u282b08.tar.gz"
+_tarfile_sha256="e6e6e0356649b9696fa5082cfcb0663d4bef159fc22d406e3a012e71fce83a5c"
 _jdk_path="/usr/lib/jvm/adoptopenjdk-java8-jdk-amd64"
 
 function prepare() {

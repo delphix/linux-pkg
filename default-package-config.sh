@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # Copyright 2018, 2020 Delphix
 #
@@ -234,20 +234,24 @@ function kernel_update_upstream() {
 	# version and the ABI num that we got above.
 	#
 	# Note that "generic" (used mainly ESX) is a special
-	# case as we are currently using the HWE kernel image.
+	# case on bionic where we are using the HWE kernel image.
 	#
 	local tag_prefix_flavour
-	if [[ "${platform}" == generic ]] &&
-		[[ "$UBUNTU_DISTRIBUTION" == bionic ]]; then
-		tag_prefix_flavour="Ubuntu-hwe"
-	elif [[ "${platform}" == aws ]] ||
-		[[ "${platform}" == azure ]] ||
-		[[ "${platform}" == gcp ]] ||
-		[[ "${platform}" == oracle ]]; then
+	case "${platform}" in
+	generic)
+		if [[ "$UBUNTU_DISTRIBUTION" == bionic ]]; then
+			tag_prefix_flavour="Ubuntu-hwe"
+		else
+			tag_prefix_flavour="Ubuntu"
+		fi
+		;;
+	aws | azure | gcp | oracle)
 		tag_prefix_flavour="Ubuntu-${platform}"
-	else
+		;;
+	*)
 		die "assertion: unexpected platform: ${platform}"
-	fi
+		;;
+	esac
 
 	local tag_prefix kvers_major kvers_minor short_kvers
 	kvers_major=$(echo "${kernel_version}" | cut -d '.' -f 1)
@@ -282,6 +286,26 @@ function kernel_update_upstream() {
 	#
 	local upstream_tag_info
 	upstream_tag_info=$(git ls-remote --tags --ref upstream | grep "${tag_prefix}" | tail -n 1)
+
+	if [[ -z "${upstream_tag_info}" ]]; then
+		echo "tag with prefix ${tag_prefix} not found."
+		tag_prefix="${tag_prefix_flavour}-${kernel_version}-${abinum}"
+		#
+		# Canonical has 2 ways of naming their tags:
+		# - Ubuntu-gcp-5.4.0-1046.49
+		# - Ubuntu-gcp-5.4-5.4.0-1046.49_18.04.1
+		#
+		# For a given kernel version and a given distribution, only one
+		# naming scheme is being used. When two distributions (such
+		# as 20.04 and 18.04) use the same major kernel version,
+		# Canonical first applies the patches to one distribution and
+		# then creates a base tag. It then backports those changes to
+		# the older distribution, and then creates a longer tag name.
+		#
+		echo "trying tag prefix: ${tag_prefix}."
+		upstream_tag_info=$(git ls-remote --tags --ref upstream | grep "${tag_prefix}" | tail -n 1)
+	fi
+
 	[[ -z "${upstream_tag_info}" ]] && die "could not find upstream tag for tag prefix: ${tag_prefix}"
 
 	local upstream_tag
@@ -347,17 +371,12 @@ function kernel_merge_with_upstream() {
 
 	check_git_ref "$upstream_ref" "$repo_ref"
 
-	if git merge-base --is-ancestor "$upstream_ref" "$repo_ref"; then
-		echo "NOTE: $PACKAGE is already up-to-date with upstream."
-		return 0
-	fi
-
 	#
 	# Ensure that there is a commit marking the start of
 	# the Delphix set of patches. Then get the hash of
 	# the commit right before it.
 	#
-	local dlpx_patch_end dlpx_patch_start current_ubuntu_commit
+	local dlpx_patch_end dlpx_patch_start current_ubuntu_commit upstream_head_commit
 	dlpx_patch_start=$(git log --pretty=oneline repo-HEAD | grep @@DELPHIX_PATCHSET_START@@ | awk '{ print $1 }')
 	[[ -z "${dlpx_patch_start}" ]] && die "could not find DELPHIX_PATCHSET_START"
 	[[ $(wc -l <<<"${dlpx_patch_start}") != 1 ]] && die "multiple DELPHIX_PATCHSET_START commits - ${dlpx_patch_start}"
@@ -365,6 +384,13 @@ function kernel_merge_with_upstream() {
 	[[ -z "${current_ubuntu_commit}" ]] && die "could not find commit before DELPHIX_PATCHSET_START"
 	dlpx_patch_end=$(git rev-parse repo-HEAD)
 	[[ -z "${dlpx_patch_end}" ]] && die "could not find repo-HEAD's head commit"
+
+	upstream_head_commit="$(git rev-parse "$upstream_ref")"
+
+	if [[ "$current_ubuntu_commit" == "$upstream_head_commit" ]]; then
+		echo "NOTE: $PACKAGE is already up-to-date with upstream."
+		return 0
+	fi
 
 	#
 	# We rebase all the Delphix commits on top of the new upstream-HEAD
