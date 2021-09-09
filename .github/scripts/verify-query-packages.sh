@@ -72,7 +72,7 @@ test "$(TARGET_KERNEL_FLAVORS=generic ./query-packages.sh list linux-kernel)" ==
 # Check that when a package has multiple dependencies they are printed in the
 # expected format.
 test "$(TARGET_KERNEL_FLAVORS="generic aws" ./query-packages.sh single -o dependencies zfs)" == \
-	"linux-kernel-generic,linux-kernel-aws"
+	"linux-kernel-generic,linux-kernel-aws,delphix-rust"
 
 # Check that the output from the appliance list contains zfs and
 # delphix-platform packages. Note, we explicitly do not use grep -q here as it
