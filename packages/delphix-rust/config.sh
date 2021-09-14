@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Copyright 2020 Delphix
+# Copyright 2021 Delphix
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -16,13 +16,9 @@
 #
 # shellcheck disable=SC2034
 
-DEFAULT_PACKAGE_GIT_URL="none"
-
-function fetch() {
-	# Nothing to do
-	return
-}
+DEFAULT_PACKAGE_GIT_URL="https://github.com/delphix/delphix-rust.git"
 
 function build() {
-	logmust fetch_kernel_from_apt_for_platform "generic"
+	logmust mkdir -p "$WORKDIR/repo"
+	logmust dpkg_buildpackage_default
 }
