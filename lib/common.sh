@@ -716,6 +716,26 @@ function fetch_dependencies() {
 }
 
 #
+# Run git fetch with the passed arguments. Git url must be passed as first
+# argument. If FETCH_GIT_TOKEN is set and this is a github repository
+# then pass-in the token when fetching.
+#
+function git_fetch_helper() {
+	local orig_url="$1"
+	local git_url="$1"
+	local label=''
+	shift
+
+	if [[ -n "$FETCH_GIT_TOKEN" ]] &&
+		[[ "$git_url" == https://github.com/* ]]; then
+		git_url="${git_url/https:\/\//https:\/\/${FETCH_GIT_TOKEN}@}"
+		label='[token passed]'
+	fi
+	echo "Running: $label git fetch $orig_url $*"
+	git fetch "$git_url" "$@" || die "git fetch failed"
+}
+
+#
 # Fetch package repository into $WORKDIR/repo
 #
 function fetch_repo_from_git() {
@@ -731,14 +751,14 @@ function fetch_repo_from_git() {
 	# Otherwise just get the latest commit of the main branch.
 	#
 	if [[ "$DO_UPDATE_PACKAGE" == "true" ]]; then
-		logmust git fetch --no-tags "$PACKAGE_GIT_URL" \
+		logmust git_fetch_helper "$PACKAGE_GIT_URL" --no-tags \
 			"+$PACKAGE_GIT_BRANCH:repo-HEAD"
-		logmust git fetch --no-tags "$PACKAGE_GIT_URL" \
+		logmust git_fetch_helper "$PACKAGE_GIT_URL" --no-tags \
 			"+upstreams/$DEFAULT_GIT_BRANCH:upstream-HEAD"
 		logmust git show-ref repo-HEAD
 		logmust git show-ref upstream-HEAD
 	else
-		logmust git fetch --no-tags "$PACKAGE_GIT_URL" \
+		logmust git_fetch_helper "$PACKAGE_GIT_URL" --no-tags \
 			"+$PACKAGE_GIT_BRANCH:repo-HEAD" --depth=1
 		logmust git show-ref repo-HEAD
 	fi
@@ -826,8 +846,7 @@ function update_upstream_from_git() {
 	#
 	# Fetch updates from third-party upstream repository.
 	#
-	logmust git remote add upstream "$UPSTREAM_GIT_URL"
-	logmust git fetch upstream "$UPSTREAM_GIT_BRANCH"
+	logmust git_fetch_helper "$UPSTREAM_GIT_URL" "$UPSTREAM_GIT_BRANCH"
 
 	#
 	# Compare third-party upstream repository to our local snapshot of the
