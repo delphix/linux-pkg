@@ -100,21 +100,34 @@ function logmust() {
 # scripts on their work system and changing its configuration.
 #
 function check_running_system() {
+	local msg
+
 	if [[ "$DISABLE_SYSTEM_CHECK" == "true" ]]; then
 		echo "WARNING: System check disabled."
 		return 0
 	fi
 
+	msg="Note that you can bypass this check by setting environment"
+	msg="${msg} variable DISABLE_SYSTEM_CHECK=true. Use this at your"
+	msg="${msg} own risk as running this command may modify your system."
+
 	if ! (command -v lsb_release >/dev/null &&
 		[[ $(lsb_release -cs) == "$UBUNTU_DISTRIBUTION" ]]); then
-		die "Script can only be ran on an ubuntu-${UBUNTU_DISTRIBUTION} system."
+		echo_error "Script can only be run on an ubuntu-${UBUNTU_DISTRIBUTION} system."
+		echo_bold "$msg"
+		exit 1
 	fi
 
 	if ! curl "http://169.254.169.254/latest/meta-datas" \
 		>/dev/null 2>&1; then
-		die "Not running in AWS, are you sure you are on the" \
+		echo_error "Not running in AWS, are you sure you are on the" \
 			"right system?"
+		echo_bold "$msg"
+		exit 1
 	fi
+
+	echo should not get here
+	exit 1
 }
 
 #
