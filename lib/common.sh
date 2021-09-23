@@ -118,6 +118,23 @@ function check_running_system() {
 }
 
 #
+# We need to have run setup.sh before running most linux-pkg commands.
+# This checks if setup has been run before. Note that if the system was
+# rebooted we want to rerun setup as cloud-init will reset apt sources on
+# boot.
+#
+function run_setup_if_needed() {
+	[[ -f /run/linux-pkg-setup ]] && return
+
+	check_env TOP
+	echo_bold "------------------------------------------------------------"
+	echo_bold "Running setup script"
+	echo_bold "------------------------------------------------------------"
+	logmust "$TOP/setup.sh"
+	echo_bold "------------------------------------------------------------"
+}
+
+#
 # Determine DEFAULT_GIT_BRANCH. If it is unset, default to the branch set in
 # branch.config.
 #
