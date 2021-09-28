@@ -125,9 +125,6 @@ function check_running_system() {
 		echo_bold "$msg"
 		exit 1
 	fi
-
-	echo should not get here
-	exit 1
 }
 
 #
