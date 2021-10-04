@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Copyright 2018, 2020 Delphix
+# Copyright 2018, 2021 Delphix
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -26,6 +26,7 @@ export SUPPORTED_KERNEL_FLAVORS="generic aws gcp azure oracle"
 # for testing purposes to use jenkins-ops.<developer> instead.
 #
 export JENKINS_OPS_DIR="${JENKINS_OPS_DIR:-jenkins-ops}"
+export S3_DEVOPS_BRANCH="${S3_DEVOPS_BRANCH:-master}"
 
 export UBUNTU_DISTRIBUTION="bionic"
 
@@ -100,21 +101,48 @@ function logmust() {
 # scripts on their work system and changing its configuration.
 #
 function check_running_system() {
+	local msg
+
 	if [[ "$DISABLE_SYSTEM_CHECK" == "true" ]]; then
 		echo "WARNING: System check disabled."
 		return 0
 	fi
 
+	msg="Note that you can bypass this check by setting environment"
+	msg="${msg} variable DISABLE_SYSTEM_CHECK=true. Use this at your"
+	msg="${msg} own risk as running this command may modify your system."
+
 	if ! (command -v lsb_release >/dev/null &&
 		[[ $(lsb_release -cs) == "$UBUNTU_DISTRIBUTION" ]]); then
-		die "Script can only be ran on an ubuntu-${UBUNTU_DISTRIBUTION} system."
+		echo_error "Script can only be run on an ubuntu-${UBUNTU_DISTRIBUTION} system."
+		echo_bold "$msg"
+		exit 1
 	fi
 
 	if ! curl "http://169.254.169.254/latest/meta-datas" \
 		>/dev/null 2>&1; then
-		die "Not running in AWS, are you sure you are on the" \
+		echo_error "Not running in AWS, are you sure you are on the" \
 			"right system?"
+		echo_bold "$msg"
+		exit 1
 	fi
+}
+
+#
+# We need to have run setup.sh before running most linux-pkg commands.
+# This checks if setup has been run before. Note that if the system was
+# rebooted we want to rerun setup as cloud-init will reset apt sources on
+# boot.
+#
+function run_setup_if_needed() {
+	[[ -f /run/linux-pkg-setup ]] && return
+
+	check_env TOP
+	echo_bold "------------------------------------------------------------"
+	echo_bold "Running setup script"
+	echo_bold "------------------------------------------------------------"
+	logmust "$TOP/setup.sh"
+	echo_bold "------------------------------------------------------------"
 }
 
 #
@@ -632,7 +660,7 @@ function determine_dependencies_base_url() {
 		[[ -n "$suv" ]] || die "No artifacts found at $url"
 		DEPENDENCIES_BASE_URL="$url/$suv/input-artifacts/combined-packages/packages"
 	else
-		DEPENDENCIES_BASE_URL="s3://snapshot-de-images/builds/$JENKINS_OPS_DIR/devops-gate/master/linux-pkg/$DEFAULT_GIT_BRANCH/build-package"
+		DEPENDENCIES_BASE_URL="s3://snapshot-de-images/builds/$JENKINS_OPS_DIR/devops-gate/$S3_DEVOPS_BRANCH/linux-pkg/$DEFAULT_GIT_BRANCH/build-package"
 	fi
 
 	#
