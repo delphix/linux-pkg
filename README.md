@@ -50,19 +50,12 @@ This quick tutorial shows how to build the packages managed by this framework.
 You need a system that meets the requirements above. For Delphix developers, you
 should clone the `bootstrap-18-04` group on DCoA.
 
-### Step 2. Clone this repository and run the setup script
+### Step 2. Clone this repository
 
 Clone this repository on the build VM.
 
 ```
 git clone https://github.com/delphix/linux-pkg.git
-```
-
-Run the setup script. It only needs to be run once after cloning the VM.
-
-```
-cd linux-pkg
-./setup.sh
 ```
 
 ### Step 3. Build a package

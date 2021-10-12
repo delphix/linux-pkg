@@ -18,6 +18,8 @@
 TOP="$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")"
 source "$TOP/lib/common.sh"
 
+logmust check_running_system
+
 logmust determine_default_git_branch
 
 #
@@ -79,7 +81,6 @@ configure_apt_sources() {
 	logmust sudo apt-key add "$TOP/resources/delphix-secondary-mirror.key"
 }
 
-logmust check_running_system
 logmust configure_apt_sources
 logmust sudo apt-get update
 
@@ -106,3 +107,5 @@ logmust install_shfmt
 
 logmust git config --global user.email "eng@delphix.com"
 logmust git config --global user.name "Delphix Engineering"
+
+logmust sudo touch /run/linux-pkg-setup
