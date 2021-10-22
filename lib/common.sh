@@ -28,7 +28,7 @@ export SUPPORTED_KERNEL_FLAVORS="generic aws gcp azure oracle"
 export JENKINS_OPS_DIR="${JENKINS_OPS_DIR:-jenkins-ops}"
 export S3_DEVOPS_BRANCH="${S3_DEVOPS_BRANCH:-master}"
 
-export UBUNTU_DISTRIBUTION="bionic"
+export UBUNTU_DISTRIBUTION="focal"
 
 #
 # We currently support getting the linux kernel from 3 different sources:
@@ -1240,17 +1240,6 @@ function determine_target_kernels() {
 
 	echo_bold "Kernel versions to use to build modules:"
 	echo_bold "  $KERNEL_VERSIONS"
-}
-
-#
-# Install gcc 8, and make it the default
-#
-function install_gcc8() {
-	logmust install_pkgs gcc-8 g++-8
-	logmust sudo update-alternatives --install /usr/bin/gcc gcc \
-		/usr/bin/gcc-7 700 --slave /usr/bin/g++ g++ /usr/bin/g++-7
-	logmust sudo update-alternatives --install /usr/bin/gcc gcc \
-		/usr/bin/gcc-8 800 --slave /usr/bin/g++ g++ /usr/bin/g++-8
 }
 
 #
