@@ -16,7 +16,7 @@
 #
 # shellcheck disable=SC2034
 
-DEFAULT_PACKAGE_GIT_URL="https://gitlab.delphix.com/os-platform/linux-3rd-party-pkgs.git"
+DEFAULT_PACKAGE_GIT_URL="https://github.com/delphix/crypt-blowfish.git"
 SKIP_COPYRIGHTS_CHECK=true
 
 function build() {
