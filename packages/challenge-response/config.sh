@@ -16,7 +16,7 @@
 #
 # shellcheck disable=SC2034
 
-DEFAULT_PACKAGE_GIT_URL="https://gitlab.delphix.com/os-platform/linux-dlpx-pkgs.git"
+DEFAULT_PACKAGE_GIT_URL="https://github.com/delphix/challenge-response.git"
 
 function prepare() {
 	logmust install_pkgs \

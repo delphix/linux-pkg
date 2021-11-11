@@ -16,7 +16,7 @@
 #
 # shellcheck disable=SC2034
 
-DEFAULT_PACKAGE_GIT_URL="https://gitlab.delphix.com/app/saml-app.git"
+DEFAULT_PACKAGE_GIT_URL="https://github.com/delphix/saml-app.git"
 PACKAGE_DEPENDENCIES="adoptopenjdk"
 
 function prepare() {
