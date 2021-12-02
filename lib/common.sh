@@ -629,7 +629,7 @@ function determine_dependencies_base_url() {
 		[[ -n "$suv" ]] || die "No artifacts found at $url"
 		DEPENDENCIES_BASE_URL="$url/$suv/input-artifacts/combined-packages/packages"
 	else
-		DEPENDENCIES_BASE_URL="s3://snapshot-de-images/builds/$JENKINS_OPS_DIR/devops-gate/master/linux-pkg/$DEFAULT_GIT_BRANCH/build-package"
+		DEPENDENCIES_BASE_URL="s3://snapshot-de-images/builds/$JENKINS_OPS_DIR/linux-pkg/$DEFAULT_GIT_BRANCH/build-package"
 	fi
 
 	#
