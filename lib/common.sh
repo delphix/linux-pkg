@@ -26,7 +26,6 @@ export SUPPORTED_KERNEL_FLAVORS="generic aws gcp azure oracle"
 # for testing purposes to use jenkins-ops.<developer> instead.
 #
 export JENKINS_OPS_DIR="${JENKINS_OPS_DIR:-jenkins-ops}"
-export S3_DEVOPS_BRANCH="${S3_DEVOPS_BRANCH:-master}"
 
 export UBUNTU_DISTRIBUTION="bionic"
 
@@ -660,7 +659,7 @@ function determine_dependencies_base_url() {
 		[[ -n "$suv" ]] || die "No artifacts found at $url"
 		DEPENDENCIES_BASE_URL="$url/$suv/input-artifacts/combined-packages/packages"
 	else
-		DEPENDENCIES_BASE_URL="s3://snapshot-de-images/builds/$JENKINS_OPS_DIR/devops-gate/$S3_DEVOPS_BRANCH/linux-pkg/$DEFAULT_GIT_BRANCH/build-package"
+		DEPENDENCIES_BASE_URL="s3://snapshot-de-images/builds/$JENKINS_OPS_DIR/linux-pkg/$DEFAULT_GIT_BRANCH/build-package"
 	fi
 
 	#
