@@ -23,20 +23,6 @@ logmust check_running_system
 logmust determine_default_git_branch
 
 #
-# In order to ship vSDK 4.0.0 with 6.0.12.0, we need python3.8 (and the
-# relevant distutils release). The following line gets the deadsnakes
-# (https://launchpad.net/~deadsnakes/+archive/ubuntu/ppa) repo from
-# which we install python3.8 in packages/virtualization/config.sh.
-# This line will be removed via DLPX-78481 when 6.0/stage begins
-# tracking 6.0.13.0.
-#
-function install_python_38() {
-	logmust sudo add-apt-repository ppa:deadsnakes/ppa -y
-	logmust sudo apt-get update
-	logmust install_pkgs python 3.8
-}
-
-#
 # Update the sources.list file to point to our internal package mirror. If no
 # mirror url is passed in, then the latest mirror snapshot is used.
 #
@@ -114,7 +100,6 @@ function add_swap() {
 	fi
 }
 
-logmust install_python_38
 logmust configure_apt_sources
 logmust sudo apt-get update
 
