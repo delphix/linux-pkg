@@ -23,10 +23,24 @@ logmust check_running_system
 logmust determine_default_git_branch
 
 #
+# In order to ship vSDK 4.0.0 with 6.0.12.0, we need python3.8 (and the
+# relevant distutils release). The following line gets the deadsnakes
+# (https://launchpad.net/~deadsnakes/+archive/ubuntu/ppa) repo from
+# which we install python3.8 in packages/virtualization/config.sh.
+# This line will be removed via DLPX-78481 when 6.0/stage begins
+# tracking 6.0.13.0.
+#
+function install_python_38() {
+	logmust sudo add-apt-repository ppa:deadsnakes/ppa -y
+	logmust sudo apt-get update
+	logmust install_pkgs python 3.8
+}
+
+#
 # Update the sources.list file to point to our internal package mirror. If no
 # mirror url is passed in, then the latest mirror snapshot is used.
 #
-configure_apt_sources() {
+function configure_apt_sources() {
 	local package_mirror_url
 	local primary_url="$DELPHIX_PACKAGE_MIRROR_MAIN"
 	local secondary_url="$DELPHIX_PACKAGE_MIRROR_SECONDARY"
@@ -81,6 +95,26 @@ configure_apt_sources() {
 	logmust sudo apt-key add "$TOP/resources/delphix-secondary-mirror.key"
 }
 
+#
+# Some packages require cause a spike in memory usage during the build, so
+# we add a swap file to prevent the oom-killer from terminating the build.
+#
+function add_swap() {
+	local swapfile="/swapfile"
+	local size="4G"
+
+	if [[ ! -f "$swapfile" ]]; then
+		logmust sudo fallocate -l "$size" "$swapfile"
+		logmust sudo chmod 600 /swapfile
+		logmust sudo mkswap /swapfile
+	fi
+
+	if ! sudo swapon --show | grep -q "$swapfile"; then
+		logmust sudo swapon "$swapfile"
+	fi
+}
+
+logmust install_python_38
 logmust configure_apt_sources
 logmust sudo apt-get update
 
@@ -111,6 +145,8 @@ logmust install_shfmt
 # https://bugs.launchpad.net/ubuntu/+source/linux/+bug/1849348
 #
 logmust install_gcc8
+
+logmust add_swap
 
 logmust git config --global user.email "eng@delphix.com"
 logmust git config --global user.name "Delphix Engineering"
