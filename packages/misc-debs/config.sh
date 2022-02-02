@@ -49,13 +49,9 @@ function fetch() {
 
 	#
 	# Note about the debs being fetched:
-	# - td-agent was built by the "td-agent" linux-pkg package, but it
-	#   now fails to build due to broken third party dependencies. See
-	#   DLPX-69338 and DLPX-68211.
 	# - unzip was added as a temporary workaround to DLPX-73555.
 	#
 	local debs=(
-		"td-agent_3.5.0-delphix-2019.09.18.20_amd64.deb 84dfa2436039ff2a6312484bd7295ebaf570b5f59f100380b57e68b4800855c4"
 		"unzip_6.0-21ubuntu1_amd64.deb d46069c369ce88c8dd91c52abb8de8d6053606748ef18b3b9bc290fdd8ad2953"
 	)
 
