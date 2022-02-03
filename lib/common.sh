@@ -1086,10 +1086,7 @@ function get_kernel_version_for_platform_from_apt() {
 	# available, it is not always the case.
 	#
 
-	if [[ "$platform" == generic ]] &&
-		[[ "$UBUNTU_DISTRIBUTION" == bionic ]]; then
-		package=linux-image-generic-hwe-18.04
-	elif [[ "$platform" != generic ]] && [[ "$UBUNTU_DISTRIBUTION" == focal ]]; then
+	if [[ "$platform" != generic ]] && [[ "$UBUNTU_DISTRIBUTION" == focal ]]; then
 		package="linux-image-${platform}-lts-20.04"
 	else
 		package="linux-image-${platform}"
