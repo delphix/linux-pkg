@@ -27,7 +27,7 @@ export SUPPORTED_KERNEL_FLAVORS="generic aws gcp azure oracle"
 #
 export JENKINS_OPS_DIR="${JENKINS_OPS_DIR:-jenkins-ops}"
 
-export UBUNTU_DISTRIBUTION="bionic"
+export UBUNTU_DISTRIBUTION="focal"
 
 #
 # We currently support getting the linux kernel from 3 different sources:
@@ -471,21 +471,10 @@ function create_workdir() {
 function install_pkgs() {
 	for attempt in {1..3}; do
 		echo "Running: sudo env DEBIAN_FRONTEND=noninteractive " \
-			"apt-get install -y --allow-downgrades $*"
+			"apt-get install -y $*"
 
-		#
-		# We use the "--allow-downgrades" for the case of a
-		# package needing to install the "unzip" debian package
-		# that we build via the "misc-debs" linux-pkg package.
-		# The "misc-debs" based "unzip" package may have an
-		# older version than what's already installed on the
-		# system, so we need to "--allow-downgrades" in order to
-		# install that specific package; further, that specific
-		# package is required to build the "virtualization"
-		# debian packages.
-		#
 		sudo env DEBIAN_FRONTEND=noninteractive apt-get install \
-			-y --allow-downgrades "$@" && return
+			-y "$@" && return
 
 		echo "apt-get install failed, retrying."
 		sleep 10
@@ -1239,17 +1228,6 @@ function determine_target_kernels() {
 
 	echo_bold "Kernel versions to use to build modules:"
 	echo_bold "  $KERNEL_VERSIONS"
-}
-
-#
-# Install gcc 8, and make it the default
-#
-function install_gcc8() {
-	logmust install_pkgs gcc-8 g++-8
-	logmust sudo update-alternatives --install /usr/bin/gcc gcc \
-		/usr/bin/gcc-7 700 --slave /usr/bin/g++ g++ /usr/bin/g++-7
-	logmust sudo update-alternatives --install /usr/bin/gcc gcc \
-		/usr/bin/gcc-8 800 --slave /usr/bin/g++ g++ /usr/bin/g++-8
 }
 
 #
