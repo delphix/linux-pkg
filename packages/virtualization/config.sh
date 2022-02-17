@@ -59,7 +59,7 @@ function build() {
 	if [[ -n "$DELPHIX_RELEASE_VERSION" ]]; then
 		logmust ant -Ddockerize=true -DbuildJni=true \
 			-DhotfixGenDlpxVersion="$DELPHIX_RELEASE_VERSION" \
-			all package
+			-Dbuild.legacy.resources.war=true all package
 	else
 		logmust ant -Ddockerize=true -DbuildJni=true all package
 	fi
