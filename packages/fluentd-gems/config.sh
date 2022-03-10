@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Copyright 2020 Delphix
+# Copyright 2021 Delphix
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,31 +14,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-
 # shellcheck disable=SC2034
-DEFAULT_PACKAGE_GIT_URL="https://github.com/delphix/linux-kernel-aws.git"
 
-UPSTREAM_GIT_URL="https://git.launchpad.net/~canonical-kernel/ubuntu/+source/linux-aws/+git/${UBUNTU_DISTRIBUTION}"
-# Note: UPSTREAM_GIT_BRANCH is not used here
-UPSTREAM_GIT_BRANCH="none"
-
-#
-# Force push required when syncing with upstream because we perform a rebase.
-#
-FORCE_PUSH_ON_UPDATE=true
-
-function prepare() {
-	logmust kernel_prepare
-}
+DEFAULT_PACKAGE_GIT_URL="https://github.com/delphix/fluentd-gems.git"
 
 function build() {
-	logmust kernel_build "aws"
-}
-
-function update_upstream() {
-	logmust kernel_update_upstream "aws"
-}
-
-function merge_with_upstream() {
-	logmust kernel_merge_with_upstream
+	logmust mkdir -p "$WORKDIR/repo"
+	logmust dpkg_buildpackage_default
 }

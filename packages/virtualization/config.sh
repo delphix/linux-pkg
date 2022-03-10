@@ -17,7 +17,7 @@
 # shellcheck disable=SC2034
 
 DEFAULT_PACKAGE_GIT_URL="https://gitlab.delphix.com/app/dlpx-app-gate.git"
-PACKAGE_DEPENDENCIES="adoptopenjdk crypt-blowfish host-jdks misc-debs"
+PACKAGE_DEPENDENCIES="adoptopenjdk crypt-blowfish host-jdks"
 
 function prepare() {
 	logmust read_list "$WORKDIR/repo/appliance/packaging/build-dependencies"
@@ -26,8 +26,7 @@ function prepare() {
 	logmust install_pkgs \
 		"$DEPDIR"/adoptopenjdk/*.deb \
 		"$DEPDIR"/crypt-blowfish/*.deb \
-		"$DEPDIR"/host-jdks/*.deb \
-		"$DEPDIR"/misc-debs/unzip_6.0-21ubuntu1_amd64.deb
+		"$DEPDIR"/host-jdks/*.deb
 }
 
 function build() {
@@ -60,7 +59,7 @@ function build() {
 	if [[ -n "$DELPHIX_RELEASE_VERSION" ]]; then
 		logmust ant -Ddockerize=true -DbuildJni=true \
 			-DhotfixGenDlpxVersion="$DELPHIX_RELEASE_VERSION" \
-			all package
+			-Dbuild.legacy.resources.war=true all package
 	else
 		logmust ant -Ddockerize=true -DbuildJni=true all package
 	fi
