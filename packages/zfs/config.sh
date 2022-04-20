@@ -19,9 +19,6 @@
 DEFAULT_PACKAGE_GIT_URL="https://github.com/delphix/zfs.git"
 PACKAGE_DEPENDENCIES="@linux-kernel delphix-rust"
 
-UPSTREAM_GIT_URL="https://github.com/zfsonlinux/zfs.git"
-UPSTREAM_GIT_BRANCH="master"
-
 function prepare() {
 	logmust install_pkgs \
 		alien \
@@ -165,8 +162,4 @@ function build() {
 	done
 	logmust cd "$WORKDIR"
 	logmust mv "all-packages/"*.deb "artifacts/"
-}
-
-function update_upstream() {
-	logmust update_upstream_from_git
 }
