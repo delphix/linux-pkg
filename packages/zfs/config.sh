@@ -19,7 +19,7 @@
 DEFAULT_PACKAGE_GIT_URL="https://github.com/delphix/zfs.git"
 PACKAGE_DEPENDENCIES="@linux-kernel delphix-rust"
 
-UPSTREAM_GIT_URL="https://github.com/zfsonlinux/zfs.git"
+UPSTREAM_GIT_URL="https://github.com/openzfs/zfs.git"
 UPSTREAM_GIT_BRANCH="master"
 
 function prepare() {
