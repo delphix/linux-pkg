@@ -159,6 +159,7 @@ function kernel_build() {
 	#logmust debian/rules debian/control
 	#logmust fakeroot debian/rules updateconfigs "${debian_rules_args[@]}"
 	#logmust fakeroot debian/rules clean "${debian_rules_args[@]}"
+	exit 1
 
 	logmust fakeroot debian/rules "binary" "${debian_rules_args[@]}"
 
