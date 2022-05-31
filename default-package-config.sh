@@ -155,6 +155,11 @@ function kernel_build() {
 	local build_deps_tool="apt-get -o Debug::pkgProblemResolver=yes --no-install-recommends --yes"
 	logmust sudo mk-build-deps --install debian/control --tool "${build_deps_tool}"
 
+	# TODO comment me
+	#logmust debian/rules debian/control
+	#logmust fakeroot debian/rules updateconfigs "${debian_rules_args[@]}"
+	#logmust fakeroot debian/rules clean "${debian_rules_args[@]}"
+
 	logmust fakeroot debian/rules "binary" "${debian_rules_args[@]}"
 
 	logmust cd "$WORKDIR"
