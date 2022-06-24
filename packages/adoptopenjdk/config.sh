@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Copyright 2018, 2020 Delphix
+# Copyright 2018, 2022 Delphix
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -19,8 +19,8 @@
 DEFAULT_PACKAGE_GIT_URL=none
 PACKAGE_DEPENDENCIES="make-jpkg"
 
-_tarfile="OpenJDK8U-jdk_x64_linux_hotspot_8u302b08.tar.gz"
-_tarfile_sha256="cc13f274becf9dd5517b6be583632819dfd4dd81e524b5c1b4f406bdaf0e063a"
+_tarfile="OpenJDK8U-jdk_x64_linux_hotspot_8u332b09.tar.gz"
+_tarfile_sha256="adc13a0a0540d77f0a3481b48f10d61eb203e5ad4914507d489c2de3bd3d83da"
 _jdk_path="/usr/lib/jvm/adoptopenjdk-java8-jdk-amd64"
 
 function prepare() {
