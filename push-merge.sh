@@ -76,8 +76,14 @@ set -o pipefail
 echo "Running: git rev-parse refs/heads/repo-HEAD-saved"
 saved_ref=$(git rev-parse refs/heads/repo-HEAD-saved) ||
 	die "Failed to read local ref refs/heads/repo-HEAD-saved"
+
+git_url="$DEFAULT_PACKAGE_GIT_URL"
+if [[ -n "$FETCH_GIT_TOKEN" ]] && [[ "$git_url" == https://github.com/* ]]; then
+	git_url="${git_url/https:\/\//https:\/\/${FETCH_GIT_TOKEN}@}"
+fi
+
 echo "Running: git ls-remote $DEFAULT_PACKAGE_GIT_URL refs/heads/$DEFAULT_GIT_BRANCH"
-remote_ref=$(git ls-remote "$DEFAULT_PACKAGE_GIT_URL" "refs/heads/$DEFAULT_GIT_BRANCH" |
+remote_ref=$(git ls-remote "$git_url" "refs/heads/$DEFAULT_GIT_BRANCH" |
 	awk '{print $1}') ||
 	die "Failed to read remote ref refs/heads/$DEFAULT_GIT_BRANCH"
 set +o pipefail
