@@ -19,8 +19,8 @@
 DEFAULT_PACKAGE_GIT_URL=none
 PACKAGE_DEPENDENCIES="make-jpkg"
 
-_tarfile="OpenJDK8U-jdk_x64_linux_hotspot_8u332b09.tar.gz"
-_tarfile_sha256="adc13a0a0540d77f0a3481b48f10d61eb203e5ad4914507d489c2de3bd3d83da"
+_tarfile="OpenJDK8U-jdk_x64_linux_hotspot_8u342b07.tar.gz"
+_tarfile_sha256="8252c0e11d542ea0f9ce6b8f147d1a2bea4a17e9fc299da270288f5a4f35b1f3"
 _jdk_path="/usr/lib/jvm/adoptopenjdk-java8-jdk-amd64"
 
 function prepare() {
