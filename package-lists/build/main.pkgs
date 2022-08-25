@@ -26,6 +26,7 @@ masking
 nfs-utils
 performance-diagnostics
 ptools
+python-is-python3
 python-rtslib-fb
 recovery-environment
 savedump
