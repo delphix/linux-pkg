@@ -31,6 +31,7 @@ function configure_apt_sources() {
 	local primary_url="$DELPHIX_PACKAGE_MIRROR_MAIN"
 	local secondary_url="$DELPHIX_PACKAGE_MIRROR_SECONDARY"
 
+	DEFAULT_GIT_BRANCH="6.0/stage"
 	if [[ -z "$primary_url" ]] || [[ -z "$secondary_url" ]]; then
 		local latest_url="http://linux-package-mirror.delphix.com/"
 		if is_release_branch; then
