@@ -20,12 +20,12 @@ DEFAULT_PACKAGE_GIT_URL=none
 PACKAGE_DEPENDENCIES="make-jpkg"
 
 if [[ "$UPSTREAM_PRODUCT_BRANCH" == "master" ]]; then
-	_tarfile="OpenJDK8U-jdk_x64_linux_hotspot_8u342b07.tar.gz"
-	_tarfile_sha256="8252c0e11d542ea0f9ce6b8f147d1a2bea4a17e9fc299da270288f5a4f35b1f3"
+	_tarfile="OpenJDK8U-jdk_x64_linux_hotspot_8u345b01.tar.gz"
+	_tarfile_sha256="ed6c9db3719895584fb1fd69fc79c29240977675f26631911c5a1dbce07b7d58"
 	_jdk_path="/usr/lib/jvm/adoptopenjdk-java8-jdk-amd64"
 else
-	_tarfile="OpenJDK8U-jdk_x64_linux_hotspot_8u332b09.tar.gz"
-	_tarfile_sha256="adc13a0a0540d77f0a3481b48f10d61eb203e5ad4914507d489c2de3bd3d83da"
+	_tarfile="OpenJDK8U-jdk_x64_linux_hotspot_8u345b01.tar.gz"
+	_tarfile_sha256="ed6c9db3719895584fb1fd69fc79c29240977675f26631911c5a1dbce07b7d58"
 	_jdk_path="/usr/lib/jvm/adoptopenjdk-java8-jdk-amd64"
 fi
 
