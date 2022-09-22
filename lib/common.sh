@@ -575,8 +575,16 @@ function list_linux_kernel_packages() {
 
 function install_shfmt() {
 	if [[ ! -f /usr/local/bin/shfmt ]]; then
+		local arch
+		arch=$(dpkg-architecture -q DEB_HOST_ARCH)
+
+		# The release names for shfmt don't use the actual
+		# architecture strings, unfortunately.
+		if [[ "$arch" == "arm64" ]]; then
+			arch="arm"
+		fi
 		logmust sudo wget -nv -O /usr/local/bin/shfmt \
-			https://github.com/mvdan/sh/releases/download/v2.4.0/shfmt_v2.4.0_linux_amd64
+			https://github.com/mvdan/sh/releases/download/v2.4.0/shfmt_v2.4.0_linux_$arch
 		logmust sudo chmod +x /usr/local/bin/shfmt
 	fi
 	echo "shfmt version $(shfmt -version) is installed."
