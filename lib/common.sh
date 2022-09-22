@@ -717,14 +717,14 @@ function fetch_dependencies() {
 		case "$source" in
 		"local")
 			logmust cp -r "$WORKDIR/../../$dep/tmp/artifacts/" \
-			    "$dep/"
+				"$dep/"
 			;;
 		"s3")
 			s3urlvar="${_RET}_S3_URL"
 			if [[ -n "${!s3urlvar}" ]]; then
 				s3url="${!s3urlvar}"
 				echo "S3 URL of package dependency '$dep' " \
-				    "provided externally"
+					"provided externally"
 				echo "$s3urlvar=$s3url"
 			else
 				logmust get_package_dependency_s3_url "$dep"
@@ -734,10 +734,9 @@ function fetch_dependencies() {
 			logmust mkdir "$dep"
 			logmust aws s3 ls "$s3url"
 			logmust aws s3 cp --only-show-errors --recursive \
-			    "$s3url" "$dep/"
+				"$s3url" "$dep/"
 			echo_bold "Fetched artifacts for '$dep' from $s3url"
-			PACKAGE_DEPENDENCIES_METADATA="" \
-			    "${PACKAGE_DEPENDENCIES_METADATA}$dep: $s3url\\n"
+			PACKAGE_DEPENDENCIES_METADATA="${PACKAGE_DEPENDENCIES_METADATA}$dep: $s3url\\n"
 			;;
 		*)
 			die "invalid source parameter specified: '$source'"
