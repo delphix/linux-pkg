@@ -39,7 +39,6 @@ function usage() {
 	echo "    -c  also run package's checkstyle hook."
 	echo "    -r  override default revision for package."
 	echo "    -h  display this message and exit."
-	echo "    -l  use locally-built dependencies instead of s3 versions."
 	echo ""
 	exit 2
 }
@@ -49,15 +48,13 @@ unset PARAM_PACKAGE_GIT_BRANCH
 unset PARAM_PACKAGE_REVISION
 
 do_checkstyle=false
-source="s3"
-while getopts ':b:cg:hlr:' c; do
+while getopts ':b:cg:hr:' c; do
 	case "$c" in
 	g) export PARAM_PACKAGE_GIT_URL="$OPTARG" ;;
 	b) export PARAM_PACKAGE_GIT_BRANCH="$OPTARG" ;;
 	r) export PARAM_PACKAGE_REVISION="$OPTARG" ;;
 	c) do_checkstyle=true ;;
 	h) usage >&2 ;;
-	l) source="local" ;;
 	*) usage "illegal option -- $OPTARG" >&2 ;;
 	esac
 done
@@ -89,7 +86,7 @@ logmust cd "$WORKDIR"
 stage fetch
 
 logmust cd "$WORKDIR"
-stage fetch_dependencies $source
+stage fetch_dependencies
 
 logmust cd "$WORKDIR"
 stage prepare
