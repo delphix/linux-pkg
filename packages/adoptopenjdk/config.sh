@@ -39,6 +39,12 @@ function prepare() {
 }
 
 function fetch() {
+	# We exit here rather than above in the architecture detection logic
+	# to deal with the fact that this file can, during test runs, be
+	# sourced on platforms where builds are not happening. list-packages
+	# sources the file to gather information about the package, and this
+	# is performed on jenkins and macos during test runs. Having the exit
+	# occur above causes those runs to fail.
 	if [[ -z "$_tarfile" ]]; then
 		echo "Invalid architecture detected" >&2
 		exit 1
