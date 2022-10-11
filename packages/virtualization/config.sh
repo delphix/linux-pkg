@@ -57,7 +57,7 @@ function build() {
 	#
 	logmust cd "$WORKDIR/repo/appliance"
 
-	local secretDbArgs=()
+	local args=()
 
 	# Because ant does not read the environment variables of the execution context, we set them as
 	# parameters only if they exist in the execution context
@@ -70,48 +70,44 @@ function build() {
 	# is not set. So [[ "" ]] is what is actually evaluated when 'variable' is not set.
 
 	if [[ ${SECRET_DB_USE_JUMPBOX+nothing} ]]; then
-		secretDbArgs+=(-DSECRET_DB_USE_JUMPBOX="$SECRET_DB_USE_JUMPBOX")
+		args+=("-DSECRET_DB_USE_JUMPBOX=\"$SECRET_DB_USE_JUMPBOX\"")
 	fi
 
 	if [[ ${SECRET_DB_JUMP_BOX_HOST+nothing} ]]; then
-		secretDbArgs+=(-DSECRET_DB_JUMP_BOX_HOST="$SECRET_DB_JUMP_BOX_HOST")
+		args+=("-DSECRET_DB_JUMP_BOX_HOST=\"$SECRET_DB_JUMP_BOX_HOST\"")
 	fi
 
 	if [[ ${SECRET_DB_JUMP_BOX_USER+nothing} ]]; then
-		secretDbArgs+=(-DSECRET_DB_JUMP_BOX_USER="$SECRET_DB_JUMP_BOX_USER")
+		args+=("-DSECRET_DB_JUMP_BOX_USER=\"$SECRET_DB_JUMP_BOX_USER\"")
 	fi
 
 	if [[ ${SECRET_DB_JUMP_BOX_PRIVATE_KEY+nothing} ]]; then
-		secretDbArgs+=(-DSECRET_DB_JUMP_BOX_PRIVATE_KEY="$SECRET_DB_JUMP_BOX_PRIVATE_KEY")
+		args+=("-DSECRET_DB_JUMP_BOX_PRIVATE_KEY=\"$SECRET_DB_JUMP_BOX_PRIVATE_KEY\"")
 	fi
 
 	if [[ ${SECRET_DB_AWS_ENDPOINT+nothing} ]]; then
-		secretDbArgs+=(-DSECRET_DB_AWS_ENDPOINT="$SECRET_DB_AWS_ENDPOINT")
+		args+=("-DSECRET_DB_AWS_ENDPOINT=\"$SECRET_DB_AWS_ENDPOINT\"")
 	fi
 
 	if [[ ${SECRET_DB_AWS_PROFILE+nothing} ]]; then
-		secretDbArgs+=(-DSECRET_DB_AWS_PROFILE="$SECRET_DB_AWS_PROFILE")
+		args+=("-DSECRET_DB_AWS_PROFILE=\"$SECRET_DB_AWS_PROFILE\"")
 	fi
 
 	if [[ ${SECRET_DB_AWS_REGION+nothing} ]]; then
-		secretDbArgs+=(-DSECRET_DB_AWS_REGION="$SECRET_DB_AWS_REGION")
+		args+=("-DSECRET_DB_AWS_REGION=\"$SECRET_DB_AWS_REGION\"")
 	fi
 
+	args+=("-Ddockerize=true")
+	args+=("-DbuildJni=true")
+
 	if [[ -n "$DELPHIX_RELEASE_VERSION" ]]; then
-		logmust ant \
-			-Ddockerize=true \
-			-DbuildJni=true \
-			-DhotfixGenDlpxVersion="$DELPHIX_RELEASE_VERSION" \
-			-Dbuild.legacy.resources.war=true \
-			${secretDbArgs[@]} \
-			all-secrets package
-	else
-		logmust ant \
-			-Ddockerize=true \
-			-DbuildJni=true \
-			${secretDbArgs[@]} \
-			all-secrets package
+		args+=("-DhotfixGenDlpxVersion=\"$DELPHIX_RELEASE_VERSION\"")
+		args+=("-Dbuild.legacy.resources.war=true")
 	fi
+
+	logmust ant \
+		"${args[@]}"
+	all-secrets package
 
 	#
 	# Publish the virtualization package artifacts
