@@ -105,9 +105,7 @@ function build() {
 		args+=("-Dbuild.legacy.resources.war=true")
 	fi
 
-	logmust ant \
-		"${args[@]}"
-	all-secrets package
+	logmust ant "${args[@]}" all-secrets package
 
 	#
 	# Publish the virtualization package artifacts
