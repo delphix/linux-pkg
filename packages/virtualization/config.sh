@@ -59,9 +59,6 @@ function build() {
 
 	local args=()
 
-	# Because ant does not read the environment variables of the execution context, we set them as
-	# parameters only if they exist in the execution context
-
 	# Here we check for whether the environment variables are set and pass them along. We check for
 	# existence instead of emptiness to avoid adding a layer of interpretation.
 
@@ -82,9 +79,9 @@ function build() {
 	fi
 
 	if [[ ${SECRET_DB_JUMP_BOX_PRIVATE_KEY+nothing} ]]; then
-	  if [[ ! -f "$SECRET_DB_JUMP_BOX_PRIVATE_KEY" ]]; then
-	    die "Jumpbox private key not found."
-	  fi
+		if [[ ! -f "$SECRET_DB_JUMP_BOX_PRIVATE_KEY" ]]; then
+			die "Jumpbox private key not found."
+		fi
 		args+=("-DSECRET_DB_JUMP_BOX_PRIVATE_KEY=$SECRET_DB_JUMP_BOX_PRIVATE_KEY")
 	fi
 
