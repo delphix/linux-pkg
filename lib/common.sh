@@ -214,6 +214,7 @@ function check_git_ref() {
 #
 function stage() {
 	typeset hook=$1
+	shift 1
 
 	check_env PACKAGE
 	local stage_start=$SECONDS
@@ -221,7 +222,7 @@ function stage() {
 	echo ""
 	if type -t "$hook" >/dev/null; then
 		echo_bold "PACKAGE $PACKAGE: STAGE $hook STARTED"
-		logmust "$hook"
+		logmust "$hook" "$@"
 		echo_bold "PACKAGE $PACKAGE: STAGE $hook COMPLETED in" \
 			"$((SECONDS - stage_start)) seconds"
 	else
@@ -574,8 +575,16 @@ function list_linux_kernel_packages() {
 
 function install_shfmt() {
 	if [[ ! -f /usr/local/bin/shfmt ]]; then
+		local arch
+		arch=$(dpkg-architecture -q DEB_HOST_ARCH)
+
+		# The release names for shfmt don't use the actual
+		# architecture strings, unfortunately.
+		if [[ "$arch" == "arm64" ]]; then
+			arch="arm"
+		fi
 		logmust sudo wget -nv -O /usr/local/bin/shfmt \
-			https://github.com/mvdan/sh/releases/download/v2.4.0/shfmt_v2.4.0_linux_amd64
+			https://github.com/mvdan/sh/releases/download/v2.4.0/shfmt_v2.4.0_linux_$arch
 		logmust sudo chmod +x /usr/local/bin/shfmt
 	fi
 	echo "shfmt version $(shfmt -version) is installed."
@@ -699,6 +708,7 @@ function get_package_dependency_s3_url() {
 # is defined in the package's config.
 #
 function fetch_dependencies() {
+	local source="$1"
 	export DEPDIR="$WORKDIR/dependencies"
 	logmust mkdir "$DEPDIR"
 	logmust cd "$DEPDIR"
@@ -712,22 +722,31 @@ function fetch_dependencies() {
 	for dep in $PACKAGE_DEPENDENCIES; do
 		echo "Fetching artifacts for dependency '$dep' ..."
 		get_package_prefix "$dep"
-		s3urlvar="${_RET}_S3_URL"
-		if [[ -n "${!s3urlvar}" ]]; then
-			s3url="${!s3urlvar}"
-			echo "S3 URL of package dependency '$dep' provided" \
-				"externally"
-			echo "$s3urlvar=$s3url"
-		else
-			logmust get_package_dependency_s3_url "$dep"
-			s3url="$_RET"
-		fi
-		[[ "$s3url" != */ ]] && s3url="$s3url/"
-		logmust mkdir "$dep"
-		logmust aws s3 ls "$s3url"
-		logmust aws s3 cp --only-show-errors --recursive "$s3url" "$dep/"
-		echo_bold "Fetched artifacts for '$dep' from $s3url"
-		PACKAGE_DEPENDENCIES_METADATA="${PACKAGE_DEPENDENCIES_METADATA}$dep: $s3url\\n"
+		case "$source" in
+		"local")
+			logmust cp -r "$WORKDIR/../../$dep/tmp/artifacts/ $dep/"
+			;;
+		"s3")
+			s3urlvar="${_RET}_S3_URL"
+			if [[ -n "${!s3urlvar}" ]]; then
+				s3url="${!s3urlvar}"
+				echo "S3 URL of package dependency '$dep' provided externally"
+				echo "$s3urlvar=$s3url"
+			else
+				logmust get_package_dependency_s3_url "$dep"
+				s3url="$_RET"
+			fi
+			[[ "$s3url" != */ ]] && s3url="$s3url/"
+			logmust mkdir "$dep"
+			logmust aws s3 ls "$s3url"
+			logmust aws s3 cp --only-show-errors --recursive "$s3url" "$dep/"
+			echo_bold "Fetched artifacts for '$dep' from $s3url"
+			PACKAGE_DEPENDENCIES_METADATA="${PACKAGE_DEPENDENCIES_METADATA}$dep: $s3url\\n"
+			;;
+		*)
+			die "invalid source parameter specified: '$source'"
+			;;
+		esac
 	done
 }
 

@@ -40,6 +40,32 @@ function build() {
 
 	logmust cd "$WORKDIR/repo"
 
+	if [[ "$SECRET_DB_AWS_ENDPOINT" ]]; then
+		export SECRET_DB_AWS_ENDPOINT="$SECRET_DB_AWS_ENDPOINT"
+	fi
+
+	# Using secrets proxy
+	if [[ "$SECRET_DB_USE_JUMPBOX" ]]; then
+		export SECRET_DB_USE_JUMPBOX="$SECRET_DB_USE_JUMPBOX"
+	fi
+	if [[ "$SECRET_DB_JUMP_BOX_HOST" ]]; then
+		export SECRET_DB_JUMP_BOX_HOST="$SECRET_DB_JUMP_BOX_HOST"
+	fi
+	if [[ "$SECRET_DB_JUMP_BOX_USER" ]]; then
+		export SECRET_DB_JUMP_BOX_USER="$SECRET_DB_JUMP_BOX_USER"
+	fi
+	if [[ "$SECRET_DB_JUMP_BOX_PRIVATE_KEY" ]]; then
+		export SECRET_DB_JUMP_BOX_PRIVATE_KEY="$SECRET_DB_JUMP_BOX_PRIVATE_KEY"
+	fi
+
+	# Using master/eng-secret-user
+	if [[ "$SECRET_DB_AWS_PROFILE" ]]; then
+		export SECRET_DB_AWS_PROFILE="$SECRET_DB_AWS_PROFILE"
+	fi
+	if [[ "$SECRET_DB_AWS_REGION" ]]; then
+		export SECRET_DB_AWS_REGION="$SECRET_DB_AWS_REGION"
+	fi
+
 	logmust ./gradlew --no-daemon --stacktrace \
 		-Porg.gradle.configureondemand=false \
 		-PenvironmentName=linuxappliance \
