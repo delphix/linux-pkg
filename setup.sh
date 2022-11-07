@@ -116,6 +116,7 @@ logmust sudo apt-get update
 # - jq is used to generate a JSON formatted metadata file by some packages.
 #
 logmust install_pkgs \
+	build-essential \
 	debhelper \
 	devscripts \
 	equivs \
