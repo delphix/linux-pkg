@@ -121,7 +121,8 @@ logmust install_pkgs \
 	devscripts \
 	equivs \
 	shellcheck \
-	jq
+	jq \
+	rsync
 
 logmust install_shfmt
 
