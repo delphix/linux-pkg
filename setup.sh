@@ -93,7 +93,7 @@ function add_swap() {
 	if [[ ! -f "$swapfile" ]]; then
 		#logmust sudo fallocate -l "$size" "$swapfile"
 		#logmust sudo chmod 600 /swapfile
-		logmust sudo mkswap /swapfile
+		logmust sudo mkswap "$swapfile"
 	fi
 
 	if ! sudo swapon --show | grep -q "$swapfile"; then
