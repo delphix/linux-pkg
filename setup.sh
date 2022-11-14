@@ -125,6 +125,8 @@ logmust install_pkgs \
 	jq \
 	rsync
 
+logmust sudo apt-get purge -y docker.io
+
 logmust sudo apt-get -y upgrade
 
 logmust install_shfmt
