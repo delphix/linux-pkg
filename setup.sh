@@ -125,6 +125,8 @@ logmust install_pkgs \
 	jq \
 	rsync
 
+logmust sudo apt-get -y upgrade
+
 logmust install_shfmt
 
 #logmust add_swap
