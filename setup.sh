@@ -120,6 +120,7 @@ logmust install_pkgs \
 	debhelper \
 	devscripts \
 	equivs \
+	gcc-9 \
 	shellcheck \
 	jq \
 	rsync
