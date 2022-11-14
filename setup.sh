@@ -132,7 +132,7 @@ logmust sudo apt-get -y upgrade
 
 logmust install_shfmt
 
-#logmust add_swap
+logmust add_swap
 
 logmust git config --global user.email "eng@delphix.com"
 logmust git config --global user.name "Delphix Engineering"
