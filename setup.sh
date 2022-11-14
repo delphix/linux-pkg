@@ -86,12 +86,13 @@ function configure_apt_sources() {
 # we add a swap file to prevent the oom-killer from terminating the build.
 #
 function add_swap() {
-	local swapfile="/swapfile"
+	#local swapfile="/swapfile"
+	local swapfile="/dev/nvme1n1"
 	local size="4G"
 
 	if [[ ! -f "$swapfile" ]]; then
-		logmust sudo fallocate -l "$size" "$swapfile"
-		logmust sudo chmod 600 /swapfile
+		#logmust sudo fallocate -l "$size" "$swapfile"
+		#logmust sudo chmod 600 /swapfile
 		logmust sudo mkswap /swapfile
 	fi
 
