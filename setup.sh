@@ -86,18 +86,36 @@ function configure_apt_sources() {
 # we add a swap file to prevent the oom-killer from terminating the build.
 #
 function add_swap() {
-	local swapfile="/swapfile"
-	local size="4G"
+	local rootfs
+	local swapfile
 
-	if [[ ! -f "$swapfile" ]]; then
-		logmust sudo fallocate -l "$size" "$swapfile"
-		logmust sudo chmod 600 /swapfile
-		logmust sudo mkswap /swapfile
+	rootfs=$(awk '$2 == "/" { print $3 }' /proc/self/mounts)
+
+	#
+	# If the root filesystem type is ZFS, we assume we're running on
+	# a Delphix based buildserver, and we also assume the topology
+	# of the disks, such that we'll have an unused disk that can be
+	# used for a dedicated swap device, since swap on ZFS can lead
+	# to deadlocks (https://github.com/openzfs/zfs/issues/7734).
+	#
+	if [[ "$rootfs" == "zfs" ]]; then
+		swapfile="/dev/nvme1n1"
+	else
+		swapfile="/swapfile"
 	fi
 
-	if ! sudo swapon --show | grep -q "$swapfile"; then
-		logmust sudo swapon "$swapfile"
+	# Swap already enabled, nothing to do.
+	if sudo swapon --show | grep -q "$swapfile"; then
+		return
 	fi
+
+	if [[ "$rootfs" != "zfs" ]]; then
+		logmust sudo fallocate -l 4G "$swapfile"
+		logmust sudo chmod 600 "$swapfile"
+	fi
+
+	logmust sudo mkswap "$swapfile"
+	logmust sudo swapon "$swapfile"
 }
 
 logmust configure_apt_sources
