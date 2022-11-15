@@ -138,6 +138,7 @@ logmust install_pkgs \
 	debhelper \
 	devscripts \
 	equivs \
+	rsync \
 	shellcheck \
 	jq
 
