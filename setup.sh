@@ -89,19 +89,16 @@ function add_swap() {
 	local rootfs
 	local swapfile
 
+	swapfile="/swapfile"
 	rootfs=$(awk '$2 == "/" { print $3 }' /proc/self/mounts)
 
 	#
-	# If the root filesystem type is ZFS, we assume we're running on
-	# a Delphix based buildserver, and we also assume the topology
-	# of the disks, such that we'll have an unused disk that can be
-	# used for a dedicated swap device, since swap on ZFS can lead
-	# to deadlocks (https://github.com/openzfs/zfs/issues/7734).
+	# If the root filesystem is ZFS, we assume we're running on a
+	# Delphix based buildserver, and assume swap is already enabled;
+	# the Delphix buildserver should enable swap for us.
 	#
 	if [[ "$rootfs" == "zfs" ]]; then
-		swapfile="/dev/nvme1n1"
-	else
-		swapfile="/swapfile"
+		return
 	fi
 
 	# Swap already enabled, nothing to do.
@@ -109,11 +106,8 @@ function add_swap() {
 		return
 	fi
 
-	if [[ "$rootfs" != "zfs" ]]; then
-		logmust sudo fallocate -l 4G "$swapfile"
-		logmust sudo chmod 600 "$swapfile"
-	fi
-
+	logmust sudo fallocate -l 4G "$swapfile"
+	logmust sudo chmod 600 "$swapfile"
 	logmust sudo mkswap "$swapfile"
 	logmust sudo swapon "$swapfile"
 }
