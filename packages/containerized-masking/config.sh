@@ -24,7 +24,7 @@
 # only works with packages that are included in the appliance, which this one
 # isn't.
 #
-DEFAULT_PACKAGE_GIT_URL="https://gitlab.delphix.com/masking/dms-core-gate.git"
+DEFAULT_PACKAGE_GIT_URL="https://github.com/delphix/dms-core-gate.git"
 
 PACKAGE_DEPENDENCIES="adoptopenjdk"
 SKIP_COPYRIGHTS_CHECK=true
