@@ -16,7 +16,7 @@
 #
 # shellcheck disable=SC2034
 
-DEFAULT_PACKAGE_GIT_URL="https://gitlab.delphix.com/app/dlpx-app-gate.git"
+DEFAULT_PACKAGE_GIT_URL="https://github.com/delphix/dlpx-app-gate.git"
 PACKAGE_DEPENDENCIES="adoptopenjdk crypt-blowfish host-jdks"
 
 function prepare() {
