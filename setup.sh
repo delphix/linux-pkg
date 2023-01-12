@@ -86,18 +86,30 @@ function configure_apt_sources() {
 # we add a swap file to prevent the oom-killer from terminating the build.
 #
 function add_swap() {
-	local swapfile="/swapfile"
-	local size="4G"
+	local rootfs
+	local swapfile
 
-	if [[ ! -f "$swapfile" ]]; then
-		logmust sudo fallocate -l "$size" "$swapfile"
-		logmust sudo chmod 600 /swapfile
-		logmust sudo mkswap /swapfile
+	swapfile="/swapfile"
+	rootfs=$(awk '$2 == "/" { print $3 }' /proc/self/mounts)
+
+	#
+	# If the root filesystem is ZFS, we assume we're running on a
+	# Delphix based buildserver, and assume swap is already enabled;
+	# the Delphix buildserver should enable swap for us.
+	#
+	if [[ "$rootfs" == "zfs" ]]; then
+		return
 	fi
 
-	if ! sudo swapon --show | grep -q "$swapfile"; then
-		logmust sudo swapon "$swapfile"
+	# Swap already enabled, nothing to do.
+	if sudo swapon --show | grep -q "$swapfile"; then
+		return
 	fi
+
+	logmust sudo fallocate -l 4G "$swapfile"
+	logmust sudo chmod 600 "$swapfile"
+	logmust sudo mkswap "$swapfile"
+	logmust sudo swapon "$swapfile"
 }
 
 logmust configure_apt_sources
@@ -116,9 +128,11 @@ logmust sudo apt-get update
 # - jq is used to generate a JSON formatted metadata file by some packages.
 #
 logmust install_pkgs \
+	build-essential \
 	debhelper \
 	devscripts \
 	equivs \
+	rsync \
 	shellcheck \
 	jq
 

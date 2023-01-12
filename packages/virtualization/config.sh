@@ -102,7 +102,6 @@ function build() {
 
 	if [[ -n "$DELPHIX_RELEASE_VERSION" ]]; then
 		args+=("-DhotfixGenDlpxVersion=$DELPHIX_RELEASE_VERSION")
-		args+=("-Dbuild.legacy.resources.war=true")
 	fi
 
 	logmust ant "${args[@]}" all-secrets package
