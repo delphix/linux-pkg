@@ -30,6 +30,25 @@ function checkstyle() {
 }
 
 function build() {
+	#
+	# We set this environment variable to coerce the "read-version"
+	# script (part of the cloud-init repository) to behave correctly
+	# (for us) when it's run as part of the cloud-init build system.
+	#
+	# Specifically, without this set, the cloud-init build system
+	# will attempt to dynamically set the package version based on
+	# the upstream git tags that it expects to exist. The problem
+	# for us, is these upstream git tags don't exist when we do the
+	# package build, and even if they did exist, our repository's
+	# git history is completely unrelated to the upstream git
+	# history, due to how we merge with Ubuntu (i.e. using Ubuntu's
+	# source package, rather than a git repository).
+	#
+	# Thus, without this settinng, the build will fail when it tries
+	# to dynamically set the package version.
+	#
+	export TRAVIS_PULL_REQUEST_BRANCH="upstream/"
+
 	logmust dpkg_buildpackage_default
 }
 
