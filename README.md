@@ -606,7 +606,7 @@ dependencies can be installed by calling
 `install_build_deps_from_control_file()`.
 For other packages, you can usually find the build dependencies in the project's
 README. It is recommended to edit the `debian/control` file of the package
-to list the required build dependencies, so that 
+to list the required build dependencies, so that
 `install_build_deps_from_control_file()` can be used. Otherwise, you can also
 use the `install_pkgs()` lib function to install packages.
 
@@ -680,7 +680,7 @@ In `config.sh`, you'll need to define two variables:
 e.g.:
 
 ```
-DEFAULT_PACKAGE_GIT_URL="https://delphix.gitlab.com/<user>/<package>"
+DEFAULT_PACKAGE_GIT_URL="https://github.com/delphix/<package>"
 ```
 
 #### Step 2. Add package hooks

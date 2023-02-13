@@ -71,6 +71,6 @@ function build() {
 		-PenvironmentName=linuxappliance \
 		:tools:docker:packageMaskingKubernetes
 
-	logmust cp -v tools/docker/build/masking-kubernetes.zip \
+	logmust cp -v tools/docker/build/masking-kubernetes*.zip \
 		"$WORKDIR/artifacts/"
 }
