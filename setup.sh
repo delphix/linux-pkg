@@ -19,8 +19,7 @@ TOP="$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")"
 source "$TOP/lib/common.sh"
 
 logmust check_running_system
-
-logmust determine_default_git_branch
+check_env DEFAULT_GIT_BRANCH
 
 #
 # Update the sources.list file to point to our internal package mirror. If no

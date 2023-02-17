@@ -53,7 +53,6 @@ logmust check_package_exists "$PACKAGE"
 # If the script is called manually, we set it here.
 #
 DEFAULT_REVISION="${DEFAULT_REVISION:-$(default_revision)}"
-logmust determine_default_git_branch
 
 logmust load_package_config "$PACKAGE"
 logmust create_workdir

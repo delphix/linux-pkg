@@ -67,13 +67,13 @@ shift $((OPTIND - 1))
 PACKAGE=$1
 
 logmust check_package_exists "$PACKAGE"
+check_env DEFAULT_GIT_BRANCH
 
 #
 # DEFAULT_REVISION & DEFAULT_GIT_BRANCH will be set if called from buildlist.sh.
 # If the script is called manually, we set it here.
 #
 DEFAULT_REVISION="${DEFAULT_REVISION:-$(default_revision)}"
-logmust determine_default_git_branch
 
 echo ""
 echo_bold "===================================================================="

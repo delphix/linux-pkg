@@ -18,6 +18,7 @@
 TOP="$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")"
 source "$TOP/lib/common.sh"
 
+check_env DEFAULT_GIT_BRANCH
 logmust check_running_system
 logmust run_setup_if_needed
 
@@ -52,8 +53,6 @@ shift $((OPTIND - 1))
 PACKAGE=$1
 
 logmust check_package_exists "$PACKAGE"
-
-logmust determine_default_git_branch
 
 merging_ref="refs/heads/projects/auto-update/$DEFAULT_GIT_BRANCH/merging"
 if [[ "$DRYRUN" == 'true' ]]; then
