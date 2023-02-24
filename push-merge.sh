@@ -18,6 +18,7 @@
 TOP="$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")"
 source "$TOP/lib/common.sh"
 
+check_env DEFAULT_GIT_BRANCH
 logmust check_running_system
 logmust run_setup_if_needed
 
@@ -56,7 +57,6 @@ fi
 logmust check_package_exists "$PACKAGE"
 
 DEFAULT_REVISION="${DEFAULT_REVISION:-$(default_revision)}"
-logmust determine_default_git_branch
 logmust load_package_config "$PACKAGE"
 
 if [[ ! -d "$WORKDIR/repo" ]]; then
