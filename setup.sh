@@ -35,7 +35,7 @@ function configure_apt_sources() {
 		if is_release_branch; then
 			package_mirror_url="${latest_url}${DEFAULT_GIT_BRANCH}"
 		else
-			latest_url+="${DEFAULT_GIT_BRANCH}/latest/"
+			latest_url+="6.0/stage/latest/"
 			package_mirror_url=$(curl -LfSs -o /dev/null -w '%{url_effective}' \
 				"$latest_url" || die "Could not curl $latest_url")
 			# Remove trailing slash, if present.
