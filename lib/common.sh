@@ -1069,9 +1069,9 @@ function get_kernel_version_for_platform_from_apt() {
 	#
 
 	if [[ "$platform" != generic ]] && [[ "$UBUNTU_DISTRIBUTION" == focal ]]; then
-		package="linux-image-${platform}-lts-20.04"
-	else
 		package="linux-image-${platform}"
+	else
+		package="linux-image-${platform}-hwe-20.04"
 	fi
 
 	if [[ "$(apt-cache show --no-all-versions "$package" \
