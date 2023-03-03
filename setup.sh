@@ -21,6 +21,9 @@ source "$TOP/lib/common.sh"
 logmust check_running_system
 check_env DEFAULT_GIT_BRANCH
 
+# Hack to work for project branches
+DEFAULT_GIT_BRANCH="6.0/stage"
+
 #
 # Update the sources.list file to point to our internal package mirror. If no
 # mirror url is passed in, then the latest mirror snapshot is used.
