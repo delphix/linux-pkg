@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Copyright 2021 Delphix
+# Copyright 2021, 2023 Delphix
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -47,12 +47,8 @@ SKIP_COPYRIGHTS_CHECK=true
 function fetch() {
 	logmust cd "$WORKDIR/artifacts"
 
-	#
-	# Note about the debs being fetched:
-	# - unzip was added as a temporary workaround to DLPX-73555.
-	#
 	local debs=(
-		"unzip_6.0-21ubuntu1_amd64.deb d46069c369ce88c8dd91c52abb8de8d6053606748ef18b3b9bc290fdd8ad2953"
+		"tar_1.30+dfsg-7ubuntu0.20.04.3_amd64.deb a3b1212570b10c192b3d49cffb68f909146d4b72a7104f213f4426c7e41d0e49"
 	)
 
 	local url="http://artifactory.delphix.com/artifactory/linux-pkg/misc-debs"
