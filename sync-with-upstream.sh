@@ -81,7 +81,7 @@ if [[ -f "$WORKDIR/upstream-updated" ]]; then
 			"but not pushed because this is a dry-run."
 	else
 		logmust push_to_remote "refs/heads/upstream-HEAD" \
-			"refs/heads/upstreams/$DEFAULT_GIT_BRANCH" "$force_push"
+			"refs/heads/projects/upstreams/$DEFAULT_GIT_BRANCH" "$force_push"
 
 		if [[ -f "$WORKDIR/upstream-tag" ]]; then
 			echo "Note: also pushing tag from upstream."
