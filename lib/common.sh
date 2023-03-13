@@ -144,32 +144,6 @@ function run_setup_if_needed() {
 	echo_bold "------------------------------------------------------------"
 }
 
-#
-# Determine DEFAULT_GIT_BRANCH. If it is unset, default to the branch set in
-# branch.config.
-#
-function determine_default_git_branch() {
-
-	[[ -n "$DEFAULT_GIT_BRANCH" ]] && return
-
-	echo "DEFAULT_GIT_BRANCH is not set."
-	if ! source "$TOP/branch.config" 2>/dev/null; then
-		die "No branch.config file found in repo root."
-	fi
-
-	if [[ -z "$DEFAULT_GIT_BRANCH" ]]; then
-		die "$DEFAULT_GIT_BRANCH parameter was not sourced" \
-			"from branch.config. Ensure branch.config is" \
-			"properly formatted with e.g." \
-			"DEFAULT_GIT_BRANCH='<upstream-product-branch>'"
-	fi
-
-	echo "Defaulting DEFAULT_GIT_BRANCH to branch" \
-		"$DEFAULT_GIT_BRANCH set in branch.config."
-
-	export DEFAULT_GIT_BRANCH
-}
-
 function is_release_branch() {
 	check_env DEFAULT_GIT_BRANCH
 	[[ "$DEFAULT_GIT_BRANCH" == release/* ]]

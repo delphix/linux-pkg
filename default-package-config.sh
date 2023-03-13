@@ -345,6 +345,7 @@ function kernel_update_upstream() {
 	local local_upstream_commit
 	local_upstream_commit=$(git rev-parse upstream-HEAD)
 	[[ -z "${local_upstream_commit}" ]] && die "could not find upstream-HEAD's commit"
+	check_env DEFAULT_GIT_BRANCH
 	echo "note: upstreams/${DEFAULT_GIT_BRANCH} commit: ${local_upstream_commit}"
 
 	if [[ "${upstream_tag_commit}" == "${local_upstream_commit}" ]]; then

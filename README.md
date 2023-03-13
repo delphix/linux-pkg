@@ -97,39 +97,38 @@ we've decided to leverage the advantages offered by revision control. As such,
 we've adopted a well defined branching model for each third-party package.
 
 First of all, we have a Delphix repository on github for each third-party
-package that we build. Each repository has at least 2 branches: **master** and
-**upstreams/master**. The **master** branch of the package is the one we build,
-and contains Delphix changes. The **upstreams/master** branch is used to track
+package that we build. Each repository has at least 2 branches: **6.0/stage** and
+**upstreams/6.0/stage**. The **6.0/stage** branch of the package is the one we build,
+and contains Delphix changes. The **upstreams/6.0/stage** branch is used to track
 the upstream version of the package. For packages that are not provided by
-Ubuntu but are available on git, the **upstreams/master** branch usually just
-tracks the **master** branch of the project. For packages that are provided by
-Ubuntu, the **upstreams/master** branch instead tracks the source package that
+Ubuntu but are available on git, the **upstreams/6.0/stage** branch usually just
+tracks the **6.0/stage** branch of the project. For packages that are provided by
+Ubuntu, the **upstreams/6.0/stage** branch instead tracks the source package that
 is maintained by Ubuntu (i.e. the branch contains the files obtained from
 `apt-get source <source-package>`). This offers the advantage of using a version
 of the package tuned to work with our Ubuntu distribution.
 
-When updating a package, we first check if the **upstreams/master** branch is
+When updating a package, we first check if the **upstreams/6.0/stage** branch is
 up-to-date, by fetching the latest version of the upstream git repository or the
 Ubuntu source package. If changes are detected, we update the
-**upstreams/master** branch and push the changes to GitHub.
+**upstreams/6.0/stage** branch and push the changes to GitHub.
 
-The second step is to check if the **master** branch is up-to-date with
-**upstreams/master**. If it is already up-to-date, then we are done. If not,
-then we attempt merging **upstreams/master** into **master**.
+The second step is to check if the **6.0/stage** branch is up-to-date with
+**upstreams/6.0/stage**. If it is already up-to-date, then we are done. If not,
+then we attempt merging **upstreams/6.0/stage** into **6.0/stage**.
 
 If the merge is successful, then we push the changes to a staging branch on
-GitHub, called **projects/auto-update/master/merging**. The intent is for
+GitHub, called **projects/auto-update/6.0/stage/merging**. The intent is for
 a different system to fetch those changes, build them, and then launch tests.
 
 See [Scripts > sync-with-upstream.sh](#sync-with-upstreamsh) below.
 
 Once the merge has been tested, [Scripts > push-merge.sh](#push-mergesh) is
-called on the original VM to push the changes to the **master** branch on
+called on the original VM to push the changes to the **6.0/stage** branch on
 GitHub.
 
-Note that the example above targets the **master** branch, but the same
-workflow could apply to other branches, like **6.0/stage**, although it is
-not currently in use.
+Note that the example above targets the **6.0/stage** branch, but the same
+workflow could apply to other branches.
 
 ## Scripts
 
@@ -172,8 +171,8 @@ Usage:
 ```
 
 This checks if a package has updates in the upstream project that haven't been
-pulled into the **upstreams/master** branch, or if the **upstreams/master**
-branch has commits that haven't been merged into the **master** branch.
+pulled into the **upstreams/6.0/stage** branch, or if the **upstreams/6.0/stage**
+branch has commits that haven't been merged into the **6.0/stage** branch.
 
 If updates are available, the file `<WORKDIR>/update-available` will be created.
 
@@ -189,19 +188,19 @@ Usage:
 
 This script has 2 tasks:
 1. Check if the upstream project has updates that are not pulled into the
-**upstreams/master** branch of the package, and if so then update that branch
+**upstreams/6.0/stage** branch of the package, and if so then update that branch
 and push changes to GitHub.
-2. Merge **upstreams/master** into **master** and push the changes to a staging
-branch on GitHub, called **projects/auto-update/master/merging**. Another
+2. Merge **upstreams/6.0/stage** into **6.0/stage** and push the changes to a staging
+branch on GitHub, called **projects/auto-update/6.0/stage/merging**. Another
 system should use that branch to build the package, and then run the appropriate
 integration tests.
 
 After testing has been completed, `push-merge.sh <package>` should be called on
-the same system to push the merge to the **master** branch.
+the same system to push the merge to the **6.0/stage** branch.
 
 Note that the DRYRUN environment variable must be set when running this script.
 If DRYRUN is set to "true", then changes are not pushed to GitHub in step 1,
-and staged changes are pushed to **projects/auto-update/master/merging-dryrun**
+and staged changes are pushed to **projects/auto-update/6.0/stage/merging-dryrun**
 in step 2 instead of the non-dryrun branch. The intention is that when testing
 changes to the logic we want to be able to run most of the logic, but without
 affecting the production branches.
@@ -215,8 +214,8 @@ Usage:
 
 This must be called on a system that has previously called
 `sync-with-upstream.sh` for the same package. It will push the merge that was
-previously prepared by `sync-with-upstream.sh` to the production **master**
-branch, after checking that the **master** branch hasn't been modified since
+previously prepared by `sync-with-upstream.sh` to the production **6.0/stage**
+branch, after checking that the **6.0/stage** branch hasn't been modified since
 `sync-with-upstream.sh` was called.
 
 Like for `sync-with-upstream.sh`, the DRYRUN environment variable must be set
@@ -245,10 +244,10 @@ of some of the scripts defined above.
   revision defined. If not set, it will be auto-generated from the timestamp.
   Applies to [buildpkg.sh](#buildpkgsh).
 
-* **DEFAULT_GIT_BRANCH**: The product branch that is being built or updated is
-  typically stored in the file `branch.config`, however it can be overridden via
-  DEFAULT_GIT_BRANCH. It can either be set to a development branch, such as
-  "master" or "6.0/stage", or a release tag, such as "release/6.0.6.0".
+* **DEFAULT_GIT_BRANCH**: The product branch that is being built or updated
+  and must be set via DEFAULT_GIT_BRANCH. It can either be set to a
+  development branch, such as "6.0/stage", or a release tag, such as
+  "release/6.0.6.0".
   The product branch is used in multiple instances. When
   running [setup.sh](#setupsh), it will determine what linux-package-mirror
   link to use when fetching packages from apt (although those links can be
@@ -383,7 +382,7 @@ The `fetch()` hook is optional, as a default is provided and should be used. It
 is called when fetching the source code of the package to build or to update.
 The repository is cloned into `<WORKDIR>/repo` and checked out as
 branch **repo-HEAD**. If we are performing a package update, then we also
-fetch the **upstreams/master** branch into **upstream-HEAD**. The default
+fetch the **upstreams/6.0/stage** branch into **upstream-HEAD**. The default
 should only be overridden when not fetching the package source from git.
 
 #### Prepare (hook)
@@ -402,7 +401,7 @@ The `update_upstream()` hook should only be defined for third party packages
 that can be auto-updated. It is responsible for fetching the latest upstream
 source code on top of branch **upstream-HEAD** of our fetched repository in
 `<WORKDIR>/repo`. Note that any changes should be rebased on top of
-the **upstreams/master** branch. If changes are detected, file
+the **upstreams/6.0/stage** branch. If changes are detected, file
 `<WORKDIR>/upstream-updated` should be created.
 
 #### Merge With Upstream (hook)
@@ -552,8 +551,8 @@ UPSTREAM_GIT_BRANCH="<git branch>"
 
 Note that steps 3 to 5 are most useful when getting a third party package from
 an Ubuntu source package. When the third party package is fetched from git,
-you may simply fork the upstream repository and add an **upstreams/master**
-branch that points to the **master** branch; you can then update
+you may simply fork the upstream repository and add an **upstreams/6.0/stage**
+branch that points to the **6.0/stage** branch; you can then update
 `DEFAULT_PACKAGE_GIT_URL` in config.sh to your forked git repository and skip
 to step 6.
 
@@ -591,8 +590,8 @@ DEFAULT_PACKAGE_GIT_URL="https://github.com/<developer>/<package>"
 #### Step 5. Push to your developer repository
 
 Next step is to push the upstream code to the newly created repository to your
-developer repository. You should push the initial commit to both the **master**
-branch and the **upstreams/master** branch.
+developer repository. You should push the initial commit to both the **6.0/stage**
+branch and the **upstreams/6.0/stage** branch.
 
 #### Step 6. Build the package
 
@@ -618,7 +617,7 @@ build the package.
 
 For a package that doesn't have a `debian` metadata directory already defined in
 its source tree, you'll need to create it, and push the changes to the
-**master** branch of your developer repository. See
+**6.0/stage** branch of your developer repository. See
 [Common Steps > Creating debian metadirectory](#creating-debian-metadirectory)
 for more details.
 
@@ -729,9 +728,9 @@ is to create an official repository for it.
    [Delphix Open-Source Policy](https://docs.delphix.com/en/ip-strategy/outbound-open-source)
    if you haven't already, and provide the necessary info so that a
    `github.com/delphix/<package>` repository can be created for it. You'll need
-   to push the **master** branch from your developer repository, as well as the
-   **upstreams/master** branch if it is a third-party package. Note that if you
-   have modified **master** (i.e. it diverges from **upstreams/master**), you
+   to push the **6.0/stage** branch from your developer repository, as well as the
+   **upstreams/6.0/stage** branch if it is a third-party package. Note that if you
+   have modified **6.0/stage** (i.e. it diverges from **upstreams/6.0/stage**), you
    should submit your changes for review before pushing them.
 
 1. If this is a third-party package that is to be auto-updated by Delphix

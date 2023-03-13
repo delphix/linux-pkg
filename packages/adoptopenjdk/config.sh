@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Copyright 2018, 2022 Delphix
+# Copyright 2018, 2023 Delphix
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -21,13 +21,13 @@ PACKAGE_DEPENDENCIES="make-jpkg"
 
 case $(dpkg-architecture -q DEB_HOST_ARCH 2>/dev/null || echo "none") in
 amd64)
-	_tarfile="OpenJDK8U-jdk_x64_linux_hotspot_8u345b01.tar.gz"
-	_tarfile_sha256="ed6c9db3719895584fb1fd69fc79c29240977675f26631911c5a1dbce07b7d58"
+	_tarfile="OpenJDK8U-jdk_x64_linux_hotspot_8u362b09.tar.gz"
+	_tarfile_sha256="1486a792fb224611ce0cd0e83d4aacd3503b56698549f8e9a9f0a6ebb83bdba1"
 	_jdk_path="/usr/lib/jvm/adoptopenjdk-java8-jdk-amd64"
 	;;
 arm64)
-	_tarfile="OpenJDK8U-jdk_aarch64_linux_hotspot_8u345b01.tar.gz"
-	_tarfile_sha256="c1965fb24dded7d7944e2da36cd902adf3b7b1d327aaa21ea507cff00a5a0090"
+	_tarfile="OpenJDK8U-jdk_aarch64_linux_hotspot_8u362b09.tar.gz"
+	_tarfile_sha256="9290a8beefd7a94f0eb030f62d402411a852100482b9c5b63714bacc57002c2a"
 	_jdk_path="/usr/lib/jvm/adoptopenjdk-java8-jdk-arm64"
 	;;
 *) ;;
