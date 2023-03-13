@@ -22,6 +22,12 @@ PACKAGE_DEPENDENCIES="bcc"
 UPSTREAM_GIT_URL="https://github.com/iovisor/bpftrace.git"
 UPSTREAM_GIT_BRANCH="master"
 
+function fetch() {
+	logmust fetch_repo_from_git
+	logmust git submodule init
+	logmust git submodule update --recursive
+}
+
 function prepare() {
 	logmust install_pkgs "$DEPDIR"/bcc/libbcc_*.deb
 	logmust install_build_deps_from_control_file
