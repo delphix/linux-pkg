@@ -47,9 +47,7 @@ SKIP_COPYRIGHTS_CHECK=true
 function fetch() {
 	logmust cd "$WORKDIR/artifacts"
 
-	local debs=(
-		"tar_1.30+dfsg-7ubuntu0.20.04.3_amd64.deb a3b1212570b10c192b3d49cffb68f909146d4b72a7104f213f4426c7e41d0e49"
-	)
+	local debs=()
 
 	local url="http://artifactory.delphix.com/artifactory/linux-pkg/misc-debs"
 
