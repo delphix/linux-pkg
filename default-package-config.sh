@@ -242,12 +242,12 @@ function kernel_update_upstream() {
 	# version and the ABI num that we got above.
 	#
 	# Note that "generic" (used mainly ESX) is a special
-	# case on bionic where we are using the HWE kernel image.
+	# case on focal where we are using the HWE kernel image.
 	#
 	local tag_prefix_flavour
 	case "${platform}" in
 	generic)
-		if [[ "$UBUNTU_DISTRIBUTION" == bionic ]]; then
+		if [[ "$UBUNTU_DISTRIBUTION" == focal ]]; then
 			tag_prefix_flavour="Ubuntu-hwe"
 		else
 			tag_prefix_flavour="Ubuntu"
