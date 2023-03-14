@@ -22,6 +22,14 @@ logmust check_running_system
 check_env DEFAULT_GIT_BRANCH
 
 #
+# Until we properly support package mirrors for project branches, we use
+# a sane default when a project branch is detected.
+#
+if [[ "$DEFAULT_GIT_BRANCH" == projects/* ]]; then
+	DEFAULT_GIT_BRANCH="6.0/stage"
+fi
+
+#
 # Update the sources.list file to point to our internal package mirror. If no
 # mirror url is passed in, then the latest mirror snapshot is used.
 #
