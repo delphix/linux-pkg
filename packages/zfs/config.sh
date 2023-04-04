@@ -17,7 +17,7 @@
 # shellcheck disable=SC2034
 
 DEFAULT_PACKAGE_GIT_URL="https://github.com/delphix/zfs.git"
-PACKAGE_DEPENDENCIES="@linux-kernel delphix-rust"
+PACKAGE_DEPENDENCIES="@linux-kernel delphix-rust dwarves"
 
 UPSTREAM_GIT_URL="https://github.com/openzfs/zfs.git"
 UPSTREAM_GIT_BRANCH="master"
@@ -34,7 +34,6 @@ function prepare() {
 		dh-autoreconf \
 		dh-python \
 		dkms \
-		dwarves \
 		fakeroot \
 		gawk \
 		ksh \
@@ -57,6 +56,7 @@ function prepare() {
 		zlib1g-dev
 	logmust install_kernel_headers
 	logmust install_pkgs "$DEPDIR"/delphix-rust/*.deb
+	logmust install_pkgs "$DEPDIR"/dwarves/*.deb
 }
 
 function checkstyle() {
