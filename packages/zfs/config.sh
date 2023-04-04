@@ -34,6 +34,7 @@ function prepare() {
 		dh-autoreconf \
 		dh-python \
 		dkms \
+		dwarves \
 		fakeroot \
 		gawk \
 		ksh \
@@ -45,6 +46,7 @@ function prepare() {
 		libssl-dev \
 		libtool \
 		libudev-dev \
+		llvm-12 \
 		lsb-release \
 		lsscsi \
 		parted \
