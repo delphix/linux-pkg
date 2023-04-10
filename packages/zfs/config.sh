@@ -94,8 +94,10 @@ function build() {
 
 	local hash
 	logmust eval hash="$(git rev-parse --short HEAD)"
+	logmust sed -i "s/^Version:.*/Version:      $PACKAGE_VERSION+$PACKAGE_REVISION/" \
+		META || die "failed to set Version"
 	logmust sed -i "s/^Release:.*/Release:      $PACKAGE_REVISION-$hash/" \
-		META || die "failed to set version"
+		META || die "failed to set Release"
 	logmust set_changelog
 
 	#
