@@ -446,10 +446,10 @@ function create_workdir() {
 function install_pkgs() {
 	for attempt in {1..3}; do
 		echo "Running: sudo env DEBIAN_FRONTEND=noninteractive " \
-			"apt-get install -y $*"
+			"apt-get install -y --allow-downgrades $*"
 
 		sudo env DEBIAN_FRONTEND=noninteractive apt-get install \
-			-y "$@" && return
+			-y --allow-downgrades "$@" && return
 
 		echo "apt-get install failed, retrying."
 		sleep 10
@@ -596,10 +596,11 @@ function install_kernel_headers() {
 	done
 }
 
-function default_revision() {
+function delphix_revision() {
 	#
 	# We use "delphix" in the default revision to make it easy to find all
-	# packages built by delphix installed on an appliance.
+	# packages built by delphix installed on an appliance. This will be used
+	# along with DEFAULT_REVISION to get the full revision.
 	#
 	# We choose a timestamp as the second part since we want each package
 	# built to have a unique value for its full version, as new packages
@@ -611,7 +612,7 @@ function default_revision() {
 	# Delphix Appliance upgrades, however we prefer keeping things in-line
 	# with the established conventions.
 	#
-	echo "delphix-$(date '+%Y.%m.%d.%H')"
+	echo "delphix.$(date '+%Y.%m.%d.%H.%M')"
 }
 
 function determine_dependencies_base_url() {
@@ -1013,7 +1014,7 @@ function set_changelog() {
 	#
 	if [[ -z "$PACKAGE_VERSION" ]]; then
 		if [[ -f debian/changelog ]]; then
-			PACKAGE_VERSION="$(logmust dpkg-parsechangelog -S Version | awk -F'-' '{print $1}')"
+			PACKAGE_VERSION="$(logmust dpkg-parsechangelog -S Version)"
 		else
 			PACKAGE_VERSION=1.0.0
 		fi
@@ -1022,12 +1023,14 @@ function set_changelog() {
 	logmust export DEBEMAIL="Delphix Engineering <eng@delphix.com>"
 	if [[ -f debian/changelog ]]; then
 		# update existing changelog
-		logmust dch -b -v "${PACKAGE_VERSION}-${PACKAGE_REVISION}" \
+		# We use a + to easily visualize the separation
+		# of the delphix revision.
+		logmust dch -b -v "${PACKAGE_VERSION}+${PACKAGE_REVISION}" \
 			"Automatically generated changelog entry."
 	else
 		# create new changelog
 		logmust dch --create --package "$src_package" \
-			-v "${PACKAGE_VERSION}-${PACKAGE_REVISION}" \
+			-v "${PACKAGE_VERSION}+${PACKAGE_REVISION}" \
 			"Automatically generated changelog entry."
 	fi
 }

@@ -52,7 +52,8 @@ logmust check_package_exists "$PACKAGE"
 #
 # If the script is called manually, we set it here.
 #
-DEFAULT_REVISION="${DEFAULT_REVISION:-$(default_revision)}"
+DEFAULT_REVISION="${DEFAULT_REVISION:-$(delphix_revision)}"
+
 
 logmust load_package_config "$PACKAGE"
 logmust create_workdir

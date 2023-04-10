@@ -56,7 +56,7 @@ fi
 
 logmust check_package_exists "$PACKAGE"
 
-DEFAULT_REVISION="${DEFAULT_REVISION:-$(default_revision)}"
+DEFAULT_REVISION="${DEFAULT_REVISION:-$(delphix_revision)}"
 logmust load_package_config "$PACKAGE"
 
 if [[ ! -d "$WORKDIR/repo" ]]; then
