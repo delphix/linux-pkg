@@ -413,7 +413,7 @@ function kernel_merge_with_upstream() {
 	logmust git checkout -q -b repo-HEAD upstream-HEAD
 
 	# shellcheck disable=SC2086
-	logmust git cherry-pick ${dlpx_patch_start}^..${dlpx_patch_end}
+	logmust git cherry-pick --allow-empty ${dlpx_patch_start}^..${dlpx_patch_end}
 
 	logmust touch "$WORKDIR/repo-updated"
 }
