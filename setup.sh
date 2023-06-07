@@ -34,7 +34,7 @@ function configure_apt_sources() {
 	if [[ -z "$primary_url" ]] || [[ -z "$secondary_url" ]]; then
 		local latest_url="http://linux-package-mirror.delphix.com/"
 		if is_release_branch; then
-			package_mirror_url="${latest_url}${DEFAULT_GIT_BRANCH}"
+			package_mirror_url="${latest_url}releases/${DELPHIX_RELEASE_VERSION}"
 		else
 			latest_url+="${DEFAULT_GIT_BRANCH}/latest/"
 			package_mirror_url=$(curl -LfSs -o /dev/null -w '%{url_effective}' \
