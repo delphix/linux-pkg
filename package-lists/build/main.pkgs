@@ -9,6 +9,7 @@ challenge-response
 cloud-init
 crash-python
 crypt-blowfish
+delphix-go
 delphix-platform
 delphix-rust
 delphix-sso-app
