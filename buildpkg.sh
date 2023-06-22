@@ -73,7 +73,7 @@ check_env DEFAULT_GIT_BRANCH
 # DEFAULT_REVISION & DEFAULT_GIT_BRANCH will be set if called from buildlist.sh.
 # If the script is called manually, we set it here.
 #
-DEFAULT_REVISION="${DEFAULT_REVISION:-$(default_revision)}"
+DEFAULT_REVISION="${DEFAULT_REVISION:-$(delphix_revision)}"
 
 echo ""
 echo_bold "===================================================================="
