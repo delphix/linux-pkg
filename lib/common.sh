@@ -446,10 +446,10 @@ function create_workdir() {
 function install_pkgs() {
 	for attempt in {1..3}; do
 		echo "Running: sudo env DEBIAN_FRONTEND=noninteractive " \
-			"apt-get install -y $*"
+			"apt-get install -y --allow-downgrades $*"
 
 		sudo env DEBIAN_FRONTEND=noninteractive apt-get install \
-			-y "$@" && return
+			-y --allow-downgrades "$@" && return
 
 		echo "apt-get install failed, retrying."
 		sleep 10
@@ -596,10 +596,11 @@ function install_kernel_headers() {
 	done
 }
 
-function default_revision() {
+function delphix_revision() {
 	#
 	# We use "delphix" in the default revision to make it easy to find all
-	# packages built by delphix installed on an appliance.
+	# packages built by delphix installed on an appliance. This will be used
+	# along with DEFAULT_REVISION to get the full revision.
 	#
 	# We choose a timestamp as the second part since we want each package
 	# built to have a unique value for its full version, as new packages
@@ -611,7 +612,7 @@ function default_revision() {
 	# Delphix Appliance upgrades, however we prefer keeping things in-line
 	# with the established conventions.
 	#
-	echo "delphix-$(date '+%Y.%m.%d.%H')"
+	echo "delphix.$(date '+%Y.%m.%d.%H.%M')"
 }
 
 function determine_dependencies_base_url() {
@@ -1004,6 +1005,7 @@ function push_to_remote() {
 function set_changelog() {
 	check_env PACKAGE_REVISION
 	local src_package="${1:-$PACKAGE}"
+	local final_version
 
 	#
 	# If PACKAGE_VERSION hasn't been set already, then retrieve it from
@@ -1013,21 +1015,32 @@ function set_changelog() {
 	#
 	if [[ -z "$PACKAGE_VERSION" ]]; then
 		if [[ -f debian/changelog ]]; then
-			PACKAGE_VERSION="$(logmust dpkg-parsechangelog -S Version | awk -F'-' '{print $1}')"
+			PACKAGE_VERSION="$(logmust dpkg-parsechangelog -S Version)"
 		else
 			PACKAGE_VERSION=1.0.0
 		fi
 	fi
 
 	logmust export DEBEMAIL="Delphix Engineering <eng@delphix.com>"
+	if [[ "${PACKAGE_VERSION}" =~ '-' ]]; then
+		final_version="${PACKAGE_VERSION}+${PACKAGE_REVISION}"
+	else
+		final_version="${PACKAGE_VERSION}-1${PACKAGE_REVISION}"
+	fi
 	if [[ -f debian/changelog ]]; then
 		# update existing changelog
-		logmust dch -b -v "${PACKAGE_VERSION}-${PACKAGE_REVISION}" \
+		# We use a + or - to easily visualize the separation
+		# of the delphix revision. If there is no debian revision
+		# then we add a debian revision using - as the separator,
+		# If there is already a debian revision, we use + as the
+		# separator and update the revision.
+
+		logmust dch -b -v "$final_version" \
 			"Automatically generated changelog entry."
 	else
 		# create new changelog
 		logmust dch --create --package "$src_package" \
-			-v "${PACKAGE_VERSION}-${PACKAGE_REVISION}" \
+			-v "$final_version" \
 			"Automatically generated changelog entry."
 	fi
 }
