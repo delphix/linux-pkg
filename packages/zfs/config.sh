@@ -56,6 +56,7 @@ function prepare() {
 		zlib1g-dev
 	logmust install_kernel_headers
 	logmust install_pkgs "$DEPDIR"/delphix-rust/*.deb
+	logmust cargo install bundle-licenses
 	logmust install_pkgs "$DEPDIR"/delphix-go/*.deb
 	logmust install_pkgs "$DEPDIR"/dwarves/*.deb
 }
