@@ -66,6 +66,8 @@ function build() {
 	# 'nothing' if 'variable' is not set. Because 'nothing' is not defined it evaluates to "" when 'variable'
 	# is not set. So [[ "" ]] is what is actually evaluated when 'variable' is not set.
 
+	args+=("-Dbuild.branch=$DEFAULT_GIT_BRANCH")
+
 	if [[ ${SECRET_DB_USE_JUMPBOX+nothing} ]]; then
 		args+=("-DSECRET_DB_USE_JUMPBOX=$SECRET_DB_USE_JUMPBOX")
 	fi
