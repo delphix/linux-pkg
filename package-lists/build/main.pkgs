@@ -26,6 +26,7 @@ make-jpkg
 makedumpfile
 masking
 misc-debs
+mold
 nfs-utils
 performance-diagnostics
 ptools
