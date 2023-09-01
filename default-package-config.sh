@@ -161,7 +161,7 @@ function kernel_build() {
 	# kernel config options via an OVERRIDES file, which we use to
 	# disable varous kernel modules that we don't need or want.
 	#
-	logmust fakeroot debian/rules updateconfigs "${debian_rules_args[@]}"
+	logmust fakeroot debian/rules updateconfigs "${debian_rules_args[@]}" do_skip_checks=true
 
 	logmust fakeroot debian/rules "binary" "${debian_rules_args[@]}"
 
