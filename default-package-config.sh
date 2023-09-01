@@ -158,10 +158,10 @@ function kernel_build() {
 	#
 	# Here we update the configs used to control the kernel's build
 	# system. This is useful as it allows us to override various
-	# kernel config options via an OVERRIDES file, which we use to
-	# disable varous kernel modules that we don't need or want.
+	# kernel config options via an annotations file, which we use to
+	# disable various kernel modules that we don't need or want.
 	#
-	logmust fakeroot debian/rules updateconfigs "${debian_rules_args[@]}"
+	logmust fakeroot debian/rules updateconfigs "${debian_rules_args[@]}" do_skip_checks=true
 
 	logmust fakeroot debian/rules "binary" "${debian_rules_args[@]}"
 
