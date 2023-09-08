@@ -18,7 +18,7 @@
 #
 # We currently support getting the linux kernel from 3 different sources:
 #  1. Building it from code: see config.delphix.sh
-#  2. Dowloading from apt: see config.archive.sh
+#  2. Downloading from apt: see config.archive.sh
 #  3. Pre-built kernel stored in artifactory: see config.prebuilt.sh
 #
 

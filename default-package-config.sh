@@ -160,7 +160,21 @@ function kernel_build() {
 	# system. This is useful as it allows us to override various
 	# kernel config options via an annotations file, which we use to
 	# disable various kernel modules that we don't need or want.
+	# The kernel provides a mechanism to manipulate the annotations via
+	# a python script at `debian/scripts/misc/annotations`. The script
+	# is first used to export the Delphix's annotations file to an old-style
+	# config, which in turn is imported back into the kernel's base
+	# annotations. This allows us to maintain a partial set of annotations
+	# that are only relevant to our product. At the time of writing this,
+	# there was no direct way to import a partial annotations file into the base
+	# annotations file without first converting it to an old-style config.
 	#
+	. debian/debian.env
+	local architecture
+	architecture=$(dpkg-architecture -q DEB_HOST_ARCH 2>/dev/null)
+	logmust debian/scripts/misc/annotations -f "${WORKDIR}/../../../resources/delphix_kernel_annotations" --arch "${architecture}" --flavour "${platform}" --export >delphix.config
+	logmust debian/scripts/misc/annotations -f ${DEBIAN}/config/annotations --arch "${architecture}" --flavour "${platform}" --update delphix.config
+
 	logmust fakeroot debian/rules updateconfigs "${debian_rules_args[@]}" do_skip_checks=true
 
 	logmust fakeroot debian/rules "binary" "${debian_rules_args[@]}"
