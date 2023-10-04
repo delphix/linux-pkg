@@ -37,8 +37,9 @@ function merge_with_upstream() {
 #
 function kernel_prepare() {
 	logmust install_pkgs \
-		equivs \
 		devscripts \
+		equivs \
+		gawk \
 		kernel-wedge
 }
 
@@ -181,6 +182,15 @@ function kernel_build() {
 
 	logmust cd "$WORKDIR"
 	logmust mv ./*deb "artifacts/"
+
+	#
+	# XXX: refactor & explain
+	#
+	logmust echo "SERAPHEIM START"
+	logmust ls "$WORKDIR/repo"
+	logmust mkdir ~/vmlinux-artifacts
+	logmust cp "$WORKDIR/repo/vmlinu*" ~/vmlinux-artifacts/"vmlinux-${kernel_version}"
+	logmust echo "SERAPHEIM END"
 
 	#
 	# Make sure that we recorded the kernel version properly by checking

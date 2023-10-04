@@ -594,6 +594,18 @@ function install_kernel_headers() {
 	for kernel in $KERNEL_VERSIONS; do
 		logmust dpkg-query -l "linux-headers-$kernel" >/dev/null
 	done
+
+	#
+	# XXX: Refactor & explain
+	#
+	logmust "SERAPHEIM START2"
+	if test -d ~/vmlinux-artifacts; then
+		local kernel
+		for kernel in $KERNEL_VERSIONS; do
+			logmust cp ~/vmlinux-artifacts/"vmlinux-${kernel}" "/usr/src/linux-headers-$kernel/vmlinux"
+		done
+	fi
+	logmust "SERAPHEIM END2"
 }
 
 function delphix_revision() {
