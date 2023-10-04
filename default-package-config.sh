@@ -37,8 +37,9 @@ function merge_with_upstream() {
 #
 function kernel_prepare() {
 	logmust install_pkgs \
-		equivs \
 		devscripts \
+		equivs \
+		gawk \
 		kernel-wedge
 }
 
