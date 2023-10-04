@@ -21,13 +21,13 @@ PACKAGE_DEPENDENCIES="make-jpkg"
 
 case $(dpkg-architecture -q DEB_HOST_ARCH 2>/dev/null || echo "none") in
 amd64)
-	_tarfile="OpenJDK8U-jdk_x64_linux_hotspot_8u362b09.tar.gz"
-	_tarfile_sha256="1486a792fb224611ce0cd0e83d4aacd3503b56698549f8e9a9f0a6ebb83bdba1"
+	_tarfile="OpenJDK8U-jdk_x64_linux_hotspot_8u382b05.tar.gz"
+	_tarfile_sha256="789ad24dc0d9618294e3ba564c9bfda9d3f3a218604350e0ce0381bbc8f28db3"
 	_jdk_path="/usr/lib/jvm/adoptopenjdk-java8-jdk-amd64"
 	;;
 arm64)
-	_tarfile="OpenJDK8U-jdk_aarch64_linux_hotspot_8u362b09.tar.gz"
-	_tarfile_sha256="9290a8beefd7a94f0eb030f62d402411a852100482b9c5b63714bacc57002c2a"
+	_tarfile="OpenJDK8U-jdk_aarch64_linux_hotspot_8u382b05.tar.gz"
+	_tarfile_sha256="0951398197b7bef39ab987b59c22852812ee2c2da6549953eed7fced4c08e13d"
 	_jdk_path="/usr/lib/jvm/adoptopenjdk-java8-jdk-arm64"
 	;;
 *) ;;
