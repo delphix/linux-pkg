@@ -17,6 +17,7 @@
 
 export _RET
 export _RET_LIST
+export _SECRET_BUILD_ARGS
 export DEBIAN_FRONTEND=noninteractive
 
 export SUPPORTED_KERNEL_FLAVORS="generic aws gcp azure oracle"
@@ -1280,5 +1281,47 @@ function store_build_info() {
 
 	if [[ -f "$TOP/PACKAGE_MIRROR_URL_SECONDARY" ]]; then
 		logmust cp "$TOP/PACKAGE_MIRROR_URL_SECONDARY" "$WORKDIR/artifacts/"
+	fi
+}
+
+function fetch_secret_build_args() {
+	_SECRET_BUILD_ARGS=()
+
+	# Here we check for whether the environment variables are set and pass them along. We check for
+	# existence instead of emptiness to avoid adding a layer of interpretation.
+
+	# We use parameter expansion in the form of ${variable+nothing} which evaluates to the variable
+	# 'nothing' if 'variable' is not set. Because 'nothing' is not defined it evaluates to "" when 'variable'
+	# is not set. So [[ "" ]] is what is actually evaluated when 'variable' is not set.
+
+	if [[ ${SECRET_DB_USE_JUMPBOX+nothing} ]]; then
+		_SECRET_BUILD_ARGS+=("-DSECRET_DB_USE_JUMPBOX=$SECRET_DB_USE_JUMPBOX")
+	fi
+
+	if [[ ${SECRET_DB_JUMP_BOX_HOST+nothing} ]]; then
+		_SECRET_BUILD_ARGS+=("-DSECRET_DB_JUMP_BOX_HOST=$SECRET_DB_JUMP_BOX_HOST")
+	fi
+
+	if [[ ${SECRET_DB_JUMP_BOX_USER+nothing} ]]; then
+		_SECRET_BUILD_ARGS+=("-DSECRET_DB_JUMP_BOX_USER=$SECRET_DB_JUMP_BOX_USER")
+	fi
+
+	if [[ ${SECRET_DB_JUMP_BOX_PRIVATE_KEY+nothing} ]]; then
+		if [[ ! -f "$SECRET_DB_JUMP_BOX_PRIVATE_KEY" ]]; then
+			die "Jumpbox private key not found."
+		fi
+		_SECRET_BUILD_ARGS+=("-DSECRET_DB_JUMP_BOX_PRIVATE_KEY=$SECRET_DB_JUMP_BOX_PRIVATE_KEY")
+	fi
+
+	if [[ ${SECRET_DB_AWS_ENDPOINT+nothing} ]]; then
+		_SECRET_BUILD_ARGS+=("-DSECRET_DB_AWS_ENDPOINT=$SECRET_DB_AWS_ENDPOINT")
+	fi
+
+	if [[ ${SECRET_DB_AWS_PROFILE+nothing} ]]; then
+		_SECRET_BUILD_ARGS+=("-DSECRET_DB_AWS_PROFILE=$SECRET_DB_AWS_PROFILE")
+	fi
+
+	if [[ ${SECRET_DB_AWS_REGION+nothing} ]]; then
+		_SECRET_BUILD_ARGS+=("-DSECRET_DB_AWS_REGION=$SECRET_DB_AWS_REGION")
 	fi
 }
