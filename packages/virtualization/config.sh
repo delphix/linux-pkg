@@ -61,7 +61,7 @@ function build() {
 
 	local args=()
 
-	fetch_secret_build_args
+	set_secret_build_args
 	args+=("${_SECRET_BUILD_ARGS[@]}")
 
 	args+=("-Dbuild.branch=$DEFAULT_GIT_BRANCH")

@@ -1284,7 +1284,7 @@ function store_build_info() {
 	fi
 }
 
-function fetch_secret_build_args() {
+function set_secret_build_args() {
 	_SECRET_BUILD_ARGS=()
 
 	# Here we check for whether the environment variables are set and pass them along. We check for
