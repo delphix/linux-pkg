@@ -16,7 +16,7 @@
 #
 # shellcheck disable=SC2034
 
-source "../../lib/common.sh"
+source "$PWD/lib/common.sh"
 
 DEFAULT_PACKAGE_GIT_URL="https://github.com/delphix/dms-core-gate.git"
 PACKAGE_DEPENDENCIES="adoptopenjdk"
