@@ -72,6 +72,7 @@ function build() {
 	logmust ./gradlew --no-daemon --stacktrace \
 		-Porg.gradle.configureondemand=false \
 		-PenvironmentName=linuxappliance \
+		-PmaskingVer="$DELPHIX_RELEASE_VERSION" \
 		clean \
 		generateLicenseReport \
 		:dist:distDeb \
