@@ -16,6 +16,8 @@
 #
 # shellcheck disable=SC2034
 
+source "$PWD/lib/common.sh"
+
 DEFAULT_PACKAGE_GIT_URL="https://github.com/delphix/dms-core-gate.git"
 PACKAGE_DEPENDENCIES="adoptopenjdk"
 
@@ -43,35 +45,20 @@ function build() {
 		'{ "dms-core-gate" : { "git-hash" : $h, "date": $d }}' \
 		>"$WORKDIR/artifacts/metadata.json"
 
-	if [[ "$SECRET_DB_AWS_ENDPOINT" ]]; then
-		export SECRET_DB_AWS_ENDPOINT="$SECRET_DB_AWS_ENDPOINT"
-	fi
+	local args=()
 
-	# Using secrets proxy
-	if [[ "$SECRET_DB_USE_JUMPBOX" ]]; then
-		export SECRET_DB_USE_JUMPBOX="$SECRET_DB_USE_JUMPBOX"
-	fi
-	if [[ "$SECRET_DB_JUMP_BOX_HOST" ]]; then
-		export SECRET_DB_JUMP_BOX_HOST="$SECRET_DB_JUMP_BOX_HOST"
-	fi
-	if [[ "$SECRET_DB_JUMP_BOX_USER" ]]; then
-		export SECRET_DB_JUMP_BOX_USER="$SECRET_DB_JUMP_BOX_USER"
-	fi
-	if [[ "$SECRET_DB_JUMP_BOX_PRIVATE_KEY" ]]; then
-		export SECRET_DB_JUMP_BOX_PRIVATE_KEY="$SECRET_DB_JUMP_BOX_PRIVATE_KEY"
-	fi
+	fetch_secret_build_args
+	args+=("${_SECRET_BUILD_ARGS[@]}")
 
-	# Using master/eng-secret-user
-	if [[ "$SECRET_DB_AWS_PROFILE" ]]; then
-		export SECRET_DB_AWS_PROFILE="$SECRET_DB_AWS_PROFILE"
-	fi
-	if [[ "$SECRET_DB_AWS_REGION" ]]; then
-		export SECRET_DB_AWS_REGION="$SECRET_DB_AWS_REGION"
+	args+=("-Porg.gradle.configureondemand=false")
+	args+=("-PenvironmentName=linuxappliance")
+
+	if [[ "$DELPHIX_RELEASE_VERSION" ]]; then
+		args+=("-PmaskingVer=$DELPHIX_RELEASE_VERSION")
 	fi
 
 	logmust ./gradlew --no-daemon --stacktrace \
-		-Porg.gradle.configureondemand=false \
-		-PenvironmentName=linuxappliance \
+		"${args[@]}" \
 		clean \
 		generateLicenseReport \
 		:dist:distDeb \
