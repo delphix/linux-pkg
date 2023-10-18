@@ -69,9 +69,18 @@ function build() {
 		export SECRET_DB_AWS_REGION="$SECRET_DB_AWS_REGION"
 	fi
 
+	local args=()
+	
+	args+=("-Porg.gradle.configureondemand=false")
+	args+=("-PenvironmentName=linuxappliance")
+
+
+	if [[ "$DELPHIX_RELEASE_VERSION" ]]; then
+		args+=("-PmaskingVer=$DELPHIX_RELEASE_VERSION")
+	fi
+	
 	logmust ./gradlew --no-daemon --stacktrace \
-		-Porg.gradle.configureondemand=false \
-		-PenvironmentName=linuxappliance \
+		"${args[@]}" \
 		clean \
 		generateLicenseReport \
 		:dist:distDeb \
