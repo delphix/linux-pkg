@@ -1294,34 +1294,34 @@ function set_secret_build_args() {
 	# 'nothing' if 'variable' is not set. Because 'nothing' is not defined it evaluates to "" when 'variable'
 	# is not set. So [[ "" ]] is what is actually evaluated when 'variable' is not set.
 
-	if [[ ${SECRET_DB_USE_JUMPBOX+nothing} ]]; then
+	if [ -n "${SECRET_DB_USE_JUMPBOX}" ]; then
 		_SECRET_BUILD_ARGS+=("-DSECRET_DB_USE_JUMPBOX=$SECRET_DB_USE_JUMPBOX")
 	fi
 
-	if [[ ${SECRET_DB_JUMP_BOX_HOST+nothing} ]]; then
+	if [ -n "${SECRET_DB_JUMP_BOX_HOST}" ]; then
 		_SECRET_BUILD_ARGS+=("-DSECRET_DB_JUMP_BOX_HOST=$SECRET_DB_JUMP_BOX_HOST")
 	fi
 
-	if [[ ${SECRET_DB_JUMP_BOX_USER+nothing} ]]; then
+	if [ -n "${SECRET_DB_JUMP_BOX_USER}" ]; then
 		_SECRET_BUILD_ARGS+=("-DSECRET_DB_JUMP_BOX_USER=$SECRET_DB_JUMP_BOX_USER")
 	fi
 
-	if [[ ${SECRET_DB_JUMP_BOX_PRIVATE_KEY+nothing} ]]; then
+	if [ -n "${SECRET_DB_JUMP_BOX_PRIVATE_KEY}" ]; then
 		if [[ ! -f "$SECRET_DB_JUMP_BOX_PRIVATE_KEY" ]]; then
 			die "Jumpbox private key not found."
 		fi
 		_SECRET_BUILD_ARGS+=("-DSECRET_DB_JUMP_BOX_PRIVATE_KEY=$SECRET_DB_JUMP_BOX_PRIVATE_KEY")
 	fi
 
-	if [[ ${SECRET_DB_AWS_ENDPOINT+nothing} ]]; then
+	if [ -n "${SECRET_DB_AWS_ENDPOINT}" ]; then
 		_SECRET_BUILD_ARGS+=("-DSECRET_DB_AWS_ENDPOINT=$SECRET_DB_AWS_ENDPOINT")
 	fi
 
-	if [[ ${SECRET_DB_AWS_PROFILE+nothing} ]]; then
+	if [ -n "${SECRET_DB_AWS_PROFILE}" ]; then
 		_SECRET_BUILD_ARGS+=("-DSECRET_DB_AWS_PROFILE=$SECRET_DB_AWS_PROFILE")
 	fi
 
-	if [[ ${SECRET_DB_AWS_REGION+nothing} ]]; then
+	if [ -n "${SECRET_DB_AWS_REGION}" ]; then
 		_SECRET_BUILD_ARGS+=("-DSECRET_DB_AWS_REGION=$SECRET_DB_AWS_REGION")
 	fi
 }
