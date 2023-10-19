@@ -1287,13 +1287,6 @@ function store_build_info() {
 function set_secret_build_args() {
 	_SECRET_BUILD_ARGS=()
 
-	# Here we check for whether the environment variables are set and pass them along. We check for
-	# existence instead of emptiness to avoid adding a layer of interpretation.
-
-	# We use parameter expansion in the form of ${variable+nothing} which evaluates to the variable
-	# 'nothing' if 'variable' is not set. Because 'nothing' is not defined it evaluates to "" when 'variable'
-	# is not set. So [[ "" ]] is what is actually evaluated when 'variable' is not set.
-
 	if [[ -n "${SECRET_DB_USE_JUMPBOX}" ]]; then
 		_SECRET_BUILD_ARGS+=("-DSECRET_DB_USE_JUMPBOX=$SECRET_DB_USE_JUMPBOX")
 	fi
