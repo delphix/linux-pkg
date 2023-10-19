@@ -17,6 +17,7 @@
 
 export _RET
 export _RET_LIST
+export _SECRET_BUILD_ARGS
 export DEBIAN_FRONTEND=noninteractive
 
 export SUPPORTED_KERNEL_FLAVORS="generic aws gcp azure oracle"
@@ -1280,5 +1281,40 @@ function store_build_info() {
 
 	if [[ -f "$TOP/PACKAGE_MIRROR_URL_SECONDARY" ]]; then
 		logmust cp "$TOP/PACKAGE_MIRROR_URL_SECONDARY" "$WORKDIR/artifacts/"
+	fi
+}
+
+function set_secret_build_args() {
+	_SECRET_BUILD_ARGS=()
+
+	if [[ -n "${SECRET_DB_USE_JUMPBOX}" ]]; then
+		_SECRET_BUILD_ARGS+=("-DSECRET_DB_USE_JUMPBOX=$SECRET_DB_USE_JUMPBOX")
+	fi
+
+	if [[ -n "${SECRET_DB_JUMP_BOX_HOST}" ]]; then
+		_SECRET_BUILD_ARGS+=("-DSECRET_DB_JUMP_BOX_HOST=$SECRET_DB_JUMP_BOX_HOST")
+	fi
+
+	if [[ -n "${SECRET_DB_JUMP_BOX_USER}" ]]; then
+		_SECRET_BUILD_ARGS+=("-DSECRET_DB_JUMP_BOX_USER=$SECRET_DB_JUMP_BOX_USER")
+	fi
+
+	if [[ -n "${SECRET_DB_JUMP_BOX_PRIVATE_KEY}" ]]; then
+		if [[ ! -f "$SECRET_DB_JUMP_BOX_PRIVATE_KEY" ]]; then
+			die "Jumpbox private key not found."
+		fi
+		_SECRET_BUILD_ARGS+=("-DSECRET_DB_JUMP_BOX_PRIVATE_KEY=$SECRET_DB_JUMP_BOX_PRIVATE_KEY")
+	fi
+
+	if [[ -n "${SECRET_DB_AWS_ENDPOINT}" ]]; then
+		_SECRET_BUILD_ARGS+=("-DSECRET_DB_AWS_ENDPOINT=$SECRET_DB_AWS_ENDPOINT")
+	fi
+
+	if [[ -n "${SECRET_DB_AWS_PROFILE}" ]]; then
+		_SECRET_BUILD_ARGS+=("-DSECRET_DB_AWS_PROFILE=$SECRET_DB_AWS_PROFILE")
+	fi
+
+	if [[ -n "${SECRET_DB_AWS_REGION}" ]]; then
+		_SECRET_BUILD_ARGS+=("-DSECRET_DB_AWS_REGION=$SECRET_DB_AWS_REGION")
 	fi
 }
