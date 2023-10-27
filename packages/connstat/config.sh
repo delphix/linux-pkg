@@ -17,13 +17,15 @@
 # shellcheck disable=SC2034
 
 DEFAULT_PACKAGE_GIT_URL="https://github.com/delphix/connstat.git"
-PACKAGE_DEPENDENCIES="@linux-kernel"
+PACKAGE_DEPENDENCIES="@linux-kernel dwarves"
 
 function prepare() {
 	logmust install_pkgs \
 		debhelper \
-		dpkg-dev
+		dpkg-dev \
+		llvm-12
 	logmust install_kernel_headers
+	logmust install_pkgs "$DEPDIR"/dwarves/*.deb
 }
 
 function build() {
