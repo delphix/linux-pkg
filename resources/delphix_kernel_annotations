@@ -228,5 +228,6 @@ CONFIG_STMMAC_ETH                               policy<{'amd64': 'n', 'arm64': '
 CONFIG_SXGBE_ETH                                policy<{'amd64': 'n', 'arm64': 'n'}>
 CONFIG_SYNCLINK                                 policy<{'amd64': 'n', 'arm64': 'n'}>
 CONFIG_USB                                      policy<{'amd64': 'n', 'arm64': 'n'}>
+CONFIG_VIDEO_V4L2                               policy<{'amd64': 'n', 'arm64': 'n'}>
 CONFIG_VBOXGUEST                                policy<{'amd64': 'n', 'arm64': 'n'}>
 CONFIG_VOP                                      policy<{'amd64': 'n', 'arm64': 'n'}>
