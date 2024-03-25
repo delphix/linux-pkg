@@ -127,6 +127,7 @@ function kernel_build() {
 		"do_dkms_nvidia_server=false"
 		"do_dkms_vbox=false"
 		"do_dkms_wireguard=false"
+		"dkms_exclude=v4l2loopback"
 		"flavours=$platform"
 		"abinum=${delphix_abinum}"
 	)
