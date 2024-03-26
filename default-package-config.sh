@@ -128,6 +128,7 @@ function kernel_build() {
 		"do_dkms_vbox=false"
 		"do_dkms_wireguard=false"
 		"dkms_exclude=v4l2loopback"
+		"dkms_exclude=backport-iwlwifi-dkms"
 		"flavours=$platform"
 		"abinum=${delphix_abinum}"
 	)
