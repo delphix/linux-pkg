@@ -31,7 +31,6 @@ nfs-utils
 performance-diagnostics
 ptools
 python-rtslib-fb
-recovery-environment
 savedump
 sdb
 targetcli-fb
