@@ -45,6 +45,8 @@ SKIP_COPYRIGHTS_CHECK=true
 #
 
 function fetch() {
+	logmust install_pkgs binutils zstd
+
 	logmust cd "$WORKDIR"
 
 	local url="http://artifactory.delphix.com/artifactory/linux-pkg/misc-debs"
@@ -54,7 +56,25 @@ function fetch() {
 		"8d0fe5bee9380906be7006fcb069ef494f07c76f07e66ae7497cdb4e071955da"
 
 	logmust tar -xvf "grub-2.12-1ubuntu7.tar.gz"
-	logmust cp grub-2.12-1ubuntu7/* artifacts
+
+	logmust cd grub-2.12-1ubuntu7
+	for deb in *; do
+		DIR=$(mktemp -d)
+		logmust cd "$DIR"
+
+		logmust ar x "$WORKDIR/grub-2.12-1ubuntu7/$deb"
+
+		logmust zstd -d <control.tar.zst | xz >control.tar.xz
+		logmust zstd -d <data.tar.zst | xz >data.tar.xz
+
+		# Re-create the Debian package in /tmp/
+		logmust ar -m -c -a sdsd /tmp/$deb debian-binary control.tar.xz data.tar.xz
+
+		logmust mv /tmp/$deb "$WORKDIR/artifacts"
+
+		logmust cd -
+		logmust rm -r $DIR
+	done
 }
 
 function build() {
