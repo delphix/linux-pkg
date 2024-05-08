@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Copyright 2020 Delphix
+# Copyright 2021, 2023 Delphix
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -16,30 +16,48 @@
 #
 # shellcheck disable=SC2034
 
-DEFAULT_PACKAGE_GIT_URL="https://github.com/delphix/grub2"
-
-UPSTREAM_GIT_URL=https://git.launchpad.net/ubuntu/+source/grub2
-UPSTREAM_GIT_BRANCH="applied/ubuntu/${UBUNTU_DISTRIBUTION}-updates"
-
+DEFAULT_PACKAGE_GIT_URL=none
 SKIP_COPYRIGHTS_CHECK=true
 
 #
-# Install build dependencies for the package.
+# IMPORTANT NOTE
+# --------------
 #
-function prepare() {
-	logmust install_build_deps_from_control_file
+# Debian packages (debs) that are not built from source by linux-pkg can be
+# added to this "meta-package". As a general rule, pre-built debs should only
+# be added here when they have been fetched from a trusted third-party
+# package archive.
+#
+# Here are some valid reasons for adding new debs here:
+# - There are bugs with a recent version of a package provided by Ubuntu and
+#   we want to pin an older version of that package.
+# - Ubuntu provides a version of a package that is too old, and the package's
+#   maintainers provide a more recent version of the package. Note that in this
+#   case, you may also look into adding the maintainer's archive to the
+#   linux-package-mirror PPAs list.
+#
+# To add a new deb here, upload that deb to the linux-pkg/misc-debs directory
+# in artifcatory and note the deb's SHA256. Be explicit on where this deb
+# was fetched from and why it was added to this list.
+#
+# When removing debs from this list, you should not remove them from artifactory
+# as they would used when rebuilding older releases.
+#
+
+function fetch() {
+	logmust cd "$WORKDIR"
+
+	local url="http://artifactory.delphix.com/artifactory/linux-pkg/misc-debs"
+	local grub="grub-2.12-1ubuntu7.tar.gz"
+
+	logmust fetch_file_from_artifactory "$url/grub-2.12-1ubuntu7.tar.gz" \
+		"8d0fe5bee9380906be7006fcb069ef494f07c76f07e66ae7497cdb4e071955da"
+
+	logmust tar -xvf "grub-2.12-1ubuntu7.tar.gz"
+	logmust cp grub-2.12-1ubuntu7/* artifacts
 }
 
-#
-# Build the package.
-#
 function build() {
-	logmust dpkg_buildpackage_default
-}
-
-#
-# Hook to fetch upstream package changes and merge into our tree.
-#
-function update_upstream() {
-	logmust update_upstream_from_git
+	return
+	# Nothing to do, all the logic is done in fetch().
 }
