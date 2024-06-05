@@ -28,6 +28,7 @@ masking
 misc-debs
 mold
 nfs-utils
+openjdk-17
 performance-diagnostics
 ptools
 python-rtslib-fb
