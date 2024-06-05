@@ -29,7 +29,7 @@ projects.
 
 ## System Requirements
 
-This framework is intended to be run on an Ubuntu 18.04 system with some basic
+This framework is intended to be run on an Ubuntu 20.04 system with some basic
 developer packages installed, such as git, and passwordless sudo enabled. Note
 that it will automatically install various build-dependencies on the system, so
 as a safety precaution it is currently restricted to only run on an AWS instance
@@ -48,14 +48,16 @@ This quick tutorial shows how to build the packages managed by this framework.
 ### Step 1. Create build VM
 
 You need a system that meets the requirements above. For Delphix developers, you
-should clone the `bootstrap-18-04` group on DCoA.
+should clone the `dlpx-internal-buildserver-develop` group on DCoA.
 
 ### Step 2. Clone this repository
 
-Clone this repository on the build VM.
+Clone this repository on the build VM. In order to clone this repository to the
+build VM, you may need to specify a personal access token for authentication and
+authorization.
 
 ```
-git clone https://github.com/delphix/linux-pkg.git
+git clone https://<token>@github.com/delphix/linux-pkg.git
 ```
 
 ### Step 3. Build a package
@@ -639,19 +641,31 @@ hook to `config.sh`. You should use the following functions provided by
 * `update_upstream_from_git()` if `UPSTREAM_GIT_URL` & `UPSTREAM_GIT_BRANCH` are
   set.
 
-#### Step 8. Add package to package-lists
-
-See [Common Steps > Add package to package-lists](#add-package-to-package-lists).
-
-#### Step 9. Test your changes
-
-See section [Testing Your Changes](#testing-your-changes).
-
-#### Step 10. Make the package official
+#### Step 8. Make the package official
 
 See [Common Steps > Make the package official](#make-the-package-official).
 
-#### Step 11. Submit a Pull-Request for your changes to linux-pkg
+#### Step 9. Submit a Pull Request for the new package
+
+Once you verify that the package can be built, submit a pull request with only the
+`/packages/<package>` chages. Once merged, this change will create a Jenkins job
+`(/linux-pkg/develop/build-package/<package>/pre-push)` to
+build the new package as part of the automation pipeline. Without merging these changes
+first, we will not be able to test the automated build and integration into the appliance.
+
+#### Step 10. Add package to package-lists
+
+In a separate change, add the package to package-lists.
+See [Common Steps > Add package to package-lists](#add-package-to-package-lists).
+
+#### Step 11. Test your changes
+
+See section [Testing Your Changes](#testing-your-changes).
+
+#### Step 12. Submit a Pull-Request to add the package to package-lists
+
+**IMPORTANT**: This is the step which will trigger integration of this package into
+the appliance.
 
 ### In-house package
 
@@ -753,7 +767,12 @@ TODO: complete section
 
 ### Testing changes to linux-pkg
 
-TODO: complete section
+If you are testing a newly added package to linux-pkg:
+
+1. Run `git-ab-pre-push -b <package>` from `linux-pkg`.
+
+Note that this package must already have been added to `/packages/` in the
+`develop` branch, so that its specific Jenkins build job exists.
 
 ## Package Lists
 
@@ -819,7 +838,7 @@ environment variable.
 
 When building packages for an older version of the Delphix Appliance, the build
 image will need to be picked accordingly. We are currently using
-`bootstrap-18-04`, but this will not be the case anymore once we switch to a
+`dlpx-internal-buildserver-develop`, but this will not be the case anymore once we switch to a
 newer Ubuntu distribution.
 
 ## Contributing
