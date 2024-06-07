@@ -22,8 +22,9 @@ DEFAULT_PACKAGE_GIT_URL="https://github.com/delphix/dms-core-gate.git"
 PACKAGE_DEPENDENCIES="adoptopenjdk"
 
 function prepare() {
-	logmust read_list "$WORKDIR/repo/packaging/build-dependencies"
-	logmust install_pkgs "${_RET_LIST[@]}"
+	# logmust read_list "$WORKDIR/repo/packaging/build-dependencies"
+	# logmust install_pkgs "${_RET_LIST[@]}"
+	logmust install_pkgs openjdk-17-jdk
 
 	logmust install_pkgs "$DEPDIR"/adoptopenjdk/*.deb
 }
