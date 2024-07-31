@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Copyright 2021, 2023 Delphix
+# Copyright 2024 Delphix
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -20,52 +20,18 @@ DEFAULT_PACKAGE_GIT_URL=none
 SKIP_COPYRIGHTS_CHECK=true
 
 #
-# IMPORTANT NOTE
-# --------------
+# DCT builds use this URL for storing their builds, so we have it hardcoded here.
 #
-# Debian packages (debs) that are not built from source by linux-pkg can be
-# added to this "meta-package". As a general rule, pre-built debs should only
-# be added here when they have been fetched from a trusted third-party
-# package archive.
-#
-# Here are some valid reasons for adding new debs here:
-# - There are bugs with a recent version of a package provided by Ubuntu and
-#   we want to pin an older version of that package.
-# - Ubuntu provides a version of a package that is too old, and the package's
-#   maintainers provide a more recent version of the package. Note that in this
-#   case, you may also look into adding the maintainer's archive to the
-#   linux-package-mirror PPAs list.
-#
-# To add a new deb here, upload that deb to the linux-pkg/misc-debs directory
-# in artifcatory and note the deb's SHA256. Be explicit on where this deb
-# was fetched from and why it was added to this list.
-#
-# When removing debs from this list, you should not remove them from artifactory
-# as they would used when rebuilding older releases.
-#
+DCT_LATEST_URI="s3://snapshot-de-images/builds/jenkins-ops/dct/develop/post-push/latest"
 
 function fetch() {
-	logmust cd "$WORKDIR/artifacts"
+	aws s3 cp --queit "$DCT_LATEST_URI" .
 
-	local debs=(
-		# Copied from https://s3.amazonaws.com/packages.treasuredata.com/4/ubuntu/focal/pool/contrib/t/td-agent/td-agent_4.4.2-1_arm64.deb
-		"td-agent_4.4.2-1_amd64.deb b40c1883c3849e9a7bf67762c9f9a87a6119ad98f1fae64a83d754e1275a379a"
-	)
+	DCT_PACKAGE_URI=$(cat latest)
+	rm -f latest
 
-	local url="http://artifactory.delphix.com/artifactory/linux-pkg/misc-debs"
-
-	echo "Fetched debs:" >BUILD_INFO
-	local entry
-	for entry in "${debs[@]}"; do
-		local deb sha256
-		deb=$(echo "$entry" | awk '{print $1}')
-		sha256=$(echo "$entry" | awk '{print $2}')
-		[[ -n "$deb" && -n "$sha256" ]] || die "Invalid entry '$entry'"
-
-		logmust fetch_file_from_artifactory "$url/$deb" "$sha256"
-
-		echo "$entry" >>BUILD_INFO
-	done
+	aws s3 sync "$DCT_PACKAGE_URI" .
+	ls -la .
 }
 
 function build() {
