@@ -3,8 +3,6 @@
 #
 
 adoptopenjdk
-bcc
-bpftrace
 challenge-response
 cloud-init
 crash-python

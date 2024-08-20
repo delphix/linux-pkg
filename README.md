@@ -281,11 +281,11 @@ of some of the scripts defined above.
 * **package_S3_URL**: Similar to the package_VAR variables above. This is used
   to override the default S3 location for where package build-dependencies are
   fetched for a given linux-pkg package. For instance, if you are building
-  bpftrace, which has `PACKAGE_DEPENDENCIES="bcc"` in its config, the
+  masking, which has `PACKAGE_DEPENDENCIES="adoptopenjdk"` in its config, the
   `fetch_dependencies()` stage in the build will fetch the latest build
-  artifacts of the bcc package from a predetermined S3 location. If you pass
-  `BCC_S3_URL=s3://path/to/custom/bcc/artifacts` then those artifacts will be
-  fetched insteasd.
+  artifacts of the openjdk package from a predetermined S3 location. If you
+  pass `ADOPTOPENJDK_S3_URL=s3://path/to/custom/adoptopenjdk/artifacts` then
+  those artifacts will be fetched insteasd.
 
 * **DELPHIX_PACKAGE_MIRROR_MAIN, DELPHIX_PACKAGE_MIRROR_SECONDARY**: When
   the [setup.sh](#setupsh) script is run, it will configure the apt sources
