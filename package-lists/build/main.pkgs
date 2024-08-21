@@ -16,9 +16,7 @@ delphix-sso-app
 drgn
 docker-python-image
 dwarves
-fio
 fluentd-gems
-gdb-python
 grub2
 host-jdks
 libkdumpfile
@@ -26,7 +24,6 @@ make-jpkg
 makedumpfile
 masking
 misc-debs
-mold
 nfs-utils
 performance-diagnostics
 ptools

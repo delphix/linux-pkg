@@ -44,7 +44,7 @@ function build() {
 	# history, due to how we merge with Ubuntu (i.e. using Ubuntu's
 	# source package, rather than a git repository).
 	#
-	# Thus, without this settinng, the build will fail when it tries
+	# Thus, without this setting, the build will fail when it tries
 	# to dynamically set the package version.
 	#
 	export TRAVIS_PULL_REQUEST_BRANCH="upstream/"

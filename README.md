@@ -29,7 +29,7 @@ projects.
 
 ## System Requirements
 
-This framework is intended to be run on an Ubuntu 20.04 system with some basic
+This framework is intended to be run on an Ubuntu 24.04 system with some basic
 developer packages installed, such as git, and passwordless sudo enabled. Note
 that it will automatically install various build-dependencies on the system, so
 as a safety precaution it is currently restricted to only run on an AWS instance
