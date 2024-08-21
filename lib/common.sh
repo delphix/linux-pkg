@@ -769,6 +769,16 @@ function fetch_repo_from_git() {
 		logmust git show-ref repo-HEAD
 		logmust git show-ref upstream-HEAD
 	else
+
+		#
+		# TODO: Add explanation
+		#
+		if [[ "$PACKAGE_GIT_BRANCH" == "os-upgrade" ]]; then
+			if [[ -n $(git ls-remote --heads origin os-upgrade) ]]; then
+				PACKAGE_GIT_BRANCH="develop"
+			fi
+		fi
+
 		logmust git_fetch_helper "$PACKAGE_GIT_URL" --no-tags \
 			"+$PACKAGE_GIT_BRANCH:repo-HEAD" --depth=1
 		logmust git show-ref repo-HEAD
