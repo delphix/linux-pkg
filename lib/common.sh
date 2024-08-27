@@ -28,7 +28,7 @@ export SUPPORTED_KERNEL_FLAVORS="generic aws gcp azure oracle"
 #
 export JENKINS_OPS_DIR="${JENKINS_OPS_DIR:-jenkins-ops}"
 
-export UBUNTU_DISTRIBUTION="focal"
+export UBUNTU_DISTRIBUTION="noble"
 
 #
 # We currently support getting the linux kernel from 3 different sources:
@@ -1119,10 +1119,10 @@ function get_kernel_version_for_platform_from_apt() {
 	# available, it is not always the case.
 	#
 
-	if [[ "$platform" != generic ]] && [[ "$UBUNTU_DISTRIBUTION" == focal ]]; then
+	if [[ "$platform" != generic ]] && [[ "$UBUNTU_DISTRIBUTION" == noble ]]; then
 		package="linux-image-${platform}"
 	else
-		package="linux-image-${platform}-hwe-20.04"
+		package="linux-image-${platform}-hwe-24.04"
 	fi
 
 	if [[ "$(apt-cache show --no-all-versions "$package" \
