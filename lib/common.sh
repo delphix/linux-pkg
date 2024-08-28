@@ -747,6 +747,24 @@ function git_fetch_helper() {
 }
 
 #
+# Run git fetch with the passed arguments. Git url must be passed as first
+# argument. If FETCH_GIT_TOKEN is set and this is a github repository
+# then pass-in the token when fetching.
+#
+function git_branch_exists() {
+	local git_url="$1"
+	local label=''
+	shift
+
+	if [[ -n "$FETCH_GIT_TOKEN" ]] &&
+		[[ "$git_url" == https://github.com/* ]]; then
+		git_url="${git_url/https:\/\//https:\/\/${FETCH_GIT_TOKEN}@}"
+		label='[token passed]'
+	fi
+	git fetch "$git_url" "$@" --no-tags --depth=1 || return 1
+}
+
+#
 # Fetch package repository into $WORKDIR/repo
 #
 function fetch_repo_from_git() {
@@ -769,6 +787,25 @@ function fetch_repo_from_git() {
 		logmust git show-ref repo-HEAD
 		logmust git show-ref upstream-HEAD
 	else
+
+		#
+		# The "os-upgrade" branch is used for Ubuntu version upgrade projects. As such, the following
+		# block of code will only be executed if the `PACKAGE_GIT_BRANCH` is set to "os-upgrade". Not
+		# all product repositories are required to have an "os-upgrade" branch, because some packages
+		# will successfully build on the new Ubuntu version as well as the old without any changes.
+		# To allow engineering to create the "os-upgrade" branch only in repositories that require
+		# changes for the new Ubuntu version, this block of code will check if the "os-upgrade" branch
+		# exists in the repository and if it does not, it will build off of "develop" instead.
+		#
+		if [[ "$PACKAGE_GIT_BRANCH" == "os-upgrade" ]]; then
+			git_branch_exists "$PACKAGE_GIT_URL" "$PACKAGE_GIT_BRANCH"
+			branch_exists=$?
+			if [[ $branch_exists -ne 0 ]]; then
+				echo "NOTE: The branch 'os-upgrade' does not exist for this repo. Using 'develop' instead."
+				PACKAGE_GIT_BRANCH="develop"
+			fi
+		fi
+
 		logmust git_fetch_helper "$PACKAGE_GIT_URL" --no-tags \
 			"+$PACKAGE_GIT_BRANCH:repo-HEAD" --depth=1
 		logmust git show-ref repo-HEAD
