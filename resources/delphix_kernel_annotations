@@ -128,7 +128,7 @@ CONFIG_UDF_FS                                   policy<{'amd64': 'n', 'arm64': '
 CONFIG_UFS_FS                                   policy<{'amd64': 'n', 'arm64': 'n'}>
 CONFIG_VFAT_FS                                  policy<{'amd64': 'n', 'arm64': 'n'}>
 CONFIG_VXFS_FS                                  policy<{'amd64': 'n', 'arm64': 'n'}>
-CONFIG_XFS_FS                                   policy<{'amd64': 'n', 'arm64': 'n'}>
+CONFIG_XFS_FS                                   policy<{'amd64': 'y', 'arm64': 'n'}>
 
 #
 # Disable other misc. modules which we don't use.
