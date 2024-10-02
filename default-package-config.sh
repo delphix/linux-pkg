@@ -262,11 +262,7 @@ function kernel_update_upstream() {
 	local tag_prefix_flavour
 	case "${platform}" in
 	generic)
-		if [[ "$UBUNTU_DISTRIBUTION" == focal ]]; then
-			tag_prefix_flavour="Ubuntu-hwe"
-		else
-			tag_prefix_flavour="Ubuntu"
-		fi
+		tag_prefix_flavour="Ubuntu"
 		;;
 	aws | azure | gcp | oracle)
 		tag_prefix_flavour="Ubuntu-${platform}"
