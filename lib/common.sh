@@ -28,7 +28,7 @@ export SUPPORTED_KERNEL_FLAVORS="generic aws gcp azure oracle"
 #
 export JENKINS_OPS_DIR="${JENKINS_OPS_DIR:-jenkins-ops}"
 
-export UBUNTU_DISTRIBUTION="focal"
+export UBUNTU_DISTRIBUTION="noble"
 
 #
 # We currently support getting the linux kernel from 3 different sources:
@@ -616,6 +616,10 @@ function delphix_revision() {
 	echo "delphix.$(date '+%Y.%m.%d.%H.%M')"
 }
 
+function compare_versions() {
+	dpkg --compare-versions "$@"
+}
+
 function determine_dependencies_base_url() {
 	[[ -n "$DEPENDENCIES_BASE_URL" ]] && return
 
@@ -1109,21 +1113,13 @@ function get_kernel_version_for_platform_from_apt() {
 	# image for that particular platform. For instance, Ubuntu has a
 	# meta-package for AWS called 'linux-image-aws', which depends on
 	# package 'linux-image-4.15.0-1027-aws'. The latter is the linux image
-	# for kernel version '4.15.0-1027-aws'. We use this depenency to figure
+	# for kernel version '4.15.0-1027-aws'. We use this dependency to figure
 	# out the default kernel version for a given platform.
-	#
-	# The "generic" platform is a special case, since we want to use the
-	# hwe kernel image instead of the regular generic image.
 	#
 	# Note that while the default kernel is usually also the latest
 	# available, it is not always the case.
 	#
-
-	if [[ "$platform" != generic ]] && [[ "$UBUNTU_DISTRIBUTION" == focal ]]; then
-		package="linux-image-${platform}"
-	else
-		package="linux-image-${platform}-hwe-20.04"
-	fi
+	package="linux-image-${platform}"
 
 	if [[ "$(apt-cache show --no-all-versions "$package" \
 		2>/dev/null | grep Depends)" =~ linux-image-([^,]*-${platform}) ]]; then

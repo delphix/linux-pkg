@@ -23,7 +23,7 @@ function prepare() {
 	logmust install_pkgs \
 		debhelper \
 		dpkg-dev \
-		llvm-12
+		llvm-14
 	logmust install_kernel_headers
 	logmust install_pkgs "$DEPDIR"/dwarves/*.deb
 }

@@ -47,10 +47,7 @@ SKIP_COPYRIGHTS_CHECK=true
 function fetch() {
 	logmust cd "$WORKDIR/artifacts"
 
-	local debs=(
-		# Copied from https://s3.amazonaws.com/packages.treasuredata.com/4/ubuntu/focal/pool/contrib/t/td-agent/td-agent_4.4.2-1_arm64.deb
-		"td-agent_4.4.2-1_amd64.deb b40c1883c3849e9a7bf67762c9f9a87a6119ad98f1fae64a83d754e1275a379a"
-	)
+	local debs=()
 
 	local url="http://artifactory.delphix.com/artifactory/linux-pkg/misc-debs"
 

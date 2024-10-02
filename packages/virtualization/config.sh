@@ -19,22 +19,20 @@
 source "$PWD/lib/common.sh"
 
 DEFAULT_PACKAGE_GIT_URL="https://github.com/delphix/dlpx-app-gate.git"
-PACKAGE_DEPENDENCIES="adoptopenjdk crypt-blowfish host-jdks"
+PACKAGE_DEPENDENCIES="crypt-blowfish host-jdks"
 
 function prepare() {
 	logmust read_list "$WORKDIR/repo/appliance/packaging/build-dependencies"
 	logmust install_pkgs "${_RET_LIST[@]}"
 
 	logmust install_pkgs \
-		"$DEPDIR"/adoptopenjdk/*.deb \
 		"$DEPDIR"/crypt-blowfish/*.deb \
 		"$DEPDIR"/host-jdks/*.deb
 }
 
 function build() {
 	export JAVA_HOME
-	JAVA_HOME=$(cat "$DEPDIR/adoptopenjdk/JDK_PATH") ||
-		die "Failed to read $DEPDIR/adoptopenjdk/JDK_PATH"
+	JAVA_HOME="/usr/lib/jvm/java-8-openjdk-amd64/"
 
 	export LANG
 	LANG=en_US.UTF-8
