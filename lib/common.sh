@@ -616,6 +616,10 @@ function delphix_revision() {
 	echo "delphix.$(date '+%Y.%m.%d.%H.%M')"
 }
 
+function compare_versions() {
+	dpkg --compare-versions "$@"
+}
+
 function determine_dependencies_base_url() {
 	[[ -n "$DEPENDENCIES_BASE_URL" ]] && return
 

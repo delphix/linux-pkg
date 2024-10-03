@@ -33,6 +33,7 @@ function prepare() {
 		devscripts \
 		dh-autoreconf \
 		dh-python \
+		dh-dkms \
 		dkms \
 		fakeroot \
 		gawk \
@@ -40,12 +41,14 @@ function prepare() {
 		libattr1-dev \
 		libblkid-dev \
 		libelf-dev \
+		libpam0g \
 		libselinux-dev \
 		libselinux1-dev \
 		libssl-dev \
+		libtirpc-dev \
 		libtool \
 		libudev-dev \
-		llvm-12 \
+		llvm-14 \
 		lsb-release \
 		lsscsi \
 		parted \

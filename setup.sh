@@ -19,7 +19,7 @@ TOP="$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")"
 source "$TOP/lib/common.sh"
 
 logmust check_running_system
-check_env DEFAULT_GIT_BRANCH
+check_env DEFAULT_GIT_BRANCH DELPHIX_RELEASE_VERSION
 
 #
 # Update the sources.list file to point to our internal package mirror. If no
@@ -31,7 +31,16 @@ function configure_apt_sources() {
 	local secondary_url="$DELPHIX_PACKAGE_MIRROR_SECONDARY"
 
 	if [[ -z "$primary_url" ]] || [[ -z "$secondary_url" ]]; then
-		local latest_url="http://linux-package-mirror.delphix.com/"
+		local latest_url
+		local delphix_version="$DELPHIX_RELEASE_VERSION"
+		# TODO: Remove the first condition & set the version of os-upgrade in dlpx.version.mapping to
+		#  9999.0.0.0 when https://perforce.atlassian.net/browse/SUP-5179 is done.
+		if compare_versions "$delphix_version" eq "999.0.0.0" || compare_versions "$delphix_version" gt "2025.2"; then
+			latest_url="http://linux-package-mirror-v2.delphix.com/"
+		else
+			latest_url="http://linux-package-mirror.delphix.com/"
+		fi
+
 		if is_release_branch; then
 			package_mirror_url="${latest_url}releases/${DELPHIX_RELEASE_VERSION}"
 		else
@@ -74,7 +83,6 @@ function configure_apt_sources() {
 		deb-src ${primary_url} ${UBUNTU_DISTRIBUTION}-backports main restricted universe multiverse
 
 		deb ${secondary_url} ${UBUNTU_DISTRIBUTION} main multiverse universe
-		deb ${secondary_url} ${UBUNTU_DISTRIBUTION}-updates main multiverse universe
 		EOF" || die "/etc/apt/sources.list could not be updated"
 
 	logmust sudo apt-key add "$TOP/resources/delphix-secondary-mirror.key"

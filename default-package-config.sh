@@ -53,8 +53,8 @@ function kernel_build() {
 	local platform="$1"
 	#
 	# Note: Extra arguments can overwrite default arguments.
-	#       For example in this function we default skipdbg
-	#       to false, but if we pass "skipdbg=true" as an
+	#       For example in this function we default do_dbgsym_package
+	#       to false, but if we pass "do_dbgsym_package=true" as an
 	#       extra argument we will be overwriting this value
 	#       to true. This is because when a variable's value
 	#       is declared multiple times when invoking the
@@ -103,25 +103,28 @@ function kernel_build() {
 	echo "$kernel_version" >"$WORKDIR/artifacts/KERNEL_VERSION"
 
 	#
-	# skipdbg=false
+	# do_dbgsym_package=true
 	#   We need debug info for our debugging tools to work.
 	#   Don't skip them.
+	# do_tools_common=false
+	#   We do not need to build linux-tools-common package and we
+	#   install it directly from our package mirror.
+	# do_tools_host=false
+	#   We do not need to build linux-tools-host package.
 	# uefi_signed=false
 	#   This variable defaults to true but since we don't have
 	#   any intention and logic to provide signatures for now
 	#   we set it to false to avoid any misconfigurations down
 	#   the line.
-	# disable_d_i=true
-	#   This prevents udeb packages from being built as they are
-	#   not consumed by the Delphix Appliance.
 	# do_dkms_*=false
 	#   This disables the build of various out-of-tree kernel modules
 	#   that we do not use in our product or that we provide separately.
 	#
 	local debian_rules_args=(
-		"skipdbg=false"
+		"do_dbgsym_package=true"
+		"do_tools_common=false"
+		"do_tools_host=false"
 		"uefi_signed=false"
-		"disable_d_i=true"
 		"do_zfs=false"
 		"do_dkms_nvidia=false"
 		"do_dkms_nvidia_server=false"
