@@ -2,9 +2,6 @@
 # List of non-kernel packages to be included in the Delphix Appliance.
 #
 
-adoptopenjdk
-bcc
-bpftrace
 challenge-response
 cloud-init
 crash-python
@@ -13,20 +10,15 @@ delphix-go
 delphix-platform
 delphix-rust
 delphix-sso-app
-drgn
 docker-python-image
 dwarves
-fio
 fluentd-gems
-gdb-python
 grub2
 host-jdks
-libkdumpfile
 make-jpkg
 makedumpfile
 masking
 misc-debs
-mold
 nfs-utils
 performance-diagnostics
 ptools
