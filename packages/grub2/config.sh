@@ -23,11 +23,14 @@ UPSTREAM_GIT_BRANCH="applied/ubuntu/${UBUNTU_DISTRIBUTION}-updates"
 
 SKIP_COPYRIGHTS_CHECK=true
 
+PACKAGE_DEPENDENCIES="zfs"
+
 #
 # Install build dependencies for the package.
 #
 function prepare() {
 	logmust install_build_deps_from_control_file
+	logmust install_pkgs "$DEPDIR"/zfs/*.deb
 }
 
 #
