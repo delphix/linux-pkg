@@ -29,23 +29,19 @@ source "$PWD/lib/common.sh"
 
 DEFAULT_PACKAGE_GIT_URL="https://github.com/delphix/dms-core-gate.git"
 
-PACKAGE_DEPENDENCIES="adoptopenjdk"
 SKIP_COPYRIGHTS_CHECK=true
 
 function prepare() {
-	logmust install_pkgs "$DEPDIR"/adoptopenjdk/*.deb
+	echo "Nothing to prepare"
 }
 
 function build() {
-	export JAVA_HOME
-	JAVA_HOME=$(cat "$DEPDIR/adoptopenjdk/JDK_PATH") ||
-		die "Failed to read $DEPDIR/adoptopenjdk/JDK_PATH"
-
 	logmust cd "$WORKDIR/repo"
 
 	local args=()
 
 	set_secret_build_args
+	args+=("-Dorg.gradle.java.home=/lib/jvm/java-8-openjdk-amd64/")
 	args+=("${_SECRET_BUILD_ARGS[@]}")
 
 	args+=("-Porg.gradle.configureondemand=false")
