@@ -19,19 +19,15 @@
 source "$PWD/lib/common.sh"
 
 DEFAULT_PACKAGE_GIT_URL="https://github.com/delphix/dms-core-gate.git"
-PACKAGE_DEPENDENCIES="adoptopenjdk"
 
 function prepare() {
 	logmust read_list "$WORKDIR/repo/packaging/build-dependencies"
 	logmust install_pkgs "${_RET_LIST[@]}"
-
-	logmust install_pkgs "$DEPDIR"/adoptopenjdk/*.deb
 }
 
 function build() {
 	export JAVA_HOME
-	JAVA_HOME=$(cat "$DEPDIR/adoptopenjdk/JDK_PATH") ||
-		die "Failed to read $DEPDIR/adoptopenjdk/JDK_PATH"
+	JAVA_HOME="/usr/lib/jvm/java-8-openjdk-amd64/"
 
 	logmust cd "$WORKDIR/repo"
 

@@ -45,7 +45,7 @@ function prepare() {
 		libssl-dev \
 		libtool \
 		libudev-dev \
-		llvm-12 \
+		llvm-14 \
 		lsb-release \
 		lsscsi \
 		parted \
