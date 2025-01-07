@@ -559,7 +559,7 @@ function install_shfmt() {
 			arch="arm"
 		fi
 		logmust sudo wget -nv -O /usr/local/bin/shfmt \
-			https://github.com/mvdan/sh/releases/download/v2.4.0/shfmt_v2.4.0_linux_$arch
+			"https://github.com/mvdan/sh/releases/download/v2.4.0/shfmt_v2.4.0_linux_$arch"
 		logmust sudo chmod +x /usr/local/bin/shfmt
 	fi
 	echo "shfmt version $(shfmt -version) is installed."
