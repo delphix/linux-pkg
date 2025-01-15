@@ -17,16 +17,14 @@
 # shellcheck disable=SC2034
 
 DEFAULT_PACKAGE_GIT_URL="https://github.com/delphix/saml-app.git"
-PACKAGE_DEPENDENCIES="adoptopenjdk"
 
 function prepare() {
-	logmust install_pkgs "$DEPDIR"/adoptopenjdk/*.deb
+	echo "Nothing to prepare"
 }
 
 function build() {
 	local java_home
-	java_home=$(cat "$DEPDIR/adoptopenjdk/JDK_PATH") ||
-		die "Failed to read $DEPDIR/adoptopenjdk/JDK_PATH"
+	java_home="/usr/lib/jvm/java-8-openjdk-amd64/"
 	logmust cd "$WORKDIR/repo"
 	logmust sudo ./gradlew "-Dorg.gradle.java.home=$java_home" distDeb
 	logmust sudo mv ./build/distributions/*deb "$WORKDIR/artifacts/"
