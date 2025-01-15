@@ -559,7 +559,7 @@ function install_shfmt() {
 			arch="arm"
 		fi
 		logmust sudo wget -nv -O /usr/local/bin/shfmt \
-			https://github.com/mvdan/sh/releases/download/v2.4.0/shfmt_v2.4.0_linux_$arch
+			"https://github.com/mvdan/sh/releases/download/v2.4.0/shfmt_v2.4.0_linux_$arch"
 		logmust sudo chmod +x /usr/local/bin/shfmt
 	fi
 	echo "shfmt version $(shfmt -version) is installed."
@@ -614,6 +614,10 @@ function delphix_revision() {
 	# with the established conventions.
 	#
 	echo "delphix.$(date '+%Y.%m.%d.%H.%M')"
+}
+
+function compare_versions() {
+	dpkg --compare-versions "$@"
 }
 
 function determine_dependencies_base_url() {
