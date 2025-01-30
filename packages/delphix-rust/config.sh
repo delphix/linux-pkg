@@ -20,7 +20,16 @@ DEFAULT_PACKAGE_GIT_URL="https://github.com/delphix/delphix-rust.git"
 
 function build() {
 	logmust mkdir -p "$WORKDIR/repo"
+
+	#
+	# Instead of relying on linux-pkg to assign a default version like 1.0.0, set the
+	# version of the `delphix-rust` package to the version of the `rustc` package.
+	# This is done to ensure that third-party packages that rely on specific versions
+	# of `rustc` can correctly compare the version of the `rustc` package supplied by
+	# `delphix-rust` with their requirement.
+	#
 	PACKAGE_VERSION="$(tr -d '\n' <"$WORKDIR/repo/RUSTC_VERSION")"
 	[[ -n "$PACKAGE_VERSION" ]] || die "Failed to retrieve package version"
+
 	logmust dpkg_buildpackage_default
 }
