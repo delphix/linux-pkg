@@ -20,5 +20,7 @@ DEFAULT_PACKAGE_GIT_URL="https://github.com/delphix/delphix-rust.git"
 
 function build() {
 	logmust mkdir -p "$WORKDIR/repo"
+	PACKAGE_VERSION="$(tr -d '\n' <"$WORKDIR/repo/RUSTC_VERSION")"
+	[[ -n "$PACKAGE_VERSION" ]] || die "Failed to retrieve package version"
 	logmust dpkg_buildpackage_default
 }
