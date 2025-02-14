@@ -23,6 +23,16 @@ UPSTREAM_GIT_URL="https://git.launchpad.net/~ubuntu-kernel/ubuntu/+source/linux/
 UPSTREAM_GIT_BRANCH="none"
 
 #
+# This also installs the `delphix-rust` and `delphix-rust-src`
+# packages to satisfy the kernel's dependency on the rust toolchain
+# by ensuring that Delphix's version of the rust toolchain is
+# installed. Delphix's rust toolchain is supplied via virtual
+# packages and hence must be installed explicitly otherwise apt
+# installs the Ubuntu's version of the rust toolchain.
+#
+PACKAGE_DEPENDENCIES="delphix-rust"
+
+#
 # Force push required when syncing with upstream because we perform a rebase.
 #
 FORCE_PUSH_ON_UPDATE=true

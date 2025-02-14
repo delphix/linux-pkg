@@ -34,11 +34,18 @@ function merge_with_upstream() {
 #
 # The functions below are specific for the Linux kernel packages
 # and contain the majority of their common code.
+# This also installs the `delphix-rust` and `delphix-rust-src`
+# packages to satisfy the kernel's dependency on the rust toolchain
+# by ensuring that Delphix's version of the rust toolchain is
+# installed. Delphix's rust toolchain is supplied via virtual
+# packages and hence must be installed explicitly otherwise apt
+# installs the Ubuntu's version of the rust toolchain.
 #
 function kernel_prepare() {
 	logmust install_pkgs \
-		equivs \
+		"$DEPDIR"/delphix-rust/*.deb \
 		devscripts \
+		equivs \
 		kernel-wedge
 }
 
