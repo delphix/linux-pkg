@@ -104,7 +104,6 @@ CONFIG_EXFAT_FS                                 policy<{'amd64': 'n', 'arm64': '
 CONFIG_EXT2_FS                                  policy<{'amd64': 'n', 'arm64': 'n'}>
 CONFIG_EXT3_FS                                  policy<{'amd64': 'n', 'arm64': 'n'}>
 CONFIG_F2FS_FS                                  policy<{'amd64': 'n', 'arm64': 'n'}>
-CONFIG_FAT_FS                                   policy<{'amd64': 'n', 'arm64': 'n'}>
 CONFIG_GFS2_FS                                  policy<{'amd64': 'n', 'arm64': 'n'}>
 CONFIG_HFSPLUS_FS                               policy<{'amd64': 'n', 'arm64': 'n'}>
 CONFIG_HFS_FS                                   policy<{'amd64': 'n', 'arm64': 'n'}>
@@ -126,7 +125,6 @@ CONFIG_SYSV_FS                                  policy<{'amd64': 'n', 'arm64': '
 CONFIG_UBIFS_FS                                 policy<{'amd64': 'n', 'arm64': 'n'}>
 CONFIG_UDF_FS                                   policy<{'amd64': 'n', 'arm64': 'n'}>
 CONFIG_UFS_FS                                   policy<{'amd64': 'n', 'arm64': 'n'}>
-CONFIG_VFAT_FS                                  policy<{'amd64': 'n', 'arm64': 'n'}>
 CONFIG_VXFS_FS                                  policy<{'amd64': 'n', 'arm64': 'n'}>
 CONFIG_XFS_FS                                   policy<{'amd64': 'n', 'arm64': 'n'}>
 
