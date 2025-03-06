@@ -33,9 +33,7 @@ function configure_apt_sources() {
 	if [[ -z "$primary_url" ]] || [[ -z "$secondary_url" ]]; then
 		local latest_url
 		local delphix_version="$DELPHIX_RELEASE_VERSION"
-		# TODO: Remove the first condition & set the version of os-upgrade in dlpx.version.mapping to
-		#  9999.0.0.0 when https://perforce.atlassian.net/browse/SUP-5179 is done.
-		if compare_versions "$delphix_version" eq "999.0.0.0" || compare_versions "$delphix_version" gt "2025.2"; then
+		if compare_versions "$delphix_version" eq "9999.0.0.0" || compare_versions "$delphix_version" gt "2025.3"; then
 			latest_url="http://linux-package-mirror-v2.delphix.com/"
 		else
 			latest_url="http://linux-package-mirror.delphix.com/"
