@@ -11,6 +11,7 @@ delphix-platform
 delphix-rust
 delphix-sso-app
 docker-python-image
+drgn
 dwarves
 fluentd-gems
 gdb-python
