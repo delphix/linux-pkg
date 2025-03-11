@@ -22,12 +22,6 @@ UPSTREAM_GIT_URL="https://github.com/osandov/drgn.git"
 UPSTREAM_GIT_BRANCH="main"
 
 function prepare() {
-	#
-	# Strictly speaking libkdumpfile is not a hard prerequisite for
-	# drgn itself, but it is a hard requirement in our use-case as
-	# we do want to use drgn for kdump-compressed crash dumps.
-	#
-	logmust install_pkgs "$DEPDIR"/libkdumpfile/*.deb
 	logmust install_build_deps_from_control_file
 }
 
