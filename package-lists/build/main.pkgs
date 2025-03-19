@@ -18,7 +18,6 @@ gdb-python
 grub2
 host-jdks
 libkdumpfile
-make-jpkg
 makedumpfile
 masking
 misc-debs
