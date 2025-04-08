@@ -4,6 +4,14 @@
 # FLAVOUR: amd64-aws amd64-azure amd64-generic amd64-gcp amd64-oracle
 
 #
+# Enable various "efi" modules that we need.
+#
+CONFIG_FB_EFI                                   policy<{'amd64': 'y', 'arm64': 'n'}>
+CONFIG_FRAMEBUFFER_CONSOLE                      policy<{'amd64': 'y', 'arm64': 'n'}>
+CONFIG_EFI                                      policy<{'amd64': 'y', 'arm64': 'n'}>
+CONFIG_EFIVAR_FS                                policy<{'amd64': 'y', 'arm64': 'n'}>
+
+#
 # Disable various "net" modules which we don't use.
 #
 CONFIG_6LOWPAN                                  policy<{'amd64': 'n', 'arm64': 'n'}>
@@ -32,7 +40,6 @@ CONFIG_CONNECTOR                                policy<{'amd64': 'n', 'arm64': '
 CONFIG_DAX                                      policy<{'amd64': 'n', 'arm64': 'n'}>
 CONFIG_EISA                                     policy<{'amd64': 'n', 'arm64': 'n'}>
 CONFIG_EXTCON                                   policy<{'amd64': 'n', 'arm64': 'n'}>
-CONFIG_FB                                       policy<{'amd64': 'n', 'arm64': 'n'}>
 CONFIG_FPGA                                     policy<{'amd64': 'n', 'arm64': 'n'}>
 CONFIG_FSI                                      policy<{'amd64': 'n', 'arm64': 'n'}>
 CONFIG_GNSS                                     policy<{'amd64': 'n', 'arm64': 'n'}>
