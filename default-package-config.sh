@@ -46,7 +46,8 @@ function kernel_prepare() {
 		"$DEPDIR"/delphix-rust/*.deb \
 		devscripts \
 		equivs \
-		kernel-wedge
+		kernel-wedge \
+		gawk
 }
 
 #
@@ -123,7 +124,7 @@ function kernel_build() {
 	#   any intention and logic to provide signatures for now
 	#   we set it to false to avoid any misconfigurations down
 	#   the line.
-	# do_dkms_*=false
+	# dkms_exclude=*
 	#   This disables the build of various out-of-tree kernel modules
 	#   that we do not use in our product or that we provide separately.
 	#
@@ -132,12 +133,7 @@ function kernel_build() {
 		"do_tools_common=false"
 		"do_tools_host=false"
 		"uefi_signed=false"
-		"do_zfs=false"
-		"do_dkms_nvidia=false"
-		"do_dkms_nvidia_server=false"
-		"do_dkms_vbox=false"
-		"do_dkms_wireguard=false"
-		"dkms_exclude=v4l2loopback"
+		"dkms_exclude=zfs ipu6 iwlwifi v4l2loopback usbio"
 		"flavours=$platform"
 		"abinum=${delphix_abinum}"
 	)
