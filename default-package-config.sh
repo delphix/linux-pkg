@@ -124,7 +124,7 @@ function kernel_build() {
 	#   any intention and logic to provide signatures for now
 	#   we set it to false to avoid any misconfigurations down
 	#   the line.
-	# dkms_exclude=*
+	# do_<module>=false
 	#   This disables the build of various out-of-tree kernel modules
 	#   that we do not use in our product or that we provide separately.
 	#
@@ -133,7 +133,11 @@ function kernel_build() {
 		"do_tools_common=false"
 		"do_tools_host=false"
 		"uefi_signed=false"
-		"dkms_exclude=zfs ipu6 iwlwifi v4l2loopback usbio"
+		"do_zfs=false"
+		"do_ipu6=false"
+		"do_iwlwifi=false"
+		"do_v4l2loopback=false"
+		"do_usbio=false"
 		"flavours=$platform"
 		"abinum=${delphix_abinum}"
 	)
