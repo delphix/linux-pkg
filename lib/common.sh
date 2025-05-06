@@ -595,6 +595,20 @@ function install_kernel_headers() {
 	for kernel in $KERNEL_VERSIONS; do
 		logmust dpkg-query -l "linux-headers-$kernel" >/dev/null
 	done
+
+	#
+	# XXX: Refactor & explain
+	#
+	logmust echo "SERAPHEIM START2"
+	local pkg
+	for pkg in "${_RET_LIST[@]}"; do
+		logmust install_pkgs "$DEPDIR/$pkg/"linux-image-*-dbgsym.deb
+	done
+	local kernel
+	for kernel in $KERNEL_VERSIONS; do
+		logmust cp "/usr/lib/debug/boot/vmlinux-${kernel}" "/usr/src/linux-headers-$kernel/vmlinux"
+	done
+	logmust echo "SERAPHEIM END2"
 }
 
 function delphix_revision() {
