@@ -31,10 +31,6 @@ DEFAULT_PACKAGE_GIT_URL="https://github.com/delphix/dms-core-gate.git"
 
 SKIP_COPYRIGHTS_CHECK=true
 
-function prepare() {
-	echo "Nothing to prepare"
-}
-
 function build() {
 	export JAVA_HOME
 	JAVA_HOME="/usr/lib/jvm/java-8-openjdk-amd64/"

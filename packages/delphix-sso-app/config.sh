@@ -18,10 +18,6 @@
 
 DEFAULT_PACKAGE_GIT_URL="https://github.com/delphix/saml-app.git"
 
-function prepare() {
-	echo "Nothing to prepare"
-}
-
 function build() {
 	local java_home
 	java_home="/usr/lib/jvm/java-8-openjdk-amd64/"
