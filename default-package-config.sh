@@ -35,11 +35,19 @@ function merge_with_upstream() {
 # The functions below are specific for the Linux kernel packages
 # and contain the majority of their common code.
 #
+# Ensure that Delphix's version of the rust toolchain is
+# installed rather than Ubuntu's version to satisfy the kernel's
+# dependency on the rust toolchain. Delphix's rust toolchain is
+# supplied via virtual packages and hence must be installed explicitly
+# otherwise apt installs the Ubuntu's version of the rust toolchain.
+#
 function kernel_prepare() {
 	logmust install_pkgs \
-		equivs \
+		"$DEPDIR"/delphix-rust/*.deb \
 		devscripts \
-		kernel-wedge
+		equivs \
+		kernel-wedge \
+		gawk
 }
 
 #
@@ -53,8 +61,8 @@ function kernel_build() {
 	local platform="$1"
 	#
 	# Note: Extra arguments can overwrite default arguments.
-	#       For example in this function we default skipdbg
-	#       to false, but if we pass "skipdbg=true" as an
+	#       For example in this function we default do_dbgsym_package
+	#       to false, but if we pass "do_dbgsym_package=true" as an
 	#       extra argument we will be overwriting this value
 	#       to true. This is because when a variable's value
 	#       is declared multiple times when invoking the
@@ -103,31 +111,33 @@ function kernel_build() {
 	echo "$kernel_version" >"$WORKDIR/artifacts/KERNEL_VERSION"
 
 	#
-	# skipdbg=false
+	# do_dbgsym_package=true
 	#   We need debug info for our debugging tools to work.
 	#   Don't skip them.
+	# do_tools_common=false
+	#   We do not need to build linux-tools-common package and we
+	#   install it directly from our package mirror.
+	# do_tools_host=false
+	#   We do not need to build linux-tools-host package.
 	# uefi_signed=false
 	#   This variable defaults to true but since we don't have
 	#   any intention and logic to provide signatures for now
 	#   we set it to false to avoid any misconfigurations down
 	#   the line.
-	# disable_d_i=true
-	#   This prevents udeb packages from being built as they are
-	#   not consumed by the Delphix Appliance.
-	# do_dkms_*=false
+	# do_<module>=false
 	#   This disables the build of various out-of-tree kernel modules
 	#   that we do not use in our product or that we provide separately.
 	#
 	local debian_rules_args=(
-		"skipdbg=false"
+		"do_dbgsym_package=true"
+		"do_tools_common=false"
+		"do_tools_host=false"
 		"uefi_signed=false"
-		"disable_d_i=true"
 		"do_zfs=false"
-		"do_dkms_nvidia=false"
-		"do_dkms_nvidia_server=false"
-		"do_dkms_vbox=false"
-		"do_dkms_wireguard=false"
-		"dkms_exclude=v4l2loopback"
+		"do_ipu6=false"
+		"do_iwlwifi=false"
+		"do_v4l2loopback=false"
+		"do_usbio=false"
 		"flavours=$platform"
 		"abinum=${delphix_abinum}"
 	)
@@ -262,11 +272,7 @@ function kernel_update_upstream() {
 	local tag_prefix_flavour
 	case "${platform}" in
 	generic)
-		if [[ "$UBUNTU_DISTRIBUTION" == focal ]]; then
-			tag_prefix_flavour="Ubuntu-hwe"
-		else
-			tag_prefix_flavour="Ubuntu"
-		fi
+		tag_prefix_flavour="Ubuntu"
 		;;
 	aws | azure | gcp | oracle)
 		tag_prefix_flavour="Ubuntu-${platform}"

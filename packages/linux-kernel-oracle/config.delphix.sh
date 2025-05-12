@@ -23,6 +23,12 @@ UPSTREAM_GIT_URL="https://git.launchpad.net/~canonical-kernel/ubuntu/+source/lin
 UPSTREAM_GIT_BRANCH="none"
 
 #
+# Ensure that Delphix's version of the rust toolchain is
+# installed rather than Ubuntu's version.
+#
+PACKAGE_DEPENDENCIES="delphix-rust"
+
+#
 # Force push required when syncing with upstream because we perform a rebase.
 #
 FORCE_PUSH_ON_UPDATE=true

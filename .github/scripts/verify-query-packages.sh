@@ -30,14 +30,6 @@ read -r -a fields <<<"$(./query-packages.sh single -o git-url zfs 2>&1)"
 test ${#fields[@]} -eq 1
 test "${fields[0]}" == 'https://github.com/delphix/zfs.git'
 
-# Expect: "bpftrace	bcc	true	https://github.com/delphix/bpftrace.git"
-read -r -a fields <<<"$(./query-packages.sh single -o name,dependencies,can-update,git-url bpftrace 2>&1)"
-test ${#fields[@]} -eq 4
-test "${fields[0]}" == 'bpftrace'
-test "${fields[1]}" == 'bcc'
-test "${fields[2]}" == 'true'
-test "${fields[3]}" == 'https://github.com/delphix/bpftrace.git'
-
 # Expect that "list all" outputs all directory names under packages/
 diff <(ls -1 packages | sort) <(./query-packages.sh list all 2>&1 | sort)
 

@@ -29,7 +29,7 @@ projects.
 
 ## System Requirements
 
-This framework is intended to be run on an Ubuntu 20.04 system with some basic
+This framework is intended to be run on an Ubuntu 24.04 system with some basic
 developer packages installed, such as git, and passwordless sudo enabled. Note
 that it will automatically install various build-dependencies on the system, so
 as a safety precaution it is currently restricted to only run on an AWS instance
@@ -280,12 +280,7 @@ of some of the scripts defined above.
 
 * **package_S3_URL**: Similar to the package_VAR variables above. This is used
   to override the default S3 location for where package build-dependencies are
-  fetched for a given linux-pkg package. For instance, if you are building
-  bpftrace, which has `PACKAGE_DEPENDENCIES="bcc"` in its config, the
-  `fetch_dependencies()` stage in the build will fetch the latest build
-  artifacts of the bcc package from a predetermined S3 location. If you pass
-  `BCC_S3_URL=s3://path/to/custom/bcc/artifacts` then those artifacts will be
-  fetched insteasd.
+  fetched for a given linux-pkg package.
 
 * **DELPHIX_PACKAGE_MIRROR_MAIN, DELPHIX_PACKAGE_MIRROR_SECONDARY**: When
   the [setup.sh](#setupsh) script is run, it will configure the apt sources
