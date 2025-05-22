@@ -156,7 +156,6 @@ CONFIG_ENIC                                     policy<{'amd64': 'n', 'arm64': '
 CONFIG_FM10K                                    policy<{'amd64': 'n', 'arm64': 'n'}>
 CONFIG_FORCEDETH                                policy<{'amd64': 'n', 'arm64': 'n'}>
 CONFIG_GENWQE                                   policy<{'amd64': 'n', 'arm64': 'n'}>
-CONFIG_GVE                                      policy<{'amd64': 'n', 'arm64': 'n'}>
 CONFIG_HABANA_AI                                policy<{'amd64': 'n', 'arm64': 'n'}>
 CONFIG_HID                                      policy<{'amd64': 'n', 'arm64': 'n'}>
 CONFIG_HIO                                      policy<{'amd64': 'n', 'arm64': 'n'}>
