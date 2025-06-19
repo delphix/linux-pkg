@@ -18,6 +18,7 @@
 
 DEFAULT_PACKAGE_GIT_URL="https://github.com/delphix/dlpx-app-gate.git"
 SKIP_COPYRIGHTS_CHECK=true
+PACKAGE_GIT_BRANCH="f3b09d8c6a5a618a94a8d30f206b64bb4f511a31"
 
 function build() {
 	CONNECTOR_DIR="${WORKDIR}/repo/appliance/server/connector"
