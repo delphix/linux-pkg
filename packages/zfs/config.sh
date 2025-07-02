@@ -158,7 +158,7 @@ function build() {
 		echo_bold "Building ZFS modules for kernel $KVERS"
 		export KSRC="/usr/src/linux-headers-$KVERS"
 		export KOBJ="/usr/src/linux-headers-$KVERS"
-                ln -sf /usr/lib/debug/boot/vmlinux-${KVERS} /usr/src/linux-headers-${KVERS}/vmlinux
+                sudo ln -sf /usr/lib/debug/boot/vmlinux-${KVERS} /usr/src/linux-headers-${KVERS}/vmlinux
 		logmust fakeroot debian/rules override_dh_binary-modules
 
 		#
