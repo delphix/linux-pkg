@@ -597,6 +597,47 @@ function install_kernel_headers() {
 	done
 }
 
+#
+# Install kernel dbgsym packages for all target kernels.
+# The kernel packages are fetched from S3.
+#
+function install_kernel_dbgsyms() {
+	logmust determine_target_kernels
+	check_env KERNEL_VERSIONS DEPDIR
+
+	logmust list_linux_kernel_packages
+	# Note: linux packages returned in _RET_LIST
+
+	local pkg
+	for pkg in "${_RET_LIST[@]}"; do
+		logmust install_pkgs "$DEPDIR/$pkg/"linux-image-*dbgsym*.ddeb
+	done
+
+	#
+	# Verify that headers are installed for all kernel versions
+	# stored in KERNEL_VERSIONS
+	#
+	local kernel
+	for kernel in $KERNEL_VERSIONS; do
+		logmust dpkg-query -l "linux-image-$kernel-dbgsym*" >/dev/null
+	done
+}
+
+function install_kernel_headers_and_dbgsyms() {
+	logmust install_kernel_headers
+	logmust install_kernel_dbgsyms
+
+	#
+	# Additionally, we add these symlinks so that kernel module builds will
+	# be able to generate BTF information, as they look for the "vmlinux" file
+	# in the kernel header directory.
+	#
+	local kernel
+	for kernel in $KERNEL_VERSIONS; do
+		logmust sudo ln -s "/usr/lib/debug/boot/vmlinux-$kernel" "/usr/src/linux-headers-$kernel/vmlinux"
+	done
+}
+
 function delphix_revision() {
 	#
 	# We use "delphix" in the default revision to make it easy to find all
