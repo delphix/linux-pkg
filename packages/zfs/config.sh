@@ -57,7 +57,7 @@ function prepare() {
 		python3 \
 		uuid-dev \
 		zlib1g-dev
-	logmust install_kernel_headers
+	logmust install_kernel_headers_and_dbgsyms
 	logmust install_pkgs "$DEPDIR"/delphix-rust/*.deb
 	logmust cargo install cargo-bundle-licenses@2.1.1 --locked
 	logmust install_pkgs "$DEPDIR"/delphix-go/*.deb
