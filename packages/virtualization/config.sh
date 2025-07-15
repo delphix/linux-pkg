@@ -20,6 +20,7 @@ source "$PWD/lib/common.sh"
 
 DEFAULT_PACKAGE_GIT_URL="https://github.com/delphix/dlpx-app-gate.git"
 PACKAGE_DEPENDENCIES="crypt-blowfish host-jdks"
+MEND_SCAN_APPLICABLE="true"
 
 function prepare() {
 	logmust read_list "$WORKDIR/repo/appliance/packaging/build-dependencies"

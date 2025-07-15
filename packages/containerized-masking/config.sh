@@ -28,6 +28,8 @@
 source "$PWD/lib/common.sh"
 
 DEFAULT_PACKAGE_GIT_URL="https://github.com/delphix/dms-core-gate.git"
+MEND_SCAN_APPLICABLE="true"
+MEND_SCAN_IMAGES="'delphix-masking-proxy', 'delphix-masking-database', 'delphix-masking-app'"
 
 SKIP_COPYRIGHTS_CHECK=true
 
