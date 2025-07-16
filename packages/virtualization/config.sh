@@ -33,7 +33,7 @@ function prepare() {
 
 function build() {
 	export JAVA_HOME
-	JAVA_HOME="/usr/lib/jvm/java-8-openjdk-amd64/"
+	JAVA_HOME="/usr/lib/jvm/java-17-openjdk-amd64/"
 
 	export LANG
 	LANG=en_US.UTF-8
