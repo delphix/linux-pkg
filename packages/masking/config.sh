@@ -19,6 +19,7 @@
 source "$PWD/lib/common.sh"
 
 DEFAULT_PACKAGE_GIT_URL="https://github.com/delphix/dms-core-gate.git"
+MEND_SCAN_APPLICABLE="true"
 
 function prepare() {
 	logmust read_list "$WORKDIR/repo/packaging/build-dependencies"
