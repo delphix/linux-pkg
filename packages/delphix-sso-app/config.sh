@@ -17,6 +17,8 @@
 # shellcheck disable=SC2034
 
 DEFAULT_PACKAGE_GIT_URL="https://github.com/delphix/saml-app.git"
+MEND_SCAN_APPLICABLE="true"
+MEND_SCAN_USING_SUDO="true"
 
 function build() {
 	local java_home
