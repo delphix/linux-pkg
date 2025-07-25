@@ -634,7 +634,7 @@ function install_kernel_headers_and_dbgsyms() {
 	#
 	local kernel
 	for kernel in $KERNEL_VERSIONS; do
-		logmust sudo ln -s "/usr/lib/debug/boot/vmlinux-$kernel" "/usr/src/linux-headers-$kernel/vmlinux"
+		logmust sudo ln -sf "/usr/lib/debug/boot/vmlinux-$kernel" "/usr/src/linux-headers-$kernel/vmlinux"
 	done
 }
 
