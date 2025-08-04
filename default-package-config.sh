@@ -277,7 +277,7 @@ function kernel_update_upstream() {
 	local tag_prefix_flavour
 	case "${platform}" in
 	generic)
-		tag_prefix_flavour="Ubuntu"
+		tag_prefix_flavour="Ubuntu-hwe"
 		;;
 	aws | azure | gcp | oracle)
 		tag_prefix_flavour="Ubuntu-${platform}"

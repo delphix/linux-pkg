@@ -1157,10 +1157,17 @@ function get_kernel_version_for_platform_from_apt() {
 	# for kernel version '4.15.0-1027-aws'. We use this dependency to figure
 	# out the default kernel version for a given platform.
 	#
+	# The "generic" platform is a special case, since we want to use the
+	# hwe kernel image instead of the regular generic image.
+	#
 	# Note that while the default kernel is usually also the latest
 	# available, it is not always the case.
 	#
-	package="linux-image-${platform}"
+	if [[ "$platform" != generic ]] && [[ "$UBUNTU_DISTRIBUTION" == focal ]]; then
+		package="linux-image-${platform}"
+	else
+		package="linux-image-${platform}-hwe-24.04"
+	fi
 
 	if [[ "$(apt-cache show --no-all-versions "$package" \
 		2>/dev/null | grep Depends)" =~ linux-image-([^,]*-${platform}) ]]; then
