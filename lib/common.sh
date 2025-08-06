@@ -1163,10 +1163,10 @@ function get_kernel_version_for_platform_from_apt() {
 	# Note that while the default kernel is usually also the latest
 	# available, it is not always the case.
 	#
-	if [[ "$platform" != generic ]] && [[ "$UBUNTU_DISTRIBUTION" == focal ]]; then
-		package="linux-image-${platform}"
-	else
+	if [[ "$platform" == generic ]]; then
 		package="linux-image-${platform}-hwe-24.04"
+	else
+		package="linux-image-${platform}"
 	fi
 
 	if [[ "$(apt-cache show --no-all-versions "$package" \
