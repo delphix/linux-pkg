@@ -26,6 +26,10 @@ function prepare() {
 }
 
 function build() {
+	logmust cd "$WORKDIR/repo/challenge_response/lib"
+	PACKAGE_VERSION=$(date +%Y.%m.%d.%H)
+	logmust set_changelog
+
 	logmust cd "$WORKDIR/repo/challenge_response"
 	logmust make package
 	logmust mv "./$(dpkg-architecture -q DEB_HOST_GNU_CPU)"/*deb "$WORKDIR/artifacts/"
