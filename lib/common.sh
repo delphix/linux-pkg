@@ -1087,8 +1087,23 @@ function push_to_remote() {
 #
 function set_changelog() {
 	check_env PACKAGE_REVISION
-	local src_package="${1:-$PACKAGE}"
 	local final_version
+
+	#
+	# If the name of the source package isn't passed in as a parameter,
+	# then deduce it. If there's a debian/control file that specifies that
+	# package name, then use it. Otherwise, default to the name of the
+	# linux-pkg directory name. This can't always be the default because
+	# for some packages, those are different.  For example, the
+	# challenge-response linux-pkg directory generates the
+	# pam-challenge-response debian package.
+	#
+	if [[ -n $1 ]]; then
+		src_package=$1
+	elif [[ -f debian/control ]]; then
+		src_package=$(awk '/^Source:/ { print $2 }' debian/control)
+	fi
+	src_package=${src_package:-$PACKAGE}
 
 	#
 	# If PACKAGE_VERSION hasn't been set already, then retrieve it from
