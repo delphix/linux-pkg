@@ -597,6 +597,47 @@ function install_kernel_headers() {
 	done
 }
 
+#
+# Install kernel dbgsym packages for all target kernels.
+# The kernel packages are fetched from S3.
+#
+function install_kernel_dbgsyms() {
+	logmust determine_target_kernels
+	check_env KERNEL_VERSIONS DEPDIR
+
+	logmust list_linux_kernel_packages
+	# Note: linux packages returned in _RET_LIST
+
+	local pkg
+	for pkg in "${_RET_LIST[@]}"; do
+		logmust install_pkgs "$DEPDIR/$pkg/"linux-image-*dbgsym*.ddeb
+	done
+
+	#
+	# Verify that headers are installed for all kernel versions
+	# stored in KERNEL_VERSIONS
+	#
+	local kernel
+	for kernel in $KERNEL_VERSIONS; do
+		logmust dpkg-query -l "linux-image-$kernel-dbgsym*" >/dev/null
+	done
+}
+
+function install_kernel_headers_and_dbgsyms() {
+	logmust install_kernel_headers
+	logmust install_kernel_dbgsyms
+
+	#
+	# Additionally, we add these symlinks so that kernel module builds will
+	# be able to generate BTF information, as they look for the "vmlinux" file
+	# in the kernel header directory.
+	#
+	local kernel
+	for kernel in $KERNEL_VERSIONS; do
+		logmust sudo ln -sf "/usr/lib/debug/boot/vmlinux-$kernel" "/usr/src/linux-headers-$kernel/vmlinux"
+	done
+}
+
 function delphix_revision() {
 	#
 	# We use "delphix" in the default revision to make it easy to find all
@@ -1046,8 +1087,23 @@ function push_to_remote() {
 #
 function set_changelog() {
 	check_env PACKAGE_REVISION
-	local src_package="${1:-$PACKAGE}"
 	local final_version
+
+	#
+	# If the name of the source package isn't passed in as a parameter,
+	# then deduce it. If there's a debian/control file that specifies that
+	# package name, then use it. Otherwise, default to the name of the
+	# linux-pkg directory name. This can't always be the default because
+	# for some packages, those are different.  For example, the
+	# challenge-response linux-pkg directory generates the
+	# pam-challenge-response debian package.
+	#
+	if [[ -n $1 ]]; then
+		src_package=$1
+	elif [[ -f debian/control ]]; then
+		src_package=$(awk '/^Source:/ { print $2 }' debian/control)
+	fi
+	src_package=${src_package:-$PACKAGE}
 
 	#
 	# If PACKAGE_VERSION hasn't been set already, then retrieve it from
@@ -1116,10 +1172,17 @@ function get_kernel_version_for_platform_from_apt() {
 	# for kernel version '4.15.0-1027-aws'. We use this dependency to figure
 	# out the default kernel version for a given platform.
 	#
+	# The "generic" platform is a special case, since we want to use the
+	# hwe kernel image instead of the regular generic image.
+	#
 	# Note that while the default kernel is usually also the latest
 	# available, it is not always the case.
 	#
-	package="linux-image-${platform}"
+	if [[ "$platform" == generic ]]; then
+		package="linux-image-${platform}-hwe-24.04"
+	else
+		package="linux-image-${platform}"
+	fi
 
 	if [[ "$(apt-cache show --no-all-versions "$package" \
 		2>/dev/null | grep Depends)" =~ linux-image-([^,]*-${platform}) ]]; then

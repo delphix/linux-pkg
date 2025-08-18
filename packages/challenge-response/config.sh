@@ -19,14 +19,9 @@
 DEFAULT_PACKAGE_GIT_URL="https://github.com/delphix/challenge-response.git"
 
 function prepare() {
-	logmust install_pkgs \
-		libpam0g-dev \
-		libssl-dev \
-		uuid-dev
+	install_build_deps_from_control_file
 }
 
 function build() {
-	logmust cd "$WORKDIR/repo/challenge_response"
-	logmust make package
-	logmust mv "./$(dpkg-architecture -q DEB_HOST_GNU_CPU)"/*deb "$WORKDIR/artifacts/"
+	dpkg_buildpackage_default
 }

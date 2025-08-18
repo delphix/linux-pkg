@@ -99,9 +99,14 @@ function kernel_build() {
 	# Canonical's releases and our releases.
 	#
 	local canonical_abinum delphix_abinum kernel_release kernel_version
+
 	canonical_abinum=$(fakeroot debian/rules printenv | grep -E '^abinum ' | cut -d= -f2 | tr -d '[:space:]')
 	delphix_abinum="${canonical_abinum}-$(date -u +"dx%Y%m%d%H")-$(git rev-parse --short HEAD)"
+
 	kernel_release=$(fakeroot debian/rules printenv | grep -E '^release ' | cut -d= -f2 | tr -d '[:space:]')
+	if [[ -z "$kernel_release" ]]; then
+		kernel_release=$(fakeroot debian/rules printenv | grep -E '^DEB_VERSION_UPSTREAM ' | cut -d= -f2 | tr -d '[:space:]')
+	fi
 
 	#
 	# We record the kernel version into a file. This field is consumed
@@ -272,7 +277,7 @@ function kernel_update_upstream() {
 	local tag_prefix_flavour
 	case "${platform}" in
 	generic)
-		tag_prefix_flavour="Ubuntu"
+		tag_prefix_flavour="Ubuntu-hwe"
 		;;
 	aws | azure | gcp | oracle)
 		tag_prefix_flavour="Ubuntu-${platform}"
