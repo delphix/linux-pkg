@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Copyright 2019, 2020 Delphix
+# Copyright 2019, 2025 Delphix
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -174,6 +174,10 @@ function build() {
 	done
 	logmust cd "$WORKDIR"
 	logmust mv "all-packages/"*.deb "artifacts/"
+
+	# Sign ZFS modules in all packages
+	zfs_pkgs=$(find "$WORKDIR/artifacts" -type f -name "zfs-modules-*.deb" ! -name "*-dbg*")
+	sign_modules "$zfs_pkgs"
 }
 
 function update_upstream() {
