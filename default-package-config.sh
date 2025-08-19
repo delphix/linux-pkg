@@ -160,6 +160,35 @@ function kernel_build() {
 	#
 	logmust fakeroot debian/rules printenv "${debian_rules_args[@]}"
 
+  #
+  # Download SB keys and configure signing keys/certs before build
+  #
+  SB_KEYS_DIR="/var/tmp/sbkeys"
+  logmust mkdir -p $SB_KEYS_DIR
+  logmust aws s3 cp --recursive s3://secure-boot-keys-prod/temp/db/ $SB_KEYS_DIR
+
+	FLAVOUR=$platform
+	OBJ=debian/build/build-$FLAVOUR
+	CERTS=$OBJ/certs
+
+	ensure the objdir + certs dir exist
+	mkdir -p "$CERTS"
+
+	# provide the key the packaging expects INSIDE the objdir
+	# (symlink or copy)
+	logmust ln -sf "${SB_KEYS_DIR}/signing_key.pem" "$CERTS/signing_key.pem"
+	logmust chmod 600 "$CERTS/signing_key.pem"
+
+	# create the DER .x509 that sign-file needs from .crt)
+	logmust openssl x509 -in "${SB_KEYS_DIR}/db.crt" -outform DER -out "$CERTS/signing_key.x509"
+	# sanity checks
+	logmust test -s "$CERTS/signing_key.pem" || { echo "missing signing_key.pem"; exit 1; }
+	logmust test -s "$CERTS/signing_key.x509" || { echo "missing signing_key.x509"; exit 1; }
+	logmust openssl pkey -in "$CERTS/signing_key.pem" -noout >/dev/null || { echo "key unreadable"; exit 1; }
+
+	SBSIGN_KEY="${SBSIGN_KEY:-$SB_KEYS_DIR/db.key}"
+	SBSIGN_CERT="${SBSIGN_CERT:-$SB_KEYS_DIR/db.crt}"
+
 	#
 	# The default value of the tool argument for mk-build-deps
 	# is the following:
@@ -203,6 +232,33 @@ function kernel_build() {
 	# one of the .debs produced
 	#
 	logmust test -f "artifacts/linux-image-${kernel_version}_"*.deb
+
+	#
+	# After the build, unpackage linux-image package and sign vmlinuz
+	#
+	linux_deb=$(find artifacts -type f -name "linux-image-${kernel_version}*.deb" | head -n1)
+	temp_dir=$(mktemp -d -p "/var/tmp/")
+	logmust fakeroot dpkg-deb -R $linux_deb "$temp_dir"
+
+	bz="$temp_dir/boot/vmlinuz-${kernel_version}"
+	logmust sbsign --key $SBSIGN_KEY --cert $SBSIGN_CERT --output "$bz.signed" "$bz"
+	logmust mv "$bz.signed" "$bz"
+	logmust sbverify --list "$bz"
+
+	# Update md5sums
+	( cd "$temp_dir"
+		: > DEBIAN/md5sums
+		# print paths relative to root of package
+		while IFS= read -r -d '' f; do
+		rel="${f#./}"
+		md5sum "$rel" >> DEBIAN/md5sums
+		done < <(find . -type f ! -path './DEBIAN/*' -print0)
+	)
+
+	# Repack the .deb"
+	out_deb="artifacts/linux-image.deb"
+	logmust fakeroot dpkg-deb -b "$temp_dir" "$out_deb"
+	logmust mv "$out_deb" "$linux_deb"
 }
 
 #

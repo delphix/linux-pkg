@@ -174,6 +174,53 @@ function build() {
 	done
 	logmust cd "$WORKDIR"
 	logmust mv "all-packages/"*.deb "artifacts/"
+
+  # Sign ZFS modules in all packages
+  sign_zfs_modules
+}
+
+SB_KEYS_DIR="/var/tmp/sbkeys"
+SBSIGN_KEY="$SB_KEYS_DIR/db.key"
+SBSIGN_DER="$SB_KEYS_DIR/db.der"
+
+#
+# Unpack zfs-modules packages in artifacts directory, sign, then repack
+#
+function sign_zfs_modules() {
+	echo_bold "Signing ZFS modules"
+  logmust mkdir -p $SB_KEYS_DIR
+  logmust aws s3 cp --recursive s3://secure-boot-keys-prod/temp/db/ $SB_KEYS_DIR
+  for zfs_package in $(find artifacts -type f -name "zfs-modules-*.deb" ! -name "*-dbg*"); do
+	  echo_bold "Processing $p"
+	  temp_dir=$(mktemp -d -p "/var/tmp/")
+	  logmust fakeroot dpkg-deb -R $zfs_package "$temp_dir"
+
+	  zfs=$(find $temp_dir -type f -name zfs.ko)
+	  spl=$(find $temp_dir -type f -name spl.ko)
+
+	  logmust kmodsign sha256 $SBSIGN_KEY $SBSIGN_DER $zfs "$zfs.signed"
+	  logmust kmodsign sha256 $SBSIGN_KEY $SBSIGN_DER $spl "$spl.signed"
+	  logmust mv "$zfs.signed" "$zfs"
+	  logmust mv "$spl.signed" "$spl"
+	  logmust modinfo -F signer "$zfs"
+	  logmust modinfo -F signer "$spl"
+
+	# Update md5sums
+	( cd "$temp_dir"
+		: > DEBIAN/md5sums
+		# print paths relative to root of package
+		while IFS= read -r -d '' f; do
+		rel="${f#./}"
+		md5sum "$rel" >> DEBIAN/md5sums
+		done < <(find . -type f ! -path './DEBIAN/*' ! -path './etc/depmod*' -print0)
+	)
+
+	# Repack the .deb"
+	out_deb="artifacts/zfs-modules.deb"
+	logmust fakeroot dpkg-deb -b "$temp_dir" "$out_deb"
+	logmust mv "$out_deb" "$zfs_package"
+
+  done
 }
 
 function update_upstream() {
