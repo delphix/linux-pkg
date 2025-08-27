@@ -1414,3 +1414,87 @@ function set_secret_build_args() {
 		_SECRET_BUILD_ARGS+=("-DSECRET_DB_AWS_REGION=$SECRET_DB_AWS_REGION")
 	fi
 }
+
+#
+# Secure boot variables and functions
+#
+# S3 bucket containing keys and certs
+# ./db subdirectory contains the db key and various certs:
+#   .der is for signing modules like ZFS and connstat
+#   .crt is for signing vmlinuz
+#   signing_key.pem is the format expected by kernel build for signing its modules
+#
+# ./pub contains the auth files, secure boot enrollment certs.
+#
+S3_KEYS_URL="s3://secure-boot-keys-prod/release"
+#
+# The kernel build expects the signing_key.pem in this directory, i.e.
+# CONFIG_MODULE_SIG_KEY is set to /var/tmp/sbkeys/signing_key.pem in
+# resources/delphix_kernel_annotations
+#
+SB_KEYS_DIR="/var/tmp/sbkeys"
+SBSIGN_KEY="$SB_KEYS_DIR/db.key"
+SBSIGN_DER="$SB_KEYS_DIR/db.der"
+
+function download_keys() {
+	logmust mkdir -p $SB_KEYS_DIR
+	logmust aws s3 cp --recursive "$S3_KEYS_URL/db/" $SB_KEYS_DIR
+}
+
+function delete_keys() {
+	logmust rm -r $SB_KEYS_DIR
+}
+
+# Update DEBIAN/md5sum for package directory after
+# some files were updated, i.e. secure-boot signed.
+#
+function update_md5sums() {
+	pkg_dir=$1
+	echo_bold "Updating md5sums for $pkg_dir"
+
+	(
+		cd "$pkg_dir" || exit
+		: >DEBIAN/md5sums
+		# print paths relative to root of package
+		while IFS= read -r -d '' f; do
+			rel="${f#./}"
+			md5sum "$rel" >>DEBIAN/md5sums
+		done < <(find . -type f ! -path './DEBIAN/*' ! -path './etc/depmod*' -print0)
+	)
+}
+
+function repack_deb() {
+	deb_name=$1
+	deb_dir=$2
+	temp_deb=$(mktemp /tmp/deb.XXXXXX)
+
+	logmust fakeroot dpkg-deb -b "$deb_dir" "$temp_deb"
+	logmust mv "$temp_deb" "$deb_name"
+}
+
+#
+# Sign .ko files in the module list
+#
+function sign_modules() {
+	deb_pkgs="$1"
+	echo_bold "Signing $deb_pkgs"
+	download_keys
+
+	while IFS= read -r pkg; do
+		echo_bold "Processing $pkg"
+		temp_dir=$(mktemp -d -p "/var/tmp/")
+		logmust fakeroot dpkg-deb -R "$pkg" "$temp_dir"
+
+		# Find and sign all .ko files in package
+		find "$temp_dir" -type f -name "*.ko" -print0 |
+			while IFS= read -r -d '' kernel_mod; do
+				logmust kmodsign sha256 "$SBSIGN_KEY" "$SBSIGN_DER" "$kernel_mod" "$kernel_mod.signed"
+				logmust mv "$kernel_mod.signed" "$kernel_mod"
+				logmust modinfo -F signer "$kernel_mod"
+			done
+		# Repack the .deb"
+		update_md5sums "$temp_dir"
+		repack_deb "$pkg" "$temp_dir"
+	done <<<"$deb_pkgs"
+	delete_keys
+}

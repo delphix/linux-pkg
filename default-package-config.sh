@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Copyright 2018, 2020 Delphix
+# Copyright 2018, 2025 Delphix
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -161,6 +161,44 @@ function kernel_build() {
 	logmust fakeroot debian/rules printenv "${debian_rules_args[@]}"
 
 	#
+	# Configure signing keys/certs before build
+	#
+	# CONFIG_MODULE_SIG_KEY is set to /var/tmp/sbkeys/signing_key.pem in
+	# resources/delphix_kernel_annotations
+	#
+	FLAVOUR=$platform
+	OBJ=debian/build/build-$FLAVOUR
+	CERTS=$OBJ/certs
+
+	# ensure the objdir + certs dir exist
+	mkdir -p "$CERTS"
+	download_keys
+
+	# provide the key the packaging expects INSIDE the objdir
+	# (symlink or copy)
+	logmust ln -sf "${SB_KEYS_DIR}/signing_key.pem" "$CERTS/signing_key.pem"
+	logmust chmod 600 "$CERTS/signing_key.pem"
+
+	# create the DER .x509 that sign-file needs from .crt)
+	logmust openssl x509 -in "${SB_KEYS_DIR}/db.crt" -outform DER -out "$CERTS/signing_key.x509"
+
+	# sanity checks
+	logmust test -s "$CERTS/signing_key.pem" || {
+		echo "missing signing_key.pem"
+		exit 1
+	}
+	logmust test -s "$CERTS/signing_key.x509" || {
+		echo "missing signing_key.x509"
+		exit 1
+	}
+	logmust openssl pkey -in "$CERTS/signing_key.pem" -noout >/dev/null || {
+		echo "key unreadable"
+		exit 1
+	}
+	SBSIGN_KEY="${SBSIGN_KEY:-$SB_KEYS_DIR/db.key}"
+	SBSIGN_CERT="${SBSIGN_CERT:-$SB_KEYS_DIR/db.crt}"
+
+	#
 	# The default value of the tool argument for mk-build-deps
 	# is the following:
 	# "apt-get -o Debug::pkgProblemResolver=yes --no-install-recommends"
@@ -203,6 +241,23 @@ function kernel_build() {
 	# one of the .debs produced
 	#
 	logmust test -f "artifacts/linux-image-${kernel_version}_"*.deb
+
+	#
+	# After the build, unpackage linux-image package and sign vmlinuz
+	#
+	linux_deb=$(find artifacts -type f -name "linux-image-${kernel_version}*.deb" | head -n1)
+	temp_dir=$(mktemp -d -p "/var/tmp/")
+	logmust fakeroot dpkg-deb -R $linux_deb "$temp_dir"
+
+	bz="$temp_dir/boot/vmlinuz-${kernel_version}"
+	logmust sbsign --key $SBSIGN_KEY --cert $SBSIGN_CERT --output "$bz.signed" "$bz"
+	logmust mv "$bz.signed" "$bz"
+	logmust sbverify --list "$bz"
+
+	# Repack the .deb"
+	update_md5sums "$temp_dir"
+	repack_deb $linux_deb $temp_dir
+	delete_keys
 }
 
 #
