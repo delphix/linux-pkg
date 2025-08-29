@@ -17,29 +17,18 @@
 # shellcheck disable=SC2034
 
 DEFAULT_PACKAGE_GIT_URL="https://github.com/delphix/grub2"
-
-UPSTREAM_GIT_URL=https://git.launchpad.net/ubuntu/+source/grub2
-UPSTREAM_GIT_BRANCH="applied/ubuntu/${UBUNTU_DISTRIBUTION}-updates"
-
 SKIP_COPYRIGHTS_CHECK=true
 
-#
-# Install build dependencies for the package.
-#
-function prepare() {
-	logmust install_build_deps_from_control_file
+URI="s3://release-de-images/internal-artifacts/2025.3.0.1/1.0.53/input-artifacts/combined-packages/packages/grub2"
+
+function fetch() {
+	logmust cd "$WORKDIR/artifacts"
+
+	logmust aws s3 sync "$URI" .
+	logmust sha256sum -c SHA256SUMS
 }
 
-#
-# Build the package.
-#
 function build() {
-	logmust dpkg_buildpackage_default
-}
-
-#
-# Hook to fetch upstream package changes and merge into our tree.
-#
-function update_upstream() {
-	logmust update_upstream_from_git
+	return
+	# Nothing to do, all the logic is done in fetch().
 }
