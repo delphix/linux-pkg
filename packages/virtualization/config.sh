@@ -27,6 +27,7 @@ function prepare() {
 	logmust install_pkgs "${_RET_LIST[@]}"
 
 	logmust install_pkgs \
+		openjdk-17-jdk-headless \
 		"$DEPDIR"/crypt-blowfish/*.deb \
 		"$DEPDIR"/host-jdks/*.deb
 }
