@@ -230,3 +230,12 @@ CONFIG_SYNCLINK                                 policy<{'amd64': 'n', 'arm64': '
 CONFIG_USB                                      policy<{'amd64': 'n', 'arm64': 'n'}>
 CONFIG_VBOXGUEST                                policy<{'amd64': 'n', 'arm64': 'n'}>
 CONFIG_VOP                                      policy<{'amd64': 'n', 'arm64': 'n'}>
+
+#
+# Enable frame buffer console drivers
+#
+CONFIG_FRAMEBUFFER_CONSOLE                    policy<{'amd64': 'y', 'arm64': 'n'}>
+CONFIG_FB_EFI                                 policy<{'amd64': 'y', 'arm64': 'n'}>
+CONFIG_FB_SIMPLE                              policy<{'amd64': 'y', 'arm64': 'n'}>
+CONFIG_DRM_SIMPLEDRM                          policy<{'amd64': 'y', 'arm64': 'n'}>
+CONFIG_DRM_VMWGFX                             policy<{'amd64': 'm', 'arm64': 'n'}>
