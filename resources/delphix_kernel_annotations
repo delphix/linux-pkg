@@ -154,7 +154,6 @@ CONFIG_CDROM                                    policy<{'amd64': 'n', 'arm64': '
 CONFIG_CEPH_LIB                                 policy<{'amd64': 'n', 'arm64': 'n'}>
 CONFIG_CRAMFS                                   policy<{'amd64': 'n', 'arm64': 'n'}>
 CONFIG_CYCLADES                                 policy<{'amd64': 'n', 'arm64': 'n'}>
-CONFIG_DRM                                      policy<{'amd64': 'n', 'arm64': 'n'}>
 CONFIG_ENIC                                     policy<{'amd64': 'n', 'arm64': 'n'}>
 CONFIG_FM10K                                    policy<{'amd64': 'n', 'arm64': 'n'}>
 CONFIG_FORCEDETH                                policy<{'amd64': 'n', 'arm64': 'n'}>
