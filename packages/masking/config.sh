@@ -53,6 +53,7 @@ function build() {
 	args+=("-Porg.gradle.configureondemand=false")
 	args+=("-PenvironmentName=linuxappliance")
 
+	DELPHIX_RELEASE_VERSION="2025.5.0.2-AES-256"
 	if [[ -n "$DELPHIX_RELEASE_VERSION" ]]; then
 		args+=("-PmaskingVer=$DELPHIX_RELEASE_VERSION")
 	fi
