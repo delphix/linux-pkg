@@ -22,6 +22,7 @@ makedumpfile
 masking
 misc-debs
 nfs-utils
+openssh
 performance-diagnostics
 ptools
 python-rtslib-fb
