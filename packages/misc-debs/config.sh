@@ -47,7 +47,10 @@ SKIP_COPYRIGHTS_CHECK=true
 function fetch() {
 	logmust cd "$WORKDIR/artifacts"
 
-	local debs=()
+	local debs=(
+		# Used "apt-get download runc" on "develop" to obtain this package.
+		"runc_1.3.3-0ubuntu1~24.04.2_amd64.deb 1e45145fa8b45b12ce95bf8f65ff737f159a32c3490367b97d65132d6d9a19f5"
+	)
 
 	local url="http://artifactory.delphix.com/artifactory/linux-pkg/misc-debs"
 
