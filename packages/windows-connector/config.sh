@@ -19,6 +19,11 @@
 DEFAULT_PACKAGE_GIT_URL="https://github.com/delphix/dlpx-app-gate.git"
 SKIP_COPYRIGHTS_CHECK=true
 
+function prepare() {
+	logmust install_pkgs \
+		openjdk-17-jdk-headless
+}
+
 function build() {
 	CONNECTOR_DIR="${WORKDIR}/repo/appliance/server/connector"
 	INSTALLER_DIR="${WORKDIR}/repo/appliance/host/windows"
