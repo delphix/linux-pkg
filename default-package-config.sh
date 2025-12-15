@@ -135,8 +135,11 @@ function kernel_build() {
 	#
 	local debian_rules_args=(
 		"do_dbgsym_package=true"
-		"do_tools_common=false"
+		"do_tools_common=true"
 		"do_tools_host=false"
+		"do_tools_perf=true"
+		"do_tools_perf_jvmti=true"
+		"do_tools_perf_python=true"
 		"uefi_signed=false"
 		"do_zfs=false"
 		"do_ipu6=false"
