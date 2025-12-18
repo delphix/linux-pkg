@@ -27,13 +27,14 @@ function prepare() {
 	logmust install_pkgs "${_RET_LIST[@]}"
 
 	logmust install_pkgs \
+		openjdk-17-jdk-headless \
 		"$DEPDIR"/crypt-blowfish/*.deb \
 		"$DEPDIR"/host-jdks/*.deb
 }
 
 function build() {
 	export JAVA_HOME
-	JAVA_HOME="/usr/lib/jvm/java-8-openjdk-amd64/"
+	JAVA_HOME="/usr/lib/jvm/java-17-openjdk-amd64/"
 
 	export LANG
 	LANG=en_US.UTF-8
