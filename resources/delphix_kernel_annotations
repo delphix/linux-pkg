@@ -7,6 +7,11 @@ CONFIG_MODULE_SIG_KEY  		policy<{'amd64': '"/var/tmp/sbkeys/signing_key.pem"'}>
 CONFIG_MODULE_SIG_FORCE 			policy<{'amd64': 'y', 'arm64': 'n'}>
 
 #
+# XXX
+#
+CONFIG_SMP                                     policy<{'amd64': 'n', 'arm64': 'n'}>
+
+#
 # Disable various "net" modules which we don't use.
 #
 CONFIG_6LOWPAN                                  policy<{'amd64': 'n', 'arm64': 'n'}>
