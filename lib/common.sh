@@ -1150,7 +1150,7 @@ function set_changelog() {
 function dpkg_buildpackage_default() {
 	logmust cd "$WORKDIR/repo"
 	logmust set_changelog
-	logmust dpkg-buildpackage -b -us -uc
+	DEB_BUILD_OPTIONS=nocheck dpkg-buildpackage -d -b -us -uc
 	logmust cd "$WORKDIR/"
 	logmust mv ./*deb artifacts/
 }
