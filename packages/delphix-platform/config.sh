@@ -24,7 +24,6 @@ function prepare() {
 
 function build() {
 	logmust cd "$WORKDIR/repo"
-	logmust ansible-playbook bootstrap/playbook.yml
 	logmust make packages
 	logmust sudo chown -R "$USER:" artifacts
 	logmust mv artifacts/*deb "$WORKDIR/artifacts/"
