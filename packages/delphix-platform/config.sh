@@ -19,7 +19,7 @@
 DEFAULT_PACKAGE_GIT_URL="https://github.com/delphix/delphix-platform.git"
 
 function prepare() {
-	logmust install_build_deps_from_control_file
+	logmust sudo make build-deps
 }
 
 function build() {
