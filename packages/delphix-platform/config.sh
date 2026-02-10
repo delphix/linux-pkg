@@ -18,6 +18,10 @@
 
 DEFAULT_PACKAGE_GIT_URL="https://github.com/delphix/delphix-platform.git"
 
+function prepare() {
+	logmust install_build_deps_from_control_file
+}
+
 function build() {
 	logmust cd "$WORKDIR/repo"
 	logmust ansible-playbook bootstrap/playbook.yml
