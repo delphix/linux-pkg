@@ -24,7 +24,7 @@ function prepare() {
 
 function build() {
 	logmust cd "$WORKDIR/repo"
-	logmust make packages
+	logmust make packages VERSION="1.0.0-$PACKAGE_REVISION"
 	logmust sudo chown -R "$USER:" artifacts
 	logmust mv artifacts/*deb "$WORKDIR/artifacts/"
 }
