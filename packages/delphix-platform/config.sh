@@ -19,6 +19,7 @@
 DEFAULT_PACKAGE_GIT_URL="https://github.com/delphix/delphix-platform.git"
 
 function prepare() {
+	logmust cd "$WORKDIR/repo"
 	logmust sudo make build-deps
 }
 
