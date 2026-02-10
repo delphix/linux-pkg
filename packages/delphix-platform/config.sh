@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Copyright 2018, 2020 Delphix
+# Copyright 2018, 2026 Delphix
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -21,8 +21,7 @@ DEFAULT_PACKAGE_GIT_URL="https://github.com/delphix/delphix-platform.git"
 function build() {
 	logmust cd "$WORKDIR/repo"
 	logmust ansible-playbook bootstrap/playbook.yml
-	logmust ./scripts/docker-run.sh make packages \
-		VERSION="1.0.0-$PACKAGE_REVISION"
+	logmust make packages
 	logmust sudo chown -R "$USER:" artifacts
 	logmust mv artifacts/*deb "$WORKDIR/artifacts/"
 }
