@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Copyright 2018, 2020 Delphix
+# Copyright 2018, 2025 Delphix
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -50,4 +50,8 @@ function build() {
 
 	logmust cd "$WORKDIR/repo"
 	logmust mv ./*deb "$WORKDIR/artifacts/"
+
+	# Sign the generated modules
+	connstat_pkgs=$(find "$WORKDIR/artifacts" -type f -name "connstat-module-*.deb" ! -name "*-dbg*")
+	sign_modules "$connstat_pkgs"
 }

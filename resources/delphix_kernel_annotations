@@ -2,6 +2,9 @@
 # FORMAT: 4
 # ARCH: amd64
 # FLAVOUR: amd64-aws amd64-azure amd64-generic amd64-gcp amd64-oracle
+#
+CONFIG_MODULE_SIG_KEY  		policy<{'amd64': '"/var/tmp/sbkeys/signing_key.pem"'}>
+CONFIG_MODULE_SIG_FORCE 			policy<{'amd64': 'y', 'arm64': 'n'}>
 
 #
 # Disable various "net" modules which we don't use.
@@ -151,7 +154,6 @@ CONFIG_CDROM                                    policy<{'amd64': 'n', 'arm64': '
 CONFIG_CEPH_LIB                                 policy<{'amd64': 'n', 'arm64': 'n'}>
 CONFIG_CRAMFS                                   policy<{'amd64': 'n', 'arm64': 'n'}>
 CONFIG_CYCLADES                                 policy<{'amd64': 'n', 'arm64': 'n'}>
-CONFIG_DRM                                      policy<{'amd64': 'n', 'arm64': 'n'}>
 CONFIG_ENIC                                     policy<{'amd64': 'n', 'arm64': 'n'}>
 CONFIG_FM10K                                    policy<{'amd64': 'n', 'arm64': 'n'}>
 CONFIG_FORCEDETH                                policy<{'amd64': 'n', 'arm64': 'n'}>

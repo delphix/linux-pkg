@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Copyright 2018, 2020 Delphix
+# Copyright 2018, 2025 Delphix
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -80,7 +80,7 @@ function configure_apt_sources() {
 		deb ${primary_url} ${UBUNTU_DISTRIBUTION}-backports main restricted universe multiverse
 		deb-src ${primary_url} ${UBUNTU_DISTRIBUTION}-backports main restricted universe multiverse
 
-		deb ${secondary_url} ${UBUNTU_DISTRIBUTION} main multiverse universe
+		deb ${secondary_url} ${UBUNTU_DISTRIBUTION} main multiverse universe stable
 		EOF" || die "/etc/apt/sources.list could not be updated"
 
 	logmust sudo apt-key add "$TOP/resources/delphix-secondary-mirror.key"
