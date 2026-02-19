@@ -137,6 +137,7 @@ function kernel_build() {
 		"do_dbgsym_package=true"
 		"do_tools_common=false"
 		"do_tools_host=false"
+		"do_tools_perf=false"
 		"uefi_signed=false"
 		"do_zfs=false"
 		"do_ipu6=false"
