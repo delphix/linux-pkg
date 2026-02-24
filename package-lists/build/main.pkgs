@@ -2,7 +2,6 @@
 # List of non-kernel packages to be included in the Delphix Appliance.
 #
 
-bcc
 challenge-response
 cloud-init
 crash-python
