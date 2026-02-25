@@ -38,7 +38,7 @@ function prepare() {
 }
 
 function build() {
-	logmust kernel_build "azure"
+	logmust kernel_build "azure" "do_tools_common=true"
 }
 
 function update_upstream() {
