@@ -122,6 +122,9 @@ function kernel_build() {
 	# do_tools_common=false
 	#   We do not need to build linux-tools-common package and we
 	#   install it directly from our package mirror.
+	# do_tools_perf=false
+	#   The perf tool is provided by the linux-tools-common package,
+	#   which we install directly from our package mirror.
 	# do_tools_host=false
 	#   We do not need to build linux-tools-host package.
 	# uefi_signed=false
@@ -136,6 +139,7 @@ function kernel_build() {
 	local debian_rules_args=(
 		"do_dbgsym_package=true"
 		"do_tools_common=false"
+		"do_tools_perf=false"
 		"do_tools_host=false"
 		"uefi_signed=false"
 		"do_zfs=false"
