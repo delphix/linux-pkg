@@ -55,10 +55,21 @@ function fetch() {
 	# upstream the Delphix mirror was relaying when dlpx-develop build #4112
 	# absorbed the fix.
 	#
+	# USN-8226-1 (DLPX-97147): backport kmod 31+20240202-2ubuntu7.2 to the
+	# release-track appliance. Pairs with the delphix-platform release-branch
+	# fix in DLPX-97204 (that PR drops disable-algif_aead.conf from
+	# delphix-platform-aws so kmod can own the conffile), resolving the
+	# 2026.3 -> 2026.4 upgrade dpkg file-overwrite conflict. Fetched from
+	# Ubuntu's archive (http://security.ubuntu.com/ubuntu/pool/main/k/kmod/),
+	# the upstream the Delphix mirror was relaying when dlpx-develop
+	# post-push #4117 absorbed the fix.
+	#
 	local debs=(
 		"openssh-client_9.6p1-3ubuntu13.16_amd64.deb c773e3d5b2a12d5f2ccdb1a86701975c9c089479ab0e71145057ce7defde7f47"
 		"openssh-server_9.6p1-3ubuntu13.16_amd64.deb 5ccbc09a1bd9b84272ae8f90e46c99d3089e459eb2da4b052eb91c37f8273165"
 		"openssh-sftp-server_9.6p1-3ubuntu13.16_amd64.deb 20910ca46a77764be4b1b03f5f2b41ecee78a892e18f16e150265439211321ef"
+		"kmod_31+20240202-2ubuntu7.2_amd64.deb 687693dfad23c96570d96a1c7cc1b8709d31a93f82ac765a11b2bd9130f1dfae"
+		"libkmod2_31+20240202-2ubuntu7.2_amd64.deb a9cbdc424bc0a5c8af3d6445488a48de76df5ff4d76b7dab8aaf88f712358bbc"
 	)
 
 	local url="http://artifactory.delphix.com/artifactory/linux-pkg/misc-debs"
