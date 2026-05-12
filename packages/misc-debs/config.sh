@@ -47,7 +47,19 @@ SKIP_COPYRIGHTS_CHECK=true
 function fetch() {
 	logmust cd "$WORKDIR/artifacts"
 
-	local debs=()
+	#
+	# USN-8222-1 (DLPX-97141): backport openssh 1:9.6p1-3ubuntu13.16 to the
+	# release-track appliance. Fixes CVE-2026-35414, -35387, -35386, -35388,
+	# -35385. Fetched from Ubuntu's archive
+	# (http://security.ubuntu.com/ubuntu/pool/main/o/openssh/), which is the
+	# upstream the Delphix mirror was relaying when dlpx-develop build #4112
+	# absorbed the fix.
+	#
+	local debs=(
+		"openssh-client_9.6p1-3ubuntu13.16_amd64.deb c773e3d5b2a12d5f2ccdb1a86701975c9c089479ab0e71145057ce7defde7f47"
+		"openssh-server_9.6p1-3ubuntu13.16_amd64.deb 5ccbc09a1bd9b84272ae8f90e46c99d3089e459eb2da4b052eb91c37f8273165"
+		"openssh-sftp-server_9.6p1-3ubuntu13.16_amd64.deb 20910ca46a77764be4b1b03f5f2b41ecee78a892e18f16e150265439211321ef"
+	)
 
 	local url="http://artifactory.delphix.com/artifactory/linux-pkg/misc-debs"
 
