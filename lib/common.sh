@@ -788,7 +788,12 @@ function git_fetch_helper() {
 		label='[token passed]'
 	fi
 	echo "Running: $label git fetch $orig_url $*"
-	git fetch "$git_url" "$@" || die "git fetch failed"
+	#
+	# Don't die here; logmust callers still fail-hard via logmust's own
+	# error handling, while non-logmust callers (e.g. fetch_repo_from_git's
+	# upstream-branch bootstrap fallback) can react to the failure.
+	#
+	git fetch "$git_url" "$@"
 }
 
 #
@@ -827,8 +832,30 @@ function fetch_repo_from_git() {
 	if [[ "$DO_UPDATE_PACKAGE" == "true" ]]; then
 		logmust git_fetch_helper "$PACKAGE_GIT_URL" --no-tags \
 			"+$PACKAGE_GIT_BRANCH:repo-HEAD"
-		logmust git_fetch_helper "$PACKAGE_GIT_URL" --no-tags \
-			"+upstreams/$DEFAULT_GIT_BRANCH:upstream-HEAD"
+		#
+		# Try to fetch the upstream-tracking branch from the package's
+		# own repository. If it doesn't exist yet -- first time the
+		# package is being synced -- bootstrap upstream-HEAD directly
+		# from the third-party upstream specified by UPSTREAM_GIT_URL /
+		# UPSTREAM_GIT_BRANCH, and mark upstream-updated so
+		# sync-with-upstream.sh pushes upstream-HEAD back to origin,
+		# creating the upstreams/<branch> branch in the process.
+		#
+		if git_fetch_helper "$PACKAGE_GIT_URL" --no-tags \
+			"+upstreams/$DEFAULT_GIT_BRANCH:upstream-HEAD"; then
+			:
+		elif [[ -n "$UPSTREAM_GIT_URL" && -n "$UPSTREAM_GIT_BRANCH" ]]; then
+			echo "NOTE: upstreams/$DEFAULT_GIT_BRANCH does not exist" \
+				"on $PACKAGE_GIT_URL; bootstrapping upstream-HEAD" \
+				"from $UPSTREAM_GIT_URL ($UPSTREAM_GIT_BRANCH)."
+			logmust git_fetch_helper "$UPSTREAM_GIT_URL" --no-tags \
+				"+$UPSTREAM_GIT_BRANCH:upstream-HEAD"
+			logmust touch "$WORKDIR/upstream-updated"
+		else
+			die "Failed to fetch upstreams/$DEFAULT_GIT_BRANCH from" \
+				"$PACKAGE_GIT_URL and UPSTREAM_GIT_URL/" \
+				"UPSTREAM_GIT_BRANCH are not set to bootstrap from."
+		fi
 		logmust git show-ref repo-HEAD
 		logmust git show-ref upstream-HEAD
 	else
