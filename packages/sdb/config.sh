@@ -18,10 +18,27 @@
 # shellcheck disable=SC2034
 DEFAULT_PACKAGE_GIT_URL="https://github.com/delphix/sdb.git"
 
+UPSTREAM_GIT_URL="https://github.com/sdimitro/sdb.git"
+UPSTREAM_GIT_BRANCH="develop"
+
 function prepare() {
 	logmust install_build_deps_from_control_file
 }
 
 function build() {
+	local scm_version
+	scm_version=$(cd "$WORKDIR/repo" && python3 -m setuptools_scm 2>/dev/null) ||
+		die "setuptools_scm version derivation failed"
+	#
+	# pyproject.toml sets local_scheme="no-local-version", so the value
+	# is debian-version-safe. Pass it through as-is; linux-pkg's
+	# set_changelog appends "-1delphix.<ts>" since PACKAGE_VERSION has
+	# no "-", producing e.g. "0.6.0-1delphix.<ts>".
+	#
+	export PACKAGE_VERSION="${scm_version}"
 	logmust dpkg_buildpackage_default
+}
+
+function update_upstream() {
+	logmust update_upstream_from_git
 }
