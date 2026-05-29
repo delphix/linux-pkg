@@ -32,4 +32,15 @@ function build() {
 	logmust cd "$INSTALLER_DIR"
 	logmust sudo ../../gradlew createDebPackage
 	logmust sudo mv ./build/distributions/*deb "$WORKDIR/artifacts/"
+	#
+	# Publish the standalone Windows connector installer with the connector version in its
+	# filename so downstream publishing can nest it under a version directory.
+	# The version is read from build.gradle (connectorVersion property). See DLPX-17800.
+	#
+	logmust test -f "$INSTALLER_DIR/build.gradle"
+	connector_version=$(grep -oP "connectorVersion\s*=\s*'\K[^']+" \
+		"$INSTALLER_DIR/build.gradle")
+	logmust test -n "$connector_version"
+	logmust sudo cp ./build/DelphixConnector/DelphixConnectorInstaller.exe \
+		"$WORKDIR/artifacts/DelphixConnectorInstaller-${connector_version}.exe"
 }
