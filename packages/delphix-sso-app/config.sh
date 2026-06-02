@@ -20,9 +20,13 @@ DEFAULT_PACKAGE_GIT_URL="https://github.com/delphix/saml-app.git"
 MEND_SCAN_APPLICABLE="true"
 MEND_SCAN_USING_SUDO="true"
 
+function prepare() {
+	logmust install_pkgs openjdk-17-jdk-headless:
+}
+
 function build() {
 	local java_home
-	java_home="/usr/lib/jvm/java-8-openjdk-amd64/"
+	java_home="/usr/lib/jvm/java-17-openjdk-amd64/"
 	logmust cd "$WORKDIR/repo"
 	logmust sudo ./gradlew "-Dorg.gradle.java.home=$java_home" distDeb
 	logmust sudo mv ./build/distributions/*deb "$WORKDIR/artifacts/"
