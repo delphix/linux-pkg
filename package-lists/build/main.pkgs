@@ -23,6 +23,7 @@ libkdumpfile
 make-jpkg
 makedumpfile
 masking
+mount-s3
 nfs-utils
 performance-diagnostics
 ptools
