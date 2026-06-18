@@ -47,7 +47,13 @@ SKIP_COPYRIGHTS_CHECK=true
 function fetch() {
 	logmust cd "$WORKDIR/artifacts"
 
-	local debs=()
+	local debs=(
+		# mount-s3 (Mountpoint for Amazon S3) v1.22.3 — FUSE driver for mounting S3 buckets.
+		# mount-s3 has no apt repository; fetched from AWS S3 and uploaded to Artifactory.
+		# Source: https://s3.amazonaws.com/mountpoint-s3-release/latest/x86_64/mount-s3.deb
+		# Required by HM-5952 (Hyperscale Snowflake connector S3 staging mounts). DLPXECO-13872.
+		"mount-s3_1.22.3_amd64.deb 259a793b1233258b35ce5ce902df177393542fd76dd2a606f07e800e28591df6"
+	)
 
 	local url="http://artifactory.delphix.com/artifactory/linux-pkg/misc-debs"
 
