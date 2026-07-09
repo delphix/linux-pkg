@@ -53,6 +53,18 @@ function fetch() {
 		# Source: https://s3.amazonaws.com/mountpoint-s3-release/latest/x86_64/mount-s3.deb
 		# Required by HM-5952 (Hyperscale Snowflake connector S3 staging mounts). DLPXECO-13872.
 		"mount-s3_1.22.3_amd64.deb 259a793b1233258b35ce5ce902df177393542fd76dd2a606f07e800e28591df6"
+		#
+		# python3.12 3.12.3-1ubuntu0.15 - Ubuntu USN-8509-1 (Python vulnerabilities).
+		# Pin the fixed python3.12 binaries into the release appliance to remediate:
+		#   CVE-2026-6100 (DLPX-97878), CVE-2025-69534 (DLPX-97875),
+		#   CVE-2026-4786 (DLPX-97873), CVE-2026-4224 (DLPX-97869),
+		#   CVE-2026-3644 (DLPX-97865).
+		# Fetched from the Ubuntu 24.04 LTS (noble) noble-security/noble-updates archive.
+		"libpython3.12-minimal_3.12.3-1ubuntu0.15_amd64.deb 5d16abf75f5a517c7e68dfbe888ddb40aa95d3b4445b1c223ec5ea23d2b01051"
+		"libpython3.12-stdlib_3.12.3-1ubuntu0.15_amd64.deb 47c3b48809d392570e827cb3cdeacdf750af39fc36619c83337e28cbffea791c"
+		"libpython3.12t64_3.12.3-1ubuntu0.15_amd64.deb 403683f2f773455bfac9ef0c830facbdb6801f616436054dad691ccfd00b4a30"
+		"python3.12_3.12.3-1ubuntu0.15_amd64.deb d02d1769ca198be054f74fab22dc46299b4994c9c00bfdd6352938402e5eed1f"
+		"python3.12-minimal_3.12.3-1ubuntu0.15_amd64.deb 487383dc2a895e0a767d820e0e55f2ab7d6ebe4dccd3d2c0b81f00ee11bb1152"
 	)
 
 	local url="http://artifactory.delphix.com/artifactory/linux-pkg/misc-debs"
