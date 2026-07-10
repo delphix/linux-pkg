@@ -54,6 +54,11 @@ function fetch() {
 		# Required by HM-5952 (Hyperscale Snowflake connector S3 staging mounts). DLPXECO-13872.
 		"mount-s3_1.22.3_amd64.deb 259a793b1233258b35ce5ce902df177393542fd76dd2a606f07e800e28591df6"
 		#
+		# gzip 1.12-1ubuntu3.2 - Ubuntu USN-8512-1 (Gzip vulnerability).
+		# Pin the fixed gzip binary into the release appliance to remediate
+		#   CVE-2026-41992 (DLPX-97858).
+		# Fetched from the Ubuntu 24.04 LTS (noble) noble-security/noble-updates archive.
+		"gzip_1.12-1ubuntu3.2_amd64.deb 4067522fbffe22672e4cf683bfc32e4a304bc872cf76f10049ab36d1a9eedb91"
 		# python3.12 3.12.3-1ubuntu0.15 - Ubuntu USN-8509-1 (Python vulnerabilities).
 		# Pin the fixed python3.12 binaries into the release appliance to remediate:
 		#   CVE-2026-6100 (DLPX-97878), CVE-2025-69534 (DLPX-97875),
