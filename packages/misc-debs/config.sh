@@ -59,6 +59,25 @@ function fetch() {
 		#   CVE-2026-41992 (DLPX-97858).
 		# Fetched from the Ubuntu 24.04 LTS (noble) noble-security/noble-updates archive.
 		"gzip_1.12-1ubuntu3.2_amd64.deb 4067522fbffe22672e4cf683bfc32e4a304bc872cf76f10049ab36d1a9eedb91"
+		# python3.12 3.12.3-1ubuntu0.15 - Ubuntu USN-8509-1 (Python vulnerabilities).
+		# Pin the fixed python3.12 binaries into the release appliance to remediate:
+		#   CVE-2026-6100 (DLPX-97878), CVE-2025-69534 (DLPX-97875),
+		#   CVE-2026-4786 (DLPX-97873), CVE-2026-4224 (DLPX-97869),
+		#   CVE-2026-3644 (DLPX-97865).
+		# Fetched from the Ubuntu 24.04 LTS (noble) noble-security/noble-updates archive.
+		"libpython3.12-minimal_3.12.3-1ubuntu0.15_amd64.deb 5d16abf75f5a517c7e68dfbe888ddb40aa95d3b4445b1c223ec5ea23d2b01051"
+		"libpython3.12-stdlib_3.12.3-1ubuntu0.15_amd64.deb 47c3b48809d392570e827cb3cdeacdf750af39fc36619c83337e28cbffea791c"
+		"libpython3.12t64_3.12.3-1ubuntu0.15_amd64.deb 403683f2f773455bfac9ef0c830facbdb6801f616436054dad691ccfd00b4a30"
+		"python3.12_3.12.3-1ubuntu0.15_amd64.deb d02d1769ca198be054f74fab22dc46299b4994c9c00bfdd6352938402e5eed1f"
+		"python3.12-minimal_3.12.3-1ubuntu0.15_amd64.deb 487383dc2a895e0a767d820e0e55f2ab7d6ebe4dccd3d2c0b81f00ee11bb1152"
+		# vim 2:9.1.0016-1ubuntu7.17 - Ubuntu USN-8500-1 (Vim vulnerabilities).
+		# Pin the fixed vim binaries into the release appliance to remediate:
+		#   CVE-2026-57455 (DLPX-97851), CVE-2026-55693 (DLPX-97850),
+		#   CVE-2026-57456 (DLPX-97847), CVE-2026-55895 (DLPX-97846).
+		# Fetched from the Ubuntu 24.04 LTS (noble) noble-security/noble-updates archive.
+		"vim_9.1.0016-1ubuntu7.17_amd64.deb 3abc1c2a22f5a542d8c6cf1b85085783b6136c0467d7c7601aee9fbd4d041713"
+		"vim-common_9.1.0016-1ubuntu7.17_all.deb 3d5eaa2b23196b573d020804a62eff2b4d667f43b8e4b324a0b91a4b76d12636"
+		"vim-runtime_9.1.0016-1ubuntu7.17_all.deb 9fe33de15cf9e531e5f34a02c999abd8e7cfdf6543beb5665fa0325eb03922f4"
 	)
 
 	local url="http://artifactory.delphix.com/artifactory/linux-pkg/misc-debs"
