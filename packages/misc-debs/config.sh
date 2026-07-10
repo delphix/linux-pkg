@@ -53,6 +53,15 @@ function fetch() {
 		# Source: https://s3.amazonaws.com/mountpoint-s3-release/latest/x86_64/mount-s3.deb
 		# Required by HM-5952 (Hyperscale Snowflake connector S3 staging mounts). DLPXECO-13872.
 		"mount-s3_1.22.3_amd64.deb 259a793b1233258b35ce5ce902df177393542fd76dd2a606f07e800e28591df6"
+		#
+		# vim 2:9.1.0016-1ubuntu7.17 - Ubuntu USN-8500-1 (Vim vulnerabilities).
+		# Pin the fixed vim binaries into the release appliance to remediate:
+		#   CVE-2026-57455 (DLPX-97851), CVE-2026-55693 (DLPX-97850),
+		#   CVE-2026-57456 (DLPX-97847), CVE-2026-55895 (DLPX-97846).
+		# Fetched from the Ubuntu 24.04 LTS (noble) noble-security/noble-updates archive.
+		"vim_9.1.0016-1ubuntu7.17_amd64.deb 3abc1c2a22f5a542d8c6cf1b85085783b6136c0467d7c7601aee9fbd4d041713"
+		"vim-common_9.1.0016-1ubuntu7.17_all.deb 3d5eaa2b23196b573d020804a62eff2b4d667f43b8e4b324a0b91a4b76d12636"
+		"vim-runtime_9.1.0016-1ubuntu7.17_all.deb 9fe33de15cf9e531e5f34a02c999abd8e7cfdf6543beb5665fa0325eb03922f4"
 	)
 
 	local url="http://artifactory.delphix.com/artifactory/linux-pkg/misc-debs"
