@@ -78,6 +78,14 @@ function fetch() {
 		"vim_9.1.0016-1ubuntu7.17_amd64.deb 3abc1c2a22f5a542d8c6cf1b85085783b6136c0467d7c7601aee9fbd4d041713"
 		"vim-common_9.1.0016-1ubuntu7.17_all.deb 3d5eaa2b23196b573d020804a62eff2b4d667f43b8e4b324a0b91a4b76d12636"
 		"vim-runtime_9.1.0016-1ubuntu7.17_all.deb 9fe33de15cf9e531e5f34a02c999abd8e7cfdf6543beb5665fa0325eb03922f4"
+		# openssh 1:9.6p1-3ubuntu13.18 - Ubuntu (ssh client use-after-free
+		#   during host-key re-exchange).
+		# Pin the fixed openssh binaries into the release appliance to remediate:
+		#   CVE-2026-60002 (DLPX-97917).
+		# Fetched from the Ubuntu 24.04 LTS (noble) noble-security/noble-updates archive.
+		"openssh-client_9.6p1-3ubuntu13.18_amd64.deb 900ee53c747920694bd508e598702aa794911a7c8273e66f292fe45144a00a9f"
+		"openssh-server_9.6p1-3ubuntu13.18_amd64.deb 81a6c622a2b566a95f1939f25776e0ec05b6b40c2fa61f7cd9f148bca4344208"
+		"openssh-sftp-server_9.6p1-3ubuntu13.18_amd64.deb 2287e3e9e3d0ace278173ca218d32d41a24b87afec3b42ef7dabfda4d9125edd"
 	)
 
 	local url="http://artifactory.delphix.com/artifactory/linux-pkg/misc-debs"
