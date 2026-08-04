@@ -140,6 +140,7 @@ function kernel_build() {
 		"uefi_signed=false"
 		"do_zfs=false"
 		"do_ipu6=false"
+		"do_ipu7=false"
 		"do_iwlwifi=false"
 		"do_v4l2loopback=false"
 		"do_usbio=false"
