@@ -174,15 +174,15 @@ logmust sudo apt-get update
 #   -DKERNEL_CENTEVERSION= compiler flag and a cascade of unrelated-looking
 #   syntax errors deep in connstat.c's version-gated #if blocks.
 # - sbsigntool provides kmodsign, used by sign_modules() to sign kernel
-#   modules for packages like connstat and zfs. Without it, every module's
-#   kmodsign call fails with "command not found" inside sign_modules()'s
-#   find | while read loop; that loop runs in a subshell, so the failure
-#   is confined to it rather than aborting the build, and the resulting
-#   package silently ships an unsigned .ko instead of failing loudly.
-# - kmod provides modinfo, which sign_modules() also runs (after kmodsign,
-#   in the same subshelled loop) purely to log the signer's identity. Same
-#   silent-failure shape as kmodsign above, but this call doesn't mutate
-#   the module, so its absence doesn't affect the signature itself.
+#   modules for packages like connstat and zfs. Without it every module's
+#   kmodsign call fails with "command not found", which aborts the build.
+#   That used to pass silently and ship an unsigned .ko, because the signing
+#   loop ran in a subshell where logmust's die had no effect on the caller
+#   (DLPX-98274).
+# - kmod provides modinfo, which sign_modules() also runs after kmodsign,
+#   purely to log the signer's identity. It doesn't mutate the module, so
+#   its absence doesn't affect the signature itself, but it is a logmust
+#   call in the same loop, so a missing modinfo fails the build as well.
 # None of build-essential/debhelper/devscripts/equivs/fakeroot/git/wget are
 # part of debootstrap's --variant=buildd set, so they cannot be assumed
 # present.
