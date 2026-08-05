@@ -1567,13 +1567,19 @@ function sign_modules() {
 		temp_dir=$(mktemp -d -p "/var/tmp/")
 		logmust fakeroot dpkg-deb -R "$pkg" "$temp_dir"
 
-		# Find and sign all .ko files in package
-		find "$temp_dir" -type f -name "*.ko" -print0 |
-			while IFS= read -r -d '' kernel_mod; do
-				logmust kmodsign sha256 "$SBSIGN_KEY" "$SBSIGN_DER" "$kernel_mod" "$kernel_mod.signed"
-				logmust mv "$kernel_mod.signed" "$kernel_mod"
-				logmust modinfo -F signer "$kernel_mod"
-			done
+		#
+		# Find and sign all .ko files in package. The find output is fed
+		# in by process substitution rather than a pipe so that the loop
+		# body runs in this shell: in a pipeline it would run in a
+		# subshell, where logmust's die only exits the subshell and the
+		# package would go on to be repacked with unsigned modules.
+		#
+		while IFS= read -r -d '' kernel_mod; do
+			logmust kmodsign sha256 "$SBSIGN_KEY" "$SBSIGN_DER" "$kernel_mod" "$kernel_mod.signed"
+			logmust mv "$kernel_mod.signed" "$kernel_mod"
+			logmust modinfo -F signer "$kernel_mod"
+		done < <(find "$temp_dir" -type f -name "*.ko" -print0)
+
 		# Repack the .deb"
 		update_md5sums "$temp_dir"
 		repack_deb "$pkg" "$temp_dir"
