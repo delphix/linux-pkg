@@ -20,6 +20,12 @@ source "$PWD/lib/common.sh"
 
 DEFAULT_PACKAGE_GIT_URL="https://github.com/delphix/dlpx-app-gate.git"
 PACKAGE_DEPENDENCIES="crypt-blowfish host-jdks"
+#
+# The build packages a docker image (see '-Ddockerize=true' below), which needs
+# a docker daemon. The build container gets the host's daemon through its
+# socket rather than running one of its own.
+#
+PACKAGE_NEEDS_DOCKER="true"
 MEND_SCAN_APPLICABLE="true"
 
 function prepare() {

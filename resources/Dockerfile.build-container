@@ -1,0 +1,62 @@
+# Copyright 2026 Delphix
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+ARG BASE
+FROM ${BASE}
+
+ARG UID
+ARG GID
+
+# lsb-release is not guaranteed to be present under --variant=buildd, and
+# check_running_system() depends on lsb_release being available.
+#
+# gnupg has no known consumer here: configure_apt_sources() names the secondary
+# mirror's key with signed-by= and apt verifies that signature with gpgv, which
+# apt depends on directly. It is kept anyway, because confirming it is
+# unnecessary needs a full build from an image built without it, and the window
+# it covers -- before the first successful apt-get update, when nothing can be
+# installed on demand -- is where being wrong is most expensive. Drop it once
+# such a build has passed.
+#
+# locales, plus the locale-gen and ENV below, give the container the UTF-8 locale
+# the buildserver supplied ambiently. This is environment rather than per-package
+# tooling, and it is set here rather than in a package's config.sh because the
+# host gave it to all 38 packages equally: windows-connector never exports LANG,
+# yet its javac compiles UTF-8 source comments on the host and emits
+# "unmappable character ... for encoding US-ASCII" in a container without this.
+# Getting a locale wrong is also silent rather than loud, changing encoding, sort
+# order and date formatting instead of failing, so it is the wrong thing to make
+# each package remember to ask for.
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+        sudo ca-certificates curl lsb-release gnupg locales && \
+    locale-gen en_US.UTF-8 && \
+    rm -rf /var/lib/apt/lists/*
+
+# Declared alongside the generation above so the two cannot drift apart: a
+# generated locale nothing selects leaves glibc on C/POSIX, which is the
+# half-fix this replaces. en_US.UTF-8 specifically, because that is what
+# packages/virtualization's build() already exports LANG to.
+ENV LANG=en_US.UTF-8
+
+# lib/container.sh's running_in_container() keys off this file's presence to tell
+# an in-container process from a host one. It lives in the image, rather than
+# being an environment variable the run command passes in, so that a host cannot
+# claim to be this container; see CONTAINER_MARKER_FILE there.
+RUN echo "linux-pkg build container" >/etc/linux-pkg-build-container
+
+RUN groupadd -o -g "${GID}" delphix && \
+    useradd -o -m -u "${UID}" -g "${GID}" -s /bin/bash delphix && \
+    echo 'delphix ALL=(ALL) NOPASSWD:ALL' >/etc/sudoers.d/delphix && \
+    chmod 0440 /etc/sudoers.d/delphix

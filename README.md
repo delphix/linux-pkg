@@ -29,17 +29,66 @@ projects.
 
 ## System Requirements
 
-This framework is intended to be run on an Ubuntu 24.04 system with some basic
-developer packages installed, such as git, and passwordless sudo enabled. Note
-that it will automatically install various build-dependencies on the system, so
-as a safety precaution it is currently restricted to only run on an AWS instance
-to prevent developers accidentally running it on their personal machines. To
-bypass the safety check, you can run the following command before running any
-script:
+Package builds run inside a Docker container image tagged
+`linux-pkg-build:$UBUNTU_DISTRIBUTION`. That image's root filesystem is
+bootstrapped with `debootstrap --variant=buildd` from the Ubuntu suite named by
+`UBUNTU_DISTRIBUTION` (see [Environment Variables](#environment-variables)), so
+a build runs against a rootfs for the suite being targeted rather than against
+whatever happens to be installed on the host. Because of that, the host's own
+Ubuntu codename no longer needs to match the suite being built; a `noble` host
+can build packages for `resolute`, or any other suite the package mirror
+serves.
+
+The host itself needs:
+
+* a reachable docker daemon (`docker info` must succeed, and your user must be
+  able to talk to it, typically by being in the `docker` group)
+* `debootstrap` installed
+* passwordless sudo, since bootstrapping and importing the container's root
+  filesystem requires root
+
+Note also that kernel headers and debug symbols for every flavor in
+`TARGET_KERNEL_FLAVORS` now land under the docker root directory rather than
+directly in the root filesystem. On a buildserver that is the same ZFS pool, so
+there is no new capacity requirement, but a full disk surfaces as a docker layer
+write failure rather than as an out-of-space error from the build.
+
+Every host-side invocation of any script, not just the one that happens to
+build the container image, checks that the host is a Delphix buildserver image
+before doing anything else, and refuses to proceed otherwise. It asks the image
+what it is, via `get-appliance-platform` and `get-appliance-variant`, and
+requires `aws` and `internal-buildserver` respectively. The check runs every
+time because the host phase mutates the host itself whenever it does run, for
+instance by teaching `debootstrap` about a new suite and creating
+`/var/lib/linux-pkg`, and it exists as a safety precaution to keep developers
+from accidentally running it on their personal machines. To bypass it, run
+the following command before running any script:
 
 ```
 export DISABLE_SYSTEM_CHECK=true
 ```
+
+On any host that is not a buildserver image that has to be set for every
+invocation, not just the first.
+
+Because the build runs in a container, only what is passed explicitly reaches
+it. Environment variables cross through an allowlist in `lib/container.sh`
+(`CONTAINER_ENV_ALLOWLIST`, plus the `AWS_*`, `SECRET_DB_*`, `*_S3_URL` and
+per-package `<PKG>_GIT_URL` / `<PKG>_GIT_BRANCH` / `<PKG>_REVISION` patterns).
+Files do not cross at all unless they are bind-mounted, and four are: the
+checkout itself, `~/.aws` when it exists (read-only, so an AWS profile or
+credentials file keeps working alongside credentials passed in `AWS_*`
+variables), the key named by `SECRET_DB_JUMP_BOX_PRIVATE_KEY`, and the host's
+docker socket for a package that declares `PACKAGE_NEEDS_DOCKER`.
+
+If you need to skip the container entirely, for example to debug the container
+mechanism itself, set `LINUX_PKG_NO_CONTAINER=true` and the build will run in
+place on the host using whatever is already installed there. This is an escape
+hatch rather than the normal path, and the buildserver-image safety check above
+still applies to it, on every invocation. So does the check that the host's own
+Ubuntu codename matches `UBUNTU_DISTRIBUTION`: without a container, `setup.sh`
+rewrites this host's `/etc/apt/sources.list` and installs from it, so the host
+has to be running the suite being built.
 
 ## Getting Started
 
@@ -47,8 +96,12 @@ This quick tutorial shows how to build the packages managed by this framework.
 
 ### Step 1. Create build VM
 
-You need a system that meets the requirements above. For Delphix developers, you
-should clone the `dlpx-internal-buildserver-develop` group on DCoA.
+Clone the `dlpx-internal-buildserver-develop` group on DCoA. The safety check
+described above requires a buildserver image, so that is the supported path.
+Which Ubuntu release the buildserver itself runs no longer has to match the
+suite being built, since builds run against a rootfs bootstrapped for the target
+suite rather than against the host's own packages. Any other host needs
+`DISABLE_SYSTEM_CHECK=true` on every invocation.
 
 ### Step 2. Clone this repository
 
@@ -165,6 +218,19 @@ in the `artifacts` sub-directory.
 Note that if the build of the package depends on build artifacts from another
 linux-pkg package, those will be fetched from a predetermined S3 location.
 
+Pass `-S` instead of building to open an interactive shell in a build
+container, with the same mounts and environment a build of that package would
+get:
+
+```
+./buildpkg.sh -S <package>
+```
+
+This is useful for reproducing a build environment or debugging a failure by
+hand. Note that this shell does not run `setup.sh`, so it starts without the
+build tooling `setup.sh` installs; run `setup.sh` yourself inside the shell
+first if you need it.
+
 ### checkupdates.sh
 
 Usage:
@@ -229,9 +295,58 @@ to run this script. However, the script will fail unless DRYRUN is set to
 There's a set of environment variables that can be set to modify the operation
 of some of the scripts defined above.
 
-* **DISABLE_SYSTEM_CHECK**: Set to "true" to disable the check that makes sure
-  we are running on the appropriate Ubuntu distribution in AWS.
-  Affects all scripts.
+* **DISABLE_SYSTEM_CHECK**: Set to "true" to disable the safety check that
+  restricts every host-side invocation of any script to Delphix buildserver
+  images (`get-appliance-platform` reporting `aws` and `get-appliance-variant`
+  reporting `internal-buildserver`). That check runs on every invocation, not
+  just the one that happens to build the container image, so on any other host
+  this needs to be set every time, not just once. That includes a plain Ubuntu
+  AWS instance, which is not a buildserver image and so does not satisfy the
+  check on its own. Affects all scripts. This variable is read on the host
+  only; it is not passed into the build container, and so has no effect on the
+  codename check made there, which compares the container's rootfs against
+  `UBUNTU_DISTRIBUTION` and holds by construction. On the
+  `LINUX_PKG_NO_CONTAINER` path that same codename check runs on the host
+  instead, where it is the only thing verifying that the host runs the suite
+  whose apt sources `setup.sh` is about to write, and there this variable does
+  disable it. Use it with care on that path.
+
+* **UBUNTU_DISTRIBUTION**: The Ubuntu suite (codename) that packages are built
+  for, such as "noble" or "resolute". Defaults to the value hardcoded for the
+  current branch in `lib/common.sh`, but can be overridden in the environment
+  to build for a different suite than the branch's default. Determines the
+  tag of the build container image (`linux-pkg-build:$UBUNTU_DISTRIBUTION`)
+  and the suite `debootstrap` bootstraps that image's rootfs from.
+
+* **LINUX_PKG_NO_CONTAINER**: Set to "true" to run in place on the host
+  instead of inside the build container. This is an escape hatch for when the
+  container mechanism itself needs to be bypassed or debugged; the
+  buildserver-image safety check above still applies to it. Affects every script
+  that re-execs itself inside the container via `container_reexec()`
+  ([buildpkg.sh](#buildpkgsh), [checkupdates.sh](#checkupdatessh),
+  [sync-with-upstream.sh](#sync-with-upstreamsh),
+  [push-merge.sh](#push-mergesh)), and [setup.sh](#setupsh), which checks it
+  directly.
+
+* **LINUX_PKG_REBUILD_IMAGE**: Set to "true" to force the build container
+  image to be rebuilt from a freshly bootstrapped rootfs, even if an image
+  tagged `linux-pkg-build:$UBUNTU_DISTRIBUTION` already exists. Setting this is
+  not needed for the three cases where a reused image would be wrong, since
+  those rebuild it on their own: the image records the mirror snapshot its
+  rootfs was bootstrapped from, the uid/gid it was built for, and a hash of the
+  `Dockerfile` that produced it, and a build whose resolved snapshot, invoking
+  user or `Dockerfile` differs rebuilds rather than reuses it. Otherwise a
+  long-lived buildserver would keep compiling against a `debootstrap` toolchain
+  frozen at the image's build time while apt is repointed at the current
+  snapshot on every build, a second user on a shared host would run as a uid
+  the image has no `/etc/passwd` entry for, and an edit to the `Dockerfile`
+  would never reach an existing image, since this check returns before
+  `docker build` is reached and docker's own layer cache never gets a say.
+
+* **LINUX_PKG_BUILD_ROOT_DIR**: Directory where the build container's rootfs
+  is bootstrapped before being imported into docker. Defaults to
+  `/var/lib/linux-pkg`. Must point at a filesystem that is not mounted
+  `nodev` or `noexec`, since `debootstrap` refuses to install into either.
 
 * **DRYRUN**: Must be set to either "true" of "false" when running script
   [sync-with-upstream.sh](#sync-with-upstreamsh), and to "false" when running

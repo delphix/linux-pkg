@@ -17,6 +17,8 @@
 
 export _RET
 export _RET_LIST
+export _RET_MIRROR_MAIN
+export _RET_MIRROR_SECONDARY
 export _SECRET_BUILD_ARGS
 export DEBIAN_FRONTEND=noninteractive
 
@@ -28,7 +30,13 @@ export SUPPORTED_KERNEL_FLAVORS="generic aws gcp azure oracle"
 #
 export JENKINS_OPS_DIR="${JENKINS_OPS_DIR:-jenkins-ops}"
 
-export UBUNTU_DISTRIBUTION="noble"
+#
+# The suite package builds run against, which may be different than the
+# branch's default (see lib/container.sh).
+#
+export UBUNTU_DISTRIBUTION="${UBUNTU_DISTRIBUTION:-noble}"
+
+source "$(dirname "${BASH_SOURCE[0]}")/container.sh"
 
 #
 # We currently support getting the linux kernel from 3 different sources:
@@ -95,36 +103,43 @@ function logmust() {
 }
 
 #
-# Check that we are running in AWS on an Ubuntu system of the appropriate
-# distribution. This is not a strict requirement for the build to work but
-# rather a safety measure to prevent developers from accidentally running the
-# scripts on their work system and changing its configuration.
+# Package builds install build dependencies and kernel headers into the root
+# filesystem they run on, so they must run inside the build container, whose
+# root is disposable and whose codename matches the suite being built. The
+# codename comparison below therefore holds by construction, and exists to catch
+# a mismatched or stale image rather than to guard the caller's machine.
+#
+# On the LINUX_PKG_NO_CONTAINER escape hatch there is no container, and the same
+# comparison becomes the only thing verifying that this host runs the suite whose
+# apt sources setup.sh is about to point it at, and whose packages it is about to
+# install. The two cases need different advice when they fail, so the failure
+# below distinguishes them.
 #
 function check_running_system() {
-	local msg
-
 	if [[ "$DISABLE_SYSTEM_CHECK" == "true" ]]; then
 		echo "WARNING: System check disabled."
 		return 0
 	fi
 
-	msg="Note that you can bypass this check by setting environment"
-	msg="${msg} variable DISABLE_SYSTEM_CHECK=true. Use this at your"
-	msg="${msg} own risk as running this command may modify your system."
+	if ! running_in_container && [[ "$LINUX_PKG_NO_CONTAINER" != "true" ]]; then
+		die "Expected to be running inside the build container." \
+			"This is a bug in the re-exec logic in lib/container.sh."
+	fi
 
 	if ! (command -v lsb_release >/dev/null &&
 		[[ $(lsb_release -cs) == "$UBUNTU_DISTRIBUTION" ]]); then
-		echo_error "Script can only be run on an ubuntu-${UBUNTU_DISTRIBUTION} system."
-		echo_bold "$msg"
-		exit 1
-	fi
-
-	if ! curl "http://169.254.169.254/latest/meta-datas" \
-		>/dev/null 2>&1; then
-		echo_error "Not running in AWS, are you sure you are on the" \
-			"right system?"
-		echo_bold "$msg"
-		exit 1
+		echo_error "Running on ubuntu-$(lsb_release -cs 2>/dev/null || echo unknown)" \
+			"but UBUNTU_DISTRIBUTION is '$UBUNTU_DISTRIBUTION'."
+		if running_in_container; then
+			die "The build container's rootfs does not match the suite being" \
+				"built. Rebuild the image with LINUX_PKG_REBUILD_IMAGE=true."
+		else
+			die "LINUX_PKG_NO_CONTAINER is set, so this runs directly on this" \
+				"host, which must itself run the suite being built. Either" \
+				"unset LINUX_PKG_NO_CONTAINER and let the build run in a" \
+				"container bootstrapped for $UBUNTU_DISTRIBUTION, or set" \
+				"UBUNTU_DISTRIBUTION to this host's own suite."
+		fi
 	fi
 }
 
@@ -143,6 +158,45 @@ function run_setup_if_needed() {
 	echo_bold "------------------------------------------------------------"
 	logmust "$TOP/setup.sh"
 	echo_bold "------------------------------------------------------------"
+}
+
+#
+# Resolve the URLs of the primary (Ubuntu archive) and secondary (PPA) package
+# mirrors for the current branch, without modifying the system. If the URLs were
+# passed in via the environment they are used as-is; otherwise the latest mirror
+# snapshot for the branch is looked up.
+#
+# Sets _RET_MIRROR_MAIN and _RET_MIRROR_SECONDARY.
+#
+function resolve_mirror_urls() {
+	check_env DEFAULT_GIT_BRANCH DELPHIX_RELEASE_VERSION
+	local package_mirror_url latest_url delphix_version
+	local primary_url="$DELPHIX_PACKAGE_MIRROR_MAIN"
+	local secondary_url="$DELPHIX_PACKAGE_MIRROR_SECONDARY"
+
+	if [[ -z "$primary_url" ]] || [[ -z "$secondary_url" ]]; then
+		delphix_version="$DELPHIX_RELEASE_VERSION"
+		if compare_versions "$delphix_version" eq "9999.0.0.0" ||
+			compare_versions "$delphix_version" gt "2025.3"; then
+			latest_url="http://linux-package-mirror-v2.delphix.com/"
+		else
+			latest_url="http://linux-package-mirror.delphix.com/"
+		fi
+
+		if is_release_branch; then
+			package_mirror_url="${latest_url}releases/${DELPHIX_RELEASE_VERSION}"
+		else
+			latest_url+="${DEFAULT_GIT_BRANCH}/latest/"
+			package_mirror_url=$(curl -LfSs -o /dev/null -w '%{url_effective}' \
+				"$latest_url" || die "Could not curl $latest_url")
+			package_mirror_url="${package_mirror_url%/}"
+		fi
+		[[ -z "$primary_url" ]] && primary_url="${package_mirror_url}/ubuntu"
+		[[ -z "$secondary_url" ]] && secondary_url="${package_mirror_url}/ppas"
+	fi
+
+	_RET_MIRROR_MAIN="$primary_url"
+	_RET_MIRROR_SECONDARY="$secondary_url"
 }
 
 function is_release_branch() {
@@ -238,6 +292,7 @@ function reset_package_config_variables() {
 	PACKAGE_PREFIX
 	FORCE_PUSH_ON_UPDATE
 	SKIP_COPYRIGHTS_CHECK
+	PACKAGE_NEEDS_DOCKER
 	"
 
 	for var in $vars; do

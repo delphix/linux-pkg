@@ -17,10 +17,9 @@
 
 TOP="$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")"
 source "$TOP/lib/common.sh"
+ORIGINAL_ARGS=("$@")
 
 check_env DEFAULT_GIT_BRANCH
-logmust check_running_system
-logmust run_setup_if_needed
 
 function usage() {
 	[[ $# != 0 ]] && echo "$(basename "$0"): $*"
@@ -49,6 +48,10 @@ shift $((OPTIND - 1))
 [[ $# -lt 1 ]] && usage "package argument missing" >&2
 [[ $# -gt 1 ]] && usage "too many arguments" >&2
 PACKAGE=$1
+
+logmust container_reexec "./$(basename "$0")" "${ORIGINAL_ARGS[@]}"
+logmust check_running_system
+logmust run_setup_if_needed
 
 if [[ "$DRYRUN" != 'false' ]]; then
 	die "DRYRUN environment variable must be set to 'false'."
