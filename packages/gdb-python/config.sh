@@ -17,8 +17,16 @@
 
 # shellcheck disable=SC2034
 DEFAULT_PACKAGE_GIT_URL="https://github.com/delphix/gdb-python.git"
+PACKAGE_DEPENDENCIES="libkdumpfile"
 
 function prepare() {
+	#
+	# debian/control build-depends on libkdumpfile, which is built by
+	# linux-pkg rather than published in the Ubuntu archive, so apt cannot
+	# find it and mk-build-deps below fails unless it is installed first.
+	# Declaring it in PACKAGE_DEPENDENCIES is what puts it in DEPDIR.
+	#
+	logmust install_pkgs "$DEPDIR"/libkdumpfile/*.deb
 	logmust install_build_deps_from_control_file
 }
 

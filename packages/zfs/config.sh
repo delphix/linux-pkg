@@ -23,6 +23,16 @@ UPSTREAM_GIT_URL="https://github.com/openzfs/zfs.git"
 UPSTREAM_GIT_BRANCH="master"
 
 function prepare() {
+	#
+	# configure autodetects systemd support by probing for the systemctl
+	# binary (config/user-systemd.m4), which is always present on a host that
+	# runs systemd and absent from a debootstrapped root; that root carries
+	# libsystemd0 and libudev1, but not systemd itself. When the probe fails
+	# configure builds '--without systemd', the unit and preset files are
+	# never generated, and dh_install aborts on the paths debian/*.install
+	# lists unconditionally; e.g. 'zfs-zed missing files:
+	# lib/systemd/system/zfs-zed.service'.
+	#
 	logmust install_pkgs \
 		alien \
 		autoconf \
@@ -55,6 +65,7 @@ function prepare() {
 		pkg-config \
 		po-debconf \
 		python3 \
+		systemd \
 		uuid-dev \
 		zlib1g-dev
 	logmust install_kernel_headers_and_dbgsyms

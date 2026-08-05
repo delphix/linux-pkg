@@ -17,9 +17,7 @@
 
 TOP="$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")"
 source "$TOP/lib/common.sh"
-
-logmust check_running_system
-logmust run_setup_if_needed
+ORIGINAL_ARGS=("$@")
 
 function usage() {
 	[[ $# != 0 ]] && echo "$(basename "$0"): $*"
@@ -40,6 +38,7 @@ function usage() {
 	echo "    -r  override default revision for package."
 	echo "    -h  display this message and exit."
 	echo "    -l  use locally-built dependencies instead of s3 versions."
+	echo "    -S  start an interactive shell in the build container."
 	echo ""
 	exit 2
 }
@@ -49,8 +48,9 @@ unset PARAM_PACKAGE_GIT_BRANCH
 unset PARAM_PACKAGE_REVISION
 
 do_checkstyle=false
+open_shell=false
 source="s3"
-while getopts ':b:cg:hlr:' c; do
+while getopts ':b:cg:hlr:S' c; do
 	case "$c" in
 	g) export PARAM_PACKAGE_GIT_URL="$OPTARG" ;;
 	b) export PARAM_PACKAGE_GIT_BRANCH="$OPTARG" ;;
@@ -58,6 +58,7 @@ while getopts ':b:cg:hlr:' c; do
 	c) do_checkstyle=true ;;
 	h) usage >&2 ;;
 	l) source="local" ;;
+	S) open_shell=true ;;
 	*) usage "illegal option -- $OPTARG" >&2 ;;
 	esac
 done
@@ -66,7 +67,38 @@ shift $((OPTIND - 1))
 [[ $# -gt 1 ]] && usage "too many arguments" >&2
 PACKAGE=$1
 
+#
+# Checked here rather than after the re-exec so that a mistyped package name
+# fails immediately, instead of after bootstrapping a container image and
+# provisioning it, which is minutes of work for a name that was never going to
+# resolve. Checked again inside the container by load_package_config().
+#
 logmust check_package_exists "$PACKAGE"
+
+#
+# Whether this package's build needs the host's docker socket bound in has to be
+# known before the container is started; see package_needs_docker().
+#
+logmust package_needs_docker "$PACKAGE"
+export PACKAGE_NEEDS_DOCKER="$_RET"
+
+if $open_shell; then
+	logmust load_package_config "$PACKAGE"
+	logmust container_shell
+fi
+
+#
+# Deliberately not logmust: this script's arguments can carry a credential
+# ('-g https://<token>@github.com/...'), and logmust would echo them verbatim
+# into the build log. container_reexec() logs its own command line with any such
+# URL masked, the way git_fetch_helper() and push_to_remote() do (lib/common.sh),
+# and it exits with the container's status rather than returning a failure for
+# logmust to catch.
+#
+container_reexec "./$(basename "$0")" "${ORIGINAL_ARGS[@]}"
+logmust check_running_system
+logmust run_setup_if_needed
+
 check_env DEFAULT_GIT_BRANCH
 
 #

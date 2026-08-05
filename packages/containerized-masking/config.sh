@@ -28,10 +28,36 @@
 source "$PWD/lib/common.sh"
 
 DEFAULT_PACKAGE_GIT_URL="https://github.com/delphix/dms-core-gate.git"
+#
+# The gradle task below reaches :tools:docker:buildLocalDockerImage, which builds
+# a docker image and so needs a docker daemon. The build container gets the
+# host's daemon through its socket rather than running one of its own.
+#
+# Without the socket the failure misdirects: the gradle-docker plugin defaults to
+# the unix socket only when one is present and otherwise falls back to TCP, so it
+# reports 'Connect to http://127.0.0.1:2375 failed: Connection refused' rather
+# than anything about a missing socket.
+#
+PACKAGE_NEEDS_DOCKER="true"
 MEND_SCAN_APPLICABLE="true"
 MEND_SCAN_IMAGES="'delphix-masking-proxy', 'delphix-masking-database', 'delphix-masking-app'"
 
 SKIP_COPYRIGHTS_CHECK=true
+
+function prepare() {
+	#
+	# Same list, from the same repo, that the 'masking' package installs.
+	# Without it no JDK is present at all: the JAVA_HOME below names a java-8
+	# path that only ever existed because the buildserver happened to have
+	# one, and dms-core-gate's own gradlew wrapper resets JAVA_HOME to Java 17
+	# only when it can find a 17 JDK to switch to. That wrapper is why
+	# 'masking' builds with the identical stale JAVA_HOME, so installing the
+	# same dependencies here fixes this package the same way rather than
+	# introducing a second, different convention.
+	#
+	logmust read_list "$WORKDIR/repo/packaging/build-dependencies"
+	logmust install_pkgs "${_RET_LIST[@]}"
+}
 
 function build() {
 	export JAVA_HOME
