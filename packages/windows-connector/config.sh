@@ -29,8 +29,11 @@ function prepare() {
 # windows-connector is only rebuilt when its version (project.ext.connectorVersion
 # in appliance/host/windows/build.gradle) is bumped. If that version has already
 # been built and uploaded to Artifactory, we just download the existing installer
-# instead of rebuilding. Uploading a newly built installer back to Artifactory is
-# a manual step (not done here) - see the message printed on a fresh build below.
+# instead of rebuilding. Otherwise we build it and upload the result to Artifactory
+# so future builds of the same version can reuse it. The upload uses the BLACKBOX_USERNAME/
+# BLACKBOX_PASSWORD credential exposed by the linux_pkg_build_package.groovy pipeline
+# (devops-gate) - the same 'blackbox' credential already used to publish DCT's Artifactory
+# artifacts in api_gw_services_build_publish_post_push.groovy.
 #
 function build() {
 	CONNECTOR_DIR="${WORKDIR}/repo/appliance/server/connector"
@@ -39,7 +42,7 @@ function build() {
 	local version
 	version=$(grep "project.ext.connectorVersion" "$INSTALLER_DIR/build.gradle" |
 		sed -E "s/.*'([^']+)'.*/\1/")
-	local artifactory_dir="http://artifactory.delphix.com/artifactory/linux-pkg/windows-connector/$version"
+	local artifactory_dir="http://artifactory.delphix.com/artifactory/third-party-local/windows-connector/$version"
 	local deb_name="windows-connector_${version}_all.deb"
 
 	if wget --spider -q "$artifactory_dir/$deb_name"; then
@@ -54,12 +57,19 @@ function build() {
 		logmust sudo ../../gradlew createDebPackage
 		logmust cp ./build/distributions/*.deb "$WORKDIR/artifacts/$deb_name"
 
-		echo "Uploading $deb_name to $artifactory_dir/ (no credentials supplied - testing default permissions)"
-		local http_code
-		http_code=$(curl -s -o /dev/stderr -w "%{http_code}" -T "$WORKDIR/artifacts/$deb_name" "$artifactory_dir/$deb_name")
-		echo "Artifactory upload HTTP status: $http_code"
-		if [[ "$http_code" != 2* ]]; then
-			echo "WARNING: upload did not return a 2xx status - it likely needs credentials (see curl output above)"
+		if [[ -z "$BLACKBOX_USERNAME" || -z "$BLACKBOX_PASSWORD" ]]; then
+			echo "WARNING: BLACKBOX_USERNAME/BLACKBOX_PASSWORD not set - skipping Artifactory upload." \
+				"Upload $WORKDIR/artifacts/$deb_name to $artifactory_dir/ manually so future builds can reuse it."
+		else
+			echo "Uploading $deb_name to $artifactory_dir/"
+			local http_code
+			http_code=$(curl -s -o /dev/stderr -w "%{http_code}" \
+				-u "${BLACKBOX_USERNAME}:${BLACKBOX_PASSWORD}" \
+				-T "$WORKDIR/artifacts/$deb_name" "$artifactory_dir/$deb_name")
+			echo "Artifactory upload HTTP status: $http_code"
+			if [[ "$http_code" != 2* ]]; then
+				echo "WARNING: upload did not return a 2xx status (see curl output above)"
+			fi
 		fi
 	fi
 }
