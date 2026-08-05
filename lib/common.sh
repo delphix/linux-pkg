@@ -800,7 +800,7 @@ function fetch_dependencies() {
 		get_package_prefix "$dep"
 		case "$source" in
 		"local")
-			logmust cp -r "$WORKDIR/../../$dep/tmp/artifacts/ $dep/"
+			logmust cp -r "$WORKDIR/../../$dep/tmp/artifacts/" "$dep/"
 			;;
 		"s3")
 			s3urlvar="${_RET}_S3_URL"
