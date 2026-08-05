@@ -70,6 +70,22 @@ function configure_apt_sources() {
 	secondary_url="$_RET_MIRROR_SECONDARY"
 
 	#
+	# The secondary mirror carries the PPAs (docker, postgres, fluentd, ...) and
+	# has no upstream equivalent, so a build pointed at the plain Ubuntu archive
+	# has nothing to name here. That is the state at the start of every LTS
+	# upgrade, before the new suite's mirror sync has published: the primary can
+	# be pointed at archive.ubuntu.com and the suite builds, but this one line
+	# fails apt-get update on a suite the Delphix mirror does not carry yet.
+	# "none" opts out of it. Only for manual builds against upstream Ubuntu; a
+	# real build wants the pinned snapshot.
+	#
+	if [[ "$secondary_url" == "none" ]]; then
+		echo "DELPHIX_PACKAGE_MIRROR_SECONDARY is 'none'; configuring apt with" \
+			"the primary mirror only. Packages that build-depend on the" \
+			"secondary mirror's PPAs will not resolve."
+	fi
+
+	#
 	# Store the package mirror in a file so that it can be added to a
 	# package build's metadata via store_build_info().
 	#
@@ -97,9 +113,11 @@ function configure_apt_sources() {
 	# /etc/apt/keyrings may not exist in a freshly debootstrapped rootfs, hence
 	# install -D.
 	#
-	logmust sudo install -D -o root -g root -m 0644 \
-		"$TOP/resources/delphix-secondary-mirror.key" \
-		"$secondary_keyring"
+	if [[ "$secondary_url" != "none" ]]; then
+		logmust sudo install -D -o root -g root -m 0644 \
+			"$TOP/resources/delphix-secondary-mirror.key" \
+			"$secondary_keyring"
+	fi
 
 	#
 	# Scoping the key above is pointless while a globally trusted copy of it sits
@@ -108,6 +126,11 @@ function configure_apt_sources() {
 	# persists between runs; a container is bootstrapped fresh and never has it.
 	#
 	logmust sudo rm -f /etc/apt/trusted.gpg.d/delphix-secondary-mirror.gpg
+
+	local secondary_line=""
+	if [[ "$secondary_url" != "none" ]]; then
+		secondary_line="deb [signed-by=${secondary_keyring}] ${secondary_url} ${UBUNTU_DISTRIBUTION} main multiverse universe stable"
+	fi
 
 	sudo bash -c "cat <<-EOF >/etc/apt/sources.list
 		deb ${primary_url} ${UBUNTU_DISTRIBUTION} main restricted universe multiverse
@@ -122,7 +145,7 @@ function configure_apt_sources() {
 		deb ${primary_url} ${UBUNTU_DISTRIBUTION}-backports main restricted universe multiverse
 		deb-src ${primary_url} ${UBUNTU_DISTRIBUTION}-backports main restricted universe multiverse
 
-		deb [signed-by=${secondary_keyring}] ${secondary_url} ${UBUNTU_DISTRIBUTION} main multiverse universe stable
+		${secondary_line}
 		EOF" || die "/etc/apt/sources.list could not be updated"
 }
 
