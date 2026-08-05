@@ -170,18 +170,17 @@ function run_setup_if_needed() {
 #
 function resolve_mirror_urls() {
 	check_env DEFAULT_GIT_BRANCH DELPHIX_RELEASE_VERSION
-	local package_mirror_url latest_url delphix_version
+	local package_mirror_url latest_url
 	local primary_url="$DELPHIX_PACKAGE_MIRROR_MAIN"
 	local secondary_url="$DELPHIX_PACKAGE_MIRROR_SECONDARY"
 
 	if [[ -z "$primary_url" ]] || [[ -z "$secondary_url" ]]; then
-		delphix_version="$DELPHIX_RELEASE_VERSION"
-		if compare_versions "$delphix_version" eq "9999.0.0.0" ||
-			compare_versions "$delphix_version" gt "2025.3"; then
-			latest_url="http://linux-package-mirror-v2.delphix.com/"
-		else
-			latest_url="http://linux-package-mirror.delphix.com/"
-		fi
+		#
+		# Every product branch is served by the v2 (aptly-based)
+		# mirror. The older linux-package-mirror.delphix.com name is
+		# deprecated and is now just an alias for the same host.
+		#
+		latest_url="http://linux-package-mirror-v2.delphix.com/"
 
 		if is_release_branch; then
 			package_mirror_url="${latest_url}releases/${DELPHIX_RELEASE_VERSION}"
