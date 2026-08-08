@@ -34,7 +34,7 @@ export JENKINS_OPS_DIR="${JENKINS_OPS_DIR:-jenkins-ops}"
 # The suite package builds run against, which may be different than the
 # branch's default (see lib/container.sh).
 #
-export UBUNTU_DISTRIBUTION="${UBUNTU_DISTRIBUTION:-noble}"
+export UBUNTU_DISTRIBUTION="${UBUNTU_DISTRIBUTION:-resolute}"
 
 source "$(dirname "${BASH_SOURCE[0]}")/container.sh"
 
@@ -1260,7 +1260,7 @@ function get_kernel_version_for_platform_from_apt() {
 	# available, it is not always the case.
 	#
 	if [[ "$platform" == generic ]]; then
-		package="linux-image-${platform}-hwe-24.04"
+		package="linux-image-${platform}-hwe-26.04"
 	else
 		package="linux-image-${platform}"
 	fi
