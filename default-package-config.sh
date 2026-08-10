@@ -327,13 +327,17 @@ function kernel_update_upstream() {
 	# latest upstream tag to sync based on the kernel
 	# version and the ABI num that we got above.
 	#
-	# Note that "generic" (used mainly ESX) is a special
-	# case on bionic where we are using the HWE kernel image.
+	# Note that "generic" (used mainly ESX) carries no flavour
+	# segment in its tag name, since it is the suite's own
+	# kernel; e.g. 'Ubuntu-7.0.0-29.29'. An 'Ubuntu-hwe-*' tag
+	# only exists in the tree of the release receiving a
+	# backport, and never for that release's own GA kernel, so
+	# it does not apply while we track the GA kernel.
 	#
 	local tag_prefix_flavour
 	case "${platform}" in
 	generic)
-		tag_prefix_flavour="Ubuntu-hwe"
+		tag_prefix_flavour="Ubuntu"
 		;;
 	aws | azure | gcp | oracle)
 		tag_prefix_flavour="Ubuntu-${platform}"
