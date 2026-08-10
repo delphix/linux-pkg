@@ -5,7 +5,6 @@
 bcc
 challenge-response
 cloud-init
-crash-python
 crypt-blowfish
 delphix-go
 delphix-platform
@@ -15,7 +14,6 @@ docker-python-image
 drgn
 dwarves
 fluentd-gems
-gdb-python
 grub2
 host-jdks
 libkdumpfile
