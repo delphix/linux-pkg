@@ -7,6 +7,11 @@ challenge-response
 cloud-init
 crash-python
 crypt-blowfish
+# cyclonedx-cli and syft (below) are build-host-only tooling for appliance-build's
+# CycloneDX SBOM generation (CP-13464/CP-13600) -- like delphix-go, they must never
+# be referenced by any appliance-build chroot package list, so they never ship
+# inside the appliance image despite being listed here.
+cyclonedx-cli
 delphix-go
 delphix-platform
 delphix-rust
@@ -28,6 +33,8 @@ ptools
 python-rtslib-fb
 savedump
 sdb
+# see the cyclonedx-cli comment above -- same build-host-only rule applies here.
+syft
 targetcli-fb
 virtualization
 windows-connector
