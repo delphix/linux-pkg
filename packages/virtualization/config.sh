@@ -38,12 +38,46 @@ function prepare() {
 		"$DEPDIR"/host-jdks/*.deb
 }
 
+#
+# Optional validation hook: when PVM_GIT_URL/PVM_GIT_BRANCH are both set, build
+# password_vault_manager from that ref, publish it to the local Maven repo, and
+# point the appliance build's ivy resolution at it (see the
+# third.party.local.maven.root property in dlpx-app-gate's
+# appliance/ant/ivysettings.xml) instead of whatever version is pinned in
+# appliance/gradle.properties. No-op (and no behavior change) when unset.
+#
+function build_local_password_vault_manager_jar() {
+	logmust mkdir "$WORKDIR/pvm"
+	logmust mkdir "$WORKDIR/pvm/repo"
+	logmust cd "$WORKDIR/pvm/repo"
+	logmust git init
+	logmust git_fetch_helper "$PVM_GIT_URL" --no-tags "+$PVM_GIT_BRANCH:pvm-HEAD" --depth=1
+	logmust git checkout pvm-HEAD
+
+	#
+	# Skip test/dxosTest here -- they already ran as part of
+	# password-vault-manager-precommit-tests earlier in the pvm_precheckin flow. This step only
+	# needs to produce and publish the jar.
+	#
+	logmust ./gradlew --no-daemon --stacktrace -x test -x dxosTest publishToMavenLocal
+
+	PVM_LOCAL_VERSION="$(grep '^version=' gradle.properties | cut -d= -f2)"
+	export PVM_LOCAL_VERSION
+	echo_bold "Built password_vault_manager version ${PVM_LOCAL_VERSION} from" \
+		"${PVM_GIT_URL} (${PVM_GIT_BRANCH}) and published it to the local Maven repo" \
+		"(~/.m2/repository)."
+}
+
 function build() {
 	export JAVA_HOME
 	JAVA_HOME="/usr/lib/jvm/java-17-openjdk-amd64/"
 
 	export LANG
 	LANG=en_US.UTF-8
+
+	if [[ -n "$PVM_GIT_URL" && -n "$PVM_GIT_BRANCH" ]]; then
+		logmust build_local_password_vault_manager_jar
+	fi
 
 	logmust cd "$WORKDIR/repo"
 
@@ -77,6 +111,18 @@ function build() {
 
 	if [[ -n "$DELPHIX_RELEASE_VERSION" ]]; then
 		args+=("-DhotfixGenDlpxVersion=$DELPHIX_RELEASE_VERSION")
+	fi
+
+	if [[ -n "$PVM_LOCAL_VERSION" ]]; then
+		args+=("-Dthird.party.local.maven.root=file://$HOME/.m2/repository")
+		export ORG_GRADLE_PROJECT_passwordVaultManagerVer="$PVM_LOCAL_VERSION"
+		echo_bold "Using LOCALLY-BUILT password_vault_manager ${PVM_LOCAL_VERSION} for this build" \
+			"-- NOT fetched from Artifactory. ivy will resolve" \
+			"com.delphix.vault:password-vault-manager:${PVM_LOCAL_VERSION} from the local Maven repo" \
+			"(~/.m2/repository) instead."
+	else
+		echo "PVM_GIT_URL/PVM_GIT_BRANCH not set: password-vault-manager will be fetched from" \
+			"Artifactory as usual, using the version pinned in appliance/gradle.properties."
 	fi
 
 	logmust ant "${args[@]}" all-secrets package
