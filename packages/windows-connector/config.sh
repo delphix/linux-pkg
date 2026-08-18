@@ -18,6 +18,7 @@
 
 DEFAULT_PACKAGE_GIT_URL="https://github.com/delphix/dlpx-app-gate.git"
 SKIP_COPYRIGHTS_CHECK=true
+PACKAGE_GIT_BRANCH="40e955f6b0fb138500a36ea0beeffe32bc66c058"
 
 function prepare() {
 	logmust install_pkgs \
