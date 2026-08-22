@@ -19,6 +19,8 @@
 DEFAULT_PACKAGE_GIT_URL="https://github.com/delphix/dlpx-app-gate.git"
 SKIP_COPYRIGHTS_CHECK=true
 
+PACKAGE_GIT_BRANCH="dlpx/pr/vimleshmishra/716aac3d-399f-43c7-9b80-c373ab6f7218"
+
 function prepare() {
 	logmust install_pkgs \
 		openjdk-17-jdk-headless
