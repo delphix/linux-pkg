@@ -16,12 +16,7 @@
 #
 # shellcheck disable=SC2034
 
-#
-# TODO(CP-13600): points at a personal dev repo while this is prototyped --
-# the author has no delphix/ org repo-creation rights. Swap to
-# https://github.com/delphix/delphix-cyclonedx-cli.git once that repo exists.
-#
-DEFAULT_PACKAGE_GIT_URL="https://github.com/justsanjeev/delphix-cyclonedx-cli.git"
+DEFAULT_PACKAGE_GIT_URL="https://github.com/delphix/cyclonedx-cli.git"
 
 function build() {
 	logmust mkdir -p "$WORKDIR/repo"
