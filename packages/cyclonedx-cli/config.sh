@@ -20,5 +20,15 @@ DEFAULT_PACKAGE_GIT_URL="https://github.com/delphix/cyclonedx-cli.git"
 
 function build() {
 	logmust mkdir -p "$WORKDIR/repo"
+
+	#
+	# Instead of relying on linux-pkg to assign a default version like 1.0.0, set the
+	# version of the delphix-cyclonedx-cli package to the pinned cyclonedx-cli version.
+	# This is done so that "apt-cache policy delphix-cyclonedx-cli" on a build host can
+	# tell you which cyclonedx-cli actually validated a given CycloneDX SBOM.
+	#
+	PACKAGE_VERSION="$(tr -d '\n' <"$WORKDIR/repo/CYCLONEDX_VERSION")"
+	[[ -n "$PACKAGE_VERSION" ]] || die "Failed to retrieve package version"
+
 	logmust dpkg_buildpackage_default
 }
