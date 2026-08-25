@@ -20,5 +20,15 @@ DEFAULT_PACKAGE_GIT_URL="https://github.com/delphix/syft.git"
 
 function build() {
 	logmust mkdir -p "$WORKDIR/repo"
+
+	#
+	# Instead of relying on linux-pkg to assign a default version like 1.0.0, set the
+	# version of the delphix-syft package to the pinned Syft version. This is done so
+	# that "dpkg -l delphix-syft" on a build host can tell you which Syft actually
+	# produced a given CycloneDX SBOM.
+	#
+	PACKAGE_VERSION="$(tr -d '\n' <"$WORKDIR/repo/SYFT_VERSION")"
+	[[ -n "$PACKAGE_VERSION" ]] || die "Failed to retrieve package version"
+
 	logmust dpkg_buildpackage_default
 }
