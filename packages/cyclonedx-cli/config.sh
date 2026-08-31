@@ -27,10 +27,10 @@ function build() {
 	# This is done so that "apt-cache policy delphix-cyclonedx-cli" on a build host can
 	# tell you which cyclonedx-cli actually validated a given CycloneDX SBOM.
 	#
-	# CYCLONEDX_VERSION holds the pinned version on line 1 and its checksum on line 2
-	# (read by debian/rules) -- take only line 1 here, not the whole file.
+	# CYCLONEDX_VERSION holds "VERSION=..." and "SHA256=..." lines (the latter also
+	# read by debian/rules) -- pull out just the version, not the whole file.
 	#
-	PACKAGE_VERSION="$(sed -n '1p' "$WORKDIR/repo/CYCLONEDX_VERSION")"
+	PACKAGE_VERSION="$(grep '^VERSION=' "$WORKDIR/repo/CYCLONEDX_VERSION" | cut -d= -f2-)"
 	[[ -n "$PACKAGE_VERSION" ]] || die "Failed to retrieve package version"
 
 	logmust dpkg_buildpackage_default
