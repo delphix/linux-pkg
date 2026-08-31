@@ -29,7 +29,6 @@ ptools
 python-rtslib-fb
 savedump
 sdb
-# see the cyclonedx-cli comment above -- same build-host-only rule applies here.
 syft
 targetcli-fb
 virtualization
