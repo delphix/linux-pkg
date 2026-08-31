@@ -16,8 +16,20 @@
 #
 # shellcheck disable=SC2034
 
-DEFAULT_PACKAGE_GIT_URL="https://github.com/delphix/dlpx-app-gate.git"
+#
+# windows-connector's post-push job no longer auto-triggers on every
+# dlpx-app-gate push (see README.md in this directory for why). Setting this
+# to "none" tells the Job DSL to disable that job's push trigger; source is
+# still fetched from the real repo via the fetch() override below, which
+# doesn't depend on this variable.
+#
+DEFAULT_PACKAGE_GIT_URL="none"
 SKIP_COPYRIGHTS_CHECK=true
+
+function fetch() {
+	PACKAGE_GIT_URL="https://github.com/delphix/dlpx-app-gate.git"
+	logmust fetch_repo_from_git
+}
 
 function prepare() {
 	logmust install_pkgs \
