@@ -27,6 +27,8 @@ PACKAGE_DEPENDENCIES="crypt-blowfish host-jdks"
 #
 PACKAGE_NEEDS_DOCKER="true"
 MEND_SCAN_APPLICABLE="true"
+# Java/Gradle app bundling jars + npm frontend
+SBOM_DEEP_SCAN="true"
 
 function prepare() {
 	logmust read_list "$WORKDIR/repo/appliance/packaging/build-dependencies"

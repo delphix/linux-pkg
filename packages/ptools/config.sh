@@ -17,6 +17,8 @@
 # shellcheck disable=SC2034
 
 DEFAULT_PACKAGE_GIT_URL="https://github.com/delphix/ptools.git"
+# Rust
+SBOM_DEEP_SCAN="true"
 
 function prepare() {
 	logmust install_pkgs cargo devscripts

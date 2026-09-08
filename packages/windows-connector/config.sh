@@ -24,6 +24,8 @@
 # doesn't depend on this variable.
 #
 DEFAULT_PACKAGE_GIT_URL="none"
+# Java/Gradle app
+SBOM_DEEP_SCAN="true"
 SKIP_COPYRIGHTS_CHECK=true
 
 function fetch() {

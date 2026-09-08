@@ -17,6 +17,7 @@
 # shellcheck disable=SC2034
 
 DEFAULT_PACKAGE_GIT_URL="https://github.com/delphix/crypt-blowfish.git"
+SBOM_DEEP_SCAN="false"
 SKIP_COPYRIGHTS_CHECK=true
 
 function build() {

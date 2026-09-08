@@ -29,3 +29,8 @@ jobs:
     steps:
       - uses: actions/checkout@v1
       - run: ./.github/scripts/verify-query-packages.sh
+  verify-sbom-scan-flag:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v1
+      - run: ./.github/scripts/verify-sbom-scan-flag.sh

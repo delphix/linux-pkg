@@ -138,6 +138,9 @@ logmust cd "$WORKDIR"
 stage store_build_info
 
 logmust cd "$WORKDIR"
+stage generate_sbom
+
+logmust cd "$WORKDIR"
 stage post_build_checks
 
 echo_success "Package $PACKAGE has been built successfully."

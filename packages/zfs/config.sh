@@ -17,6 +17,8 @@
 # shellcheck disable=SC2034
 
 DEFAULT_PACKAGE_GIT_URL="https://github.com/delphix/zfs.git"
+# OpenZFS fork bundling Delphix's Rust object agent
+SBOM_DEEP_SCAN="true"
 PACKAGE_DEPENDENCIES="@linux-kernel delphix-rust delphix-go dwarves"
 
 UPSTREAM_GIT_URL="https://github.com/openzfs/zfs.git"

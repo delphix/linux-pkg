@@ -17,6 +17,8 @@
 # shellcheck disable=SC2034
 
 DEFAULT_PACKAGE_GIT_URL="https://github.com/delphix/delphix-rust.git"
+# Rust
+SBOM_DEEP_SCAN="true"
 
 function build() {
 	logmust mkdir -p "$WORKDIR/repo"
