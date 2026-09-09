@@ -7,6 +7,7 @@ challenge-response
 cloud-init
 crash-python
 crypt-blowfish
+cyclonedx-cli
 delphix-go
 delphix-platform
 delphix-rust
@@ -28,6 +29,7 @@ ptools
 python-rtslib-fb
 savedump
 sdb
+syft
 targetcli-fb
 virtualization
 windows-connector
