@@ -17,12 +17,14 @@
 # shellcheck disable=SC2034
 
 DEFAULT_PACKAGE_GIT_URL="https://github.com/delphix/docker-python-image.git"
+SBOM_DEEP_SCAN="false"
+
 #
 # debian/rules' override_dh_install runs 'docker pull' to fetch the python
 # image it repackages, so the build needs a docker daemon. The build container
 # gets the host's daemon through its socket rather than running one of its own.
 #
-PACKAGE_NEEDS_DOCKER="true"
+PACKAGE_NEEDS_DOCKER="false"
 
 function prepare() {
 	logmust install_build_deps_from_control_file

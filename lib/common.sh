@@ -1461,6 +1461,67 @@ function store_build_info() {
 	fi
 }
 
+#
+# Generate a per-package CycloneDX SBOM sidecar by running Syft against
+# this package's built .deb(s). Only packages that bundle third-party
+# composition (jars, npm, wheels, Rust crates, ...) opt in via
+# SBOM_DEEP_SCAN="true" in their config.sh -- everything else is left as
+# a flat pkg:deb component by appliance-build's base chroot scan, so a
+# deb scan here would add nothing. The resulting <package>.cdx.json is
+# dropped in $WORKDIR/artifacts/ alongside the .deb(s), where it's picked
+# up by the same S3 sync as every other build artifact -- no separate
+# upload path needed.
+#
+function generate_sbom() {
+	if [[ "$SBOM_DEEP_SCAN" != "true" ]]; then
+		return 0
+	fi
+
+	local debs=("$WORKDIR/artifacts/"*.deb)
+	if [[ ! -e "${debs[0]}" ]]; then
+		die "SBOM_DEEP_SCAN is set but no .deb was found in" \
+			"'$WORKDIR/artifacts'"
+	fi
+
+	local sbom_file="$WORKDIR/artifacts/$PACKAGE.cdx.json"
+	local sbom_scratch_dir
+	sbom_scratch_dir="$(logmust mktemp -d)"
+
+	#
+	# A package can emit more than one .deb from a single build (e.g.
+	# "zfs" splits into zfs-dkms, zfsutils-linux, etc.) -- scan each one
+	# into its own document, then merge them into a single sidecar so
+	# there's exactly one <package>.cdx.json per package, matching how
+	# appliance-build associates a sidecar to a package via COMPONENTS.
+	#
+	local deb sbom_parts=()
+	for deb in "${debs[@]}"; do
+		local part
+		part="$sbom_scratch_dir/$(basename "$deb").cdx.json"
+		logmust syft scan "$deb" \
+			--source-name "$PACKAGE" \
+			--source-version "$PACKAGE_VERSION" \
+			-o "cyclonedx-json@1.6=$part"
+		sbom_parts+=("$part")
+	done
+
+	if [[ ${#sbom_parts[@]} -eq 1 ]]; then
+		logmust cp "${sbom_parts[0]}" "$sbom_file"
+	else
+		logmust cyclonedx-cli merge \
+			--input-files "${sbom_parts[@]}" \
+			--output-format json \
+			--output-file "$sbom_file"
+	fi
+	logmust rm -rf "$sbom_scratch_dir"
+
+	logmust cyclonedx-cli validate \
+		--input-file "$sbom_file" \
+		--input-format json \
+		--input-version v1_6 \
+		--fail-on-errors
+}
+
 function set_secret_build_args() {
 	_SECRET_BUILD_ARGS=()
 
