@@ -24,7 +24,7 @@ SBOM_DEEP_SCAN="false"
 # image it repackages, so the build needs a docker daemon. The build container
 # gets the host's daemon through its socket rather than running one of its own.
 #
-PACKAGE_NEEDS_DOCKER="false"
+PACKAGE_NEEDS_DOCKER="true"
 
 function prepare() {
 	logmust install_build_deps_from_control_file
