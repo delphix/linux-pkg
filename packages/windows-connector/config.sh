@@ -27,6 +27,13 @@ DEFAULT_PACKAGE_GIT_URL="none"
 SKIP_COPYRIGHTS_CHECK=true
 SBOM_DEEP_SCAN="true"
 
+#
+# syft/cyclonedx-cli are build-host-only tooling needed by generate_sbom()
+# (lib/common.sh) to scan this package's own .deb -- never shipped in the
+# built package itself.
+#
+PACKAGE_DEPENDENCIES="syft cyclonedx-cli"
+
 function fetch() {
 	PACKAGE_GIT_URL="https://github.com/delphix/dlpx-app-gate.git"
 	logmust fetch_repo_from_git

@@ -17,7 +17,7 @@
 # shellcheck disable=SC2034
 
 DEFAULT_PACKAGE_GIT_URL="https://github.com/delphix/zfs.git"
-PACKAGE_DEPENDENCIES="@linux-kernel delphix-rust delphix-go dwarves"
+PACKAGE_DEPENDENCIES="@linux-kernel delphix-rust delphix-go dwarves syft cyclonedx-cli"
 SBOM_DEEP_SCAN="true"
 
 UPSTREAM_GIT_URL="https://github.com/openzfs/zfs.git"

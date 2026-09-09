@@ -1483,6 +1483,18 @@ function generate_sbom() {
 			"'$WORKDIR/artifacts'"
 	fi
 
+	#
+	# syft/cyclonedx-cli are build-host-only tooling (never shipped in
+	# any product package), fetched the same way any other linux-pkg
+	# build dependency is: declared in PACKAGE_DEPENDENCIES, populated
+	# into $DEPDIR by the "fetch_dependencies" stage, installed here.
+	# This mirrors appliance-build's build-ancillary-repository.sh,
+	# which installs the same two packages onto the appliance-build host
+	# for the same reason.
+	#
+	check_env DEPDIR
+	logmust install_pkgs "$DEPDIR"/syft/*.deb "$DEPDIR"/cyclonedx-cli/*.deb
+
 	local sbom_file="$WORKDIR/artifacts/$PACKAGE.cdx.json"
 	local sbom_scratch_dir
 	sbom_scratch_dir="$(logmust mktemp -d)"
@@ -1496,11 +1508,22 @@ function generate_sbom() {
 	#
 	local deb sbom_parts=()
 	for deb in "${debs[@]}"; do
-		local part
+		local part deb_version
 		part="$sbom_scratch_dir/$(basename "$deb").cdx.json"
+		#
+		# Read the version back out of the .deb itself, rather than
+		# relying on $PACKAGE_VERSION: by this point in the build,
+		# $PACKAGE_VERSION may no longer hold the final,
+		# revision-suffixed version set_changelog() wrote into the
+		# package (e.g. it's empty for packages that don't set it
+		# explicitly themselves, unlike syft/cyclonedx-cli's own
+		# config.sh). dpkg-deb reads the actual, authoritative
+		# version of the artifact being scanned.
+		#
+		deb_version="$(dpkg-deb -f "$deb" Version)"
 		logmust syft scan "$deb" \
 			--source-name "$PACKAGE" \
-			--source-version "$PACKAGE_VERSION" \
+			--source-version "$deb_version" \
 			-o "cyclonedx-json@1.6=$part"
 		sbom_parts+=("$part")
 	done
