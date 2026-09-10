@@ -1538,9 +1538,18 @@ function generate_sbom() {
 	if [[ ${#sbom_parts[@]} -eq 1 ]]; then
 		logmust cp "${sbom_parts[0]}" "$sbom_file"
 	else
+		#
+		# --output-version must be pinned explicitly: cyclonedx-cli
+		# merge defaults to the newest spec version it supports (1.7),
+		# not the 1.6 that Syft emitted and that the validate call
+		# below (and every other producer in this pipeline) targets --
+		# left unset, the merged doc fails validation with "Incorrect
+		# schema version: expected 1.6 actual 1.7".
+		#
 		logmust cyclonedx-cli merge \
 			--input-files "${sbom_parts[@]}" \
 			--output-format json \
+			--output-version v1_6 \
 			--output-file "$sbom_file"
 	fi
 	logmust rm -rf "$sbom_scratch_dir"
