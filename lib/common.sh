@@ -1521,7 +1521,14 @@ function generate_sbom() {
 		# version of the artifact being scanned.
 		#
 		deb_version="$(dpkg-deb -f "$deb" Version)"
-		logmust syft scan "$deb" \
+		#
+		# SYFT_FILE_METADATA_SELECTION=none suppresses Syft's default
+		# per-file "file" component (with SHA-1/SHA-256 hashes and the
+		# absolute build-workspace path baked in) -- noise that doesn't
+		# belong in a per-package pkg:deb sidecar. Same reasoning as
+		# appliance-build's 95-generate-sbom.binary hook.
+		#
+		SYFT_FILE_METADATA_SELECTION=none logmust syft scan "$deb" \
 			--source-name "$PACKAGE" \
 			--source-version "$deb_version" \
 			-o "cyclonedx-json@1.6=$part"
