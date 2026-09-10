@@ -115,41 +115,29 @@ function generate_sbom() {
 			"'$WORKDIR/artifacts'"
 	fi
 
-	local sbom_file="$WORKDIR/artifacts/$PACKAGE.cdx.json"
-	local sbom_scratch_dir
-	sbom_scratch_dir="$(logmust mktemp -d)"
+	check_env DEPDIR
+	logmust install_pkgs "$DEPDIR"/syft/*.deb "$DEPDIR"/cyclonedx-cli/*.deb
 
-	# A package can emit more than one .deb from a single build (e.g.
-	# "zfs" splits into zfs-dkms, zfsutils-linux, etc.) -- scan each one
-	# into its own document, then merge into a single sidecar so there's
-	# exactly one <package>.cdx.json per package, matching how
-	# appliance-build associates a sidecar to a package via COMPONENTS.
-	local deb sbom_parts=()
+	# One sidecar per .deb, not per package: a package that emits more
+	# than one .deb (e.g. "zfs" splits into zfs-dkms, zfsutils-linux,
+	# etc.) gets one <deb-filename>.deb.cdx.json per .deb -- a strict
+	# 1:1 mapping, no merging across a package's .deb(s).
+	local deb
 	for deb in "${debs[@]}"; do
-		local part
-		part="$sbom_scratch_dir/$(basename "$deb").cdx.json"
-		logmust syft scan "$deb" \
+		local sbom_file deb_version
+		sbom_file="$WORKDIR/artifacts/$(basename "$deb").cdx.json"
+		deb_version="$(dpkg-deb -f "$deb" Version)"
+		SYFT_FILE_METADATA_SELECTION=none logmust syft scan "$deb" \
 			--source-name "$PACKAGE" \
-			--source-version "$PACKAGE_VERSION" \
-			-o "cyclonedx-json@1.6=$part"
-		sbom_parts+=("$part")
+			--source-version "$deb_version" \
+			-o "cyclonedx-json@1.6=$sbom_file"
+
+		logmust cyclonedx-cli validate \
+			--input-file "$sbom_file" \
+			--input-format json \
+			--input-version v1_6 \
+			--fail-on-errors
 	done
-
-	if [[ ${#sbom_parts[@]} -eq 1 ]]; then
-		logmust cp "${sbom_parts[0]}" "$sbom_file"
-	else
-		logmust cyclonedx-cli merge \
-			--input-files "${sbom_parts[@]}" \
-			--output-format json \
-			--output-file "$sbom_file"
-	fi
-	logmust rm -rf "$sbom_scratch_dir"
-
-	logmust cyclonedx-cli validate \
-		--input-file "$sbom_file" \
-		--input-format json \
-		--input-version v1_6 \
-		--fail-on-errors
 }
 ```
 
@@ -170,15 +158,26 @@ flag, means no package needs its own override for the baseline case (only per-ec
 overrides, out of scope for Phase 2, would override the function in a package's `config.sh`,
 the same way packages already override `build()`).
 
-**Resolved — multiple `.deb`s per package:** handled above via per-deb scan + `cyclonedx-cli
-merge` into one sidecar. Verify against a real `zfs` build before merging (see *Follow-ups*).
+**Resolved — multiple `.deb`s per package:** a reviewer flagged that the original
+merge-into-one-sidecar approach (below, kept here for history) doesn't give a clean 1:1
+mapping between a `.deb` and its BOM. Changed to: one `<deb-filename>.deb.cdx.json` per
+`.deb`, no merge, no `cyclonedx-cli merge` step at all — each `.deb`'s sidecar is fully
+independent and filename-matched to it. This is a real divergence from the top-level
+design doc (CP-13456), which called for "one package-level SBOM... associated with all
+of that package's debs via `COMPONENTS`" — that assumption didn't survive review. Phase 3
+(`appliance-build`'s consumer, not yet built) will need to associate each `.deb` with its
+own sidecar directly by filename, not go through a package-level indirection.
 
-**Open — Syft's `.deb`-scan support:** not yet verified against the real `syft`/
-`cyclonedx-cli` binaries in this environment (neither is installed here). Confirm the pinned
-`delphix-syft` version (`SYFT_VERSION` in the `syft` packaging repo) supports scanning a
-standalone `.deb` file as a source (Phase 1 only exercises Syft against a directory/rootfs,
-not a single `.deb`). If unsupported, fall back to extracting the `.deb`'s `data.tar.*` into
-a temp dir first and scanning that directory instead.
+*(For reference, the approach this replaced: scan each `.deb` into its own document, then
+`cyclonedx-cli merge --output-version v1_6` them into a single `<package>.cdx.json`. Two
+real bugs were found and fixed while that was still in place, both still relevant to the
+current code since they're not specific to the merge step: `syft`/`cyclonedx-cli` need to
+be installed from `$DEPDIR` before use — see §4's `install_pkgs` line — and Syft's default
+file-metadata component needs suppressing via `SYFT_FILE_METADATA_SELECTION=none`.)*
+
+**Resolved — Syft's `.deb`-scan support:** confirmed working against the real `syft`/
+`cyclonedx-cli` binaries via an actual pre-push build (`delphix-sso-app`, `delphix-rust`) —
+`syft scan <deb-path>` scans a standalone `.deb` file directly, no extraction needed.
 
 ### 5. Package classification
 
@@ -225,10 +224,11 @@ per-package artifact directories at all.
 |   stage build              --> $WORKDIR/artifacts/*.deb                   |
 |   stage store_build_info   --> GIT_HASH, BUILD_INFO, ...                  |
 |   stage generate_sbom      --> [only if SBOM_DEEP_SCAN="true"]            |
-|                                   syft scan <deb> -o cyclonedx-json@1.6    |
-|                                   (merge via cyclonedx-cli if >1 .deb)     |
-|                                   --> $WORKDIR/artifacts/<pkg>.cdx.json    |
-|                                   cyclonedx-cli validate --fail-on-errors  |
+|                                   for each .deb:                          |
+|                                     syft scan <deb> -o cyclonedx-json@1.6  |
+|                                     --> <deb-filename>.deb.cdx.json        |
+|                                     cyclonedx-cli validate --fail-on-errors|
+|                                   (strict 1:1 .deb <-> BOM, no merging)    |
 |   stage post_build_checks                                                 |
 +------------------------------------+--------------------------------------+
                                      |
@@ -238,14 +238,14 @@ per-package artifact directories at all.
                                      v
 +---------------------------------------------------------------------------+
 | S3: combined-packages/packages/<pkg>/                                     |
-|       *.deb                                                               |
-|       <pkg>.cdx.json      <-- NEW: sidecar, sits beside the deb(s)        |
+|       <deb-filename>.deb                                                  |
+|       <deb-filename>.deb.cdx.json   <-- NEW: one per .deb, same prefix    |
 |       GIT_HASH, BUILD_INFO, ...  (unchanged)                              |
 +---------------------------------------------------------------------------+
                                      |
                                      |  (Phase 3, not in scope here:
-                                     |   appliance-build fetches + merges
-                                     |   this sidecar into the Phase 1 base)
+                                     |   appliance-build fetches each .deb's
+                                     |   own sidecar by filename match)
                                      v
                               [out of scope for Phase 2]
 ```
@@ -265,15 +265,41 @@ per-package artifact directories at all.
 - [x] `SBOM_DEEP_SCAN` classification added to all 40 packages' `config.sh` (§5).
 - [x] `sbom-deep-scan` field added to `query-packages.sh` (§2).
 - [x] `generate_sbom()` added to `lib/common.sh` and wired as `stage generate_sbom` in
-      `buildpkg.sh` (§4), including the multi-`.deb` merge case.
+      `buildpkg.sh` (§4), producing a strict 1:1 `.deb` → `.cdx.json` mapping (§4).
 - [x] CI lint added (§3), landed in the same change as the classification pass.
 - [x] Verified locally: `verify-sbom-scan-flag.sh` and the existing
       `verify-query-packages.sh` both pass; `shellcheck`/`shfmt` clean on every touched file.
+- [x] Verified against a real build host: `delphix-sso-app` (single-`.deb`) and
+      `delphix-rust` (multi-`.deb`) pre-push builds both produce valid, schema-checked
+      CycloneDX 1.6 sidecars in S3, correctly named per `.deb`.
+- [x] Confirmed compliant with reviewer feedback: `syft`, `cyclonedx-cli`, and all
+      `linux-kernel-*` packages are `SBOM_DEEP_SCAN="false"` (no SBOM generated for
+      build-host tooling or 3rd-party kernel forks), and the `.deb` ↔ `.cdx.json` mapping
+      is now strictly 1:1 with a shared filename prefix.
 
-## Follow-ups before merging
+## Bugs found and fixed during real-build testing
 
-1. Validate against a real `syft`/`cyclonedx-cli` build host: confirm `syft scan <deb-path>`
-   works as expected (the open question in §4), and run an actual `zfs` build (multi-`.deb`
-   package) and `masking` build (single-`.deb`, Java+npm) end-to-end — confirm
-   `$WORKDIR/artifacts/<pkg>.cdx.json` is produced, schema-valid, and lands in S3.
+Not caught by CI — only surfaced by actually running builds:
+
+1. **`syft`/`cyclonedx-cli` command not found.** Nothing installed them into the
+   `linux-pkg` build container (Phase 1 only solved this for the `appliance-build` host).
+   Fixed by declaring them as `PACKAGE_DEPENDENCIES` on all 8 flagged packages and
+   installing from `$DEPDIR` in `generate_sbom()`.
+2. **Blank `--source-version`.** `$PACKAGE_VERSION` doesn't reliably survive to the
+   `generate_sbom` stage for packages that don't set it themselves (unlike
+   `syft`/`cyclonedx-cli`'s own `config.sh`). Fixed by reading the version back out of the
+   built `.deb` via `dpkg-deb -f "$deb" Version`.
+3. **Stray Syft "file" component**, carrying file hashes and an absolute build-workspace
+   path, polluting the sidecar. Fixed with `SYFT_FILE_METADATA_SELECTION=none`, matching
+   `appliance-build`'s `95-generate-sbom.binary` hook.
+4. **`cyclonedx-cli merge` defaulted to spec version 1.7**, failing the subsequent
+   `--input-version v1_6` validate call. Moot now that merging was removed entirely per
+   the 1:1-mapping change above, but the same lesson applies to any future
+   `cyclonedx-cli` invocation: pin `--output-version` explicitly, don't rely on its
+   default.
+
+## Follow-ups
+
+1. Phase 3 (`appliance-build`'s consumer) needs to key off the 1:1 `.deb` ↔ `.cdx.json`
+   filename mapping established here, not a package-level `COMPONENTS` indirection.
 2. File as sub-tasks of DLPX-98872.

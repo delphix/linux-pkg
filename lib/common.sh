@@ -1462,15 +1462,16 @@ function store_build_info() {
 }
 
 #
-# Generate a per-package CycloneDX SBOM sidecar by running Syft against
-# this package's built .deb(s). Only packages that bundle third-party
-# composition (jars, npm, wheels, Rust crates, ...) opt in via
-# SBOM_DEEP_SCAN="true" in their config.sh -- everything else is left as
-# a flat pkg:deb component by appliance-build's base chroot scan, so a
-# deb scan here would add nothing. The resulting <package>.cdx.json is
-# dropped in $WORKDIR/artifacts/ alongside the .deb(s), where it's picked
-# up by the same S3 sync as every other build artifact -- no separate
-# upload path needed.
+# Generate a CycloneDX SBOM sidecar for each of this package's built
+# .deb(s) by running Syft against it. Only packages that bundle
+# third-party composition (jars, npm, wheels, Rust crates, ...) opt in
+# via SBOM_DEEP_SCAN="true" in their config.sh -- everything else is
+# left as a flat pkg:deb component by appliance-build's base chroot
+# scan, so a deb scan here would add nothing. Each <deb-filename>.cdx.json
+# is dropped in $WORKDIR/artifacts/ alongside the .deb it describes --
+# a strict 1:1 mapping, no merging across a package's .deb(s) -- where
+# it's picked up by the same S3 sync as every other build artifact, no
+# separate upload path needed.
 #
 function generate_sbom() {
 	if [[ "$SBOM_DEEP_SCAN" != "true" ]]; then
@@ -1495,21 +1496,18 @@ function generate_sbom() {
 	check_env DEPDIR
 	logmust install_pkgs "$DEPDIR"/syft/*.deb "$DEPDIR"/cyclonedx-cli/*.deb
 
-	local sbom_file="$WORKDIR/artifacts/$PACKAGE.cdx.json"
-	local sbom_scratch_dir
-	sbom_scratch_dir="$(logmust mktemp -d)"
-
 	#
-	# A package can emit more than one .deb from a single build (e.g.
-	# "zfs" splits into zfs-dkms, zfsutils-linux, etc.) -- scan each one
-	# into its own document, then merge them into a single sidecar so
-	# there's exactly one <package>.cdx.json per package, matching how
-	# appliance-build associates a sidecar to a package via COMPONENTS.
+	# One sidecar per .deb, not per package: a package that emits more
+	# than one .deb (e.g. "zfs" splits into zfs-dkms, zfsutils-linux,
+	# etc.) gets one <deb-filename>.deb.cdx.json per .deb, each a
+	# standalone document scoped to that .deb alone. No merging across
+	# .debs -- keeps a strict 1:1 mapping between a .deb and its BOM,
+	# with the .deb's own filename as the common prefix.
 	#
-	local deb sbom_parts=()
+	local deb
 	for deb in "${debs[@]}"; do
-		local part deb_version
-		part="$sbom_scratch_dir/$(basename "$deb").cdx.json"
+		local sbom_file deb_version
+		sbom_file="$WORKDIR/artifacts/$(basename "$deb").cdx.json"
 		#
 		# Read the version back out of the .deb itself, rather than
 		# relying on $PACKAGE_VERSION: by this point in the build,
@@ -1525,40 +1523,20 @@ function generate_sbom() {
 		# SYFT_FILE_METADATA_SELECTION=none suppresses Syft's default
 		# per-file "file" component (with SHA-1/SHA-256 hashes and the
 		# absolute build-workspace path baked in) -- noise that doesn't
-		# belong in a per-package pkg:deb sidecar. Same reasoning as
+		# belong in a per-deb sidecar. Same reasoning as
 		# appliance-build's 95-generate-sbom.binary hook.
 		#
 		SYFT_FILE_METADATA_SELECTION=none logmust syft scan "$deb" \
 			--source-name "$PACKAGE" \
 			--source-version "$deb_version" \
-			-o "cyclonedx-json@1.6=$part"
-		sbom_parts+=("$part")
+			-o "cyclonedx-json@1.6=$sbom_file"
+
+		logmust cyclonedx-cli validate \
+			--input-file "$sbom_file" \
+			--input-format json \
+			--input-version v1_6 \
+			--fail-on-errors
 	done
-
-	if [[ ${#sbom_parts[@]} -eq 1 ]]; then
-		logmust cp "${sbom_parts[0]}" "$sbom_file"
-	else
-		#
-		# --output-version must be pinned explicitly: cyclonedx-cli
-		# merge defaults to the newest spec version it supports (1.7),
-		# not the 1.6 that Syft emitted and that the validate call
-		# below (and every other producer in this pipeline) targets --
-		# left unset, the merged doc fails validation with "Incorrect
-		# schema version: expected 1.6 actual 1.7".
-		#
-		logmust cyclonedx-cli merge \
-			--input-files "${sbom_parts[@]}" \
-			--output-format json \
-			--output-version v1_6 \
-			--output-file "$sbom_file"
-	fi
-	logmust rm -rf "$sbom_scratch_dir"
-
-	logmust cyclonedx-cli validate \
-		--input-file "$sbom_file" \
-		--input-format json \
-		--input-version v1_6 \
-		--fail-on-errors
 }
 
 function set_secret_build_args() {
