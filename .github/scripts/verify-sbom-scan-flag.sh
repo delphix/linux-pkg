@@ -18,6 +18,16 @@ if [[ -n "$unclassified" ]]; then
 	echo "The following packages have not set SBOM_DEEP_SCAN (\"true\" or" \
 		"\"false\") in their config.sh:"
 	echo "$unclassified"
+	echo
+	echo "Set it to \"true\" for 1st-party packages, so that the" \
+		"third-party components they package internally (jars, npm" \
+		"modules, Rust crates, ...) are included in the product's" \
+		"aggregate SBOM."
+	echo "Set it to \"false\" for 3rd-party forks of Debian packages, and" \
+		"for packages that are not included in a shipping product:" \
+		"those are already covered as a flat pkg:deb component by" \
+		"appliance-build's image-level scan, so a deep scan here would" \
+		"add nothing."
 	exit 1
 fi
 
