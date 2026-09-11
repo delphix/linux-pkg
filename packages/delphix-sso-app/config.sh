@@ -19,6 +19,7 @@
 DEFAULT_PACKAGE_GIT_URL="https://github.com/delphix/saml-app.git"
 MEND_SCAN_APPLICABLE="true"
 MEND_SCAN_USING_SUDO="true"
+SBOM_DEEP_SCAN="true"
 
 function prepare() {
 	logmust install_pkgs openjdk-17-jdk-headless:

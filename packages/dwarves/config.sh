@@ -17,6 +17,7 @@
 # shellcheck disable=SC2034
 
 DEFAULT_PACKAGE_GIT_URL="https://github.com/delphix/dwarves.git"
+SBOM_DEEP_SCAN="false"
 
 UPSTREAM_GIT_URL="https://github.com/acmel/dwarves.git"
 UPSTREAM_GIT_BRANCH="master"
