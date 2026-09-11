@@ -19,7 +19,7 @@
 source "$PWD/lib/common.sh"
 
 DEFAULT_PACKAGE_GIT_URL="https://github.com/delphix/dlpx-app-gate.git"
-PACKAGE_DEPENDENCIES="crypt-blowfish host-jdks syft cyclonedx-cli"
+PACKAGE_DEPENDENCIES="crypt-blowfish host-jdks"
 #
 # The build packages a docker image (see '-Ddockerize=true' below), which needs
 # a docker daemon. The build container gets the host's daemon through its

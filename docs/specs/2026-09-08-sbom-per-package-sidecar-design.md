@@ -115,8 +115,14 @@ function generate_sbom() {
 			"'$WORKDIR/artifacts'"
 	fi
 
-	check_env DEPDIR
-	logmust install_pkgs "$DEPDIR"/syft/*.deb "$DEPDIR"/cyclonedx-cli/*.deb
+	# syft/cyclonedx-cli come from setup.sh's install_sbom_tools(), not
+	# from anything this package declares (see below). That install is
+	# best-effort, so check here rather than letting "command not
+	# found" surface mid-scan.
+	local tool
+	for tool in syft cyclonedx-cli; do
+		command -v "$tool" >/dev/null || die "'$tool' is not installed..."
+	done
 
 	# One sidecar per .deb, not per package: a package that emits more
 	# than one .deb (e.g. "zfs" splits into zfs-dkms, zfsutils-linux,
@@ -171,8 +177,8 @@ own sidecar directly by filename, not go through a package-level indirection.
 *(For reference, the approach this replaced: scan each `.deb` into its own document, then
 `cyclonedx-cli merge --output-version v1_6` them into a single `<package>.cdx.json`. Two
 real bugs were found and fixed while that was still in place, both still relevant to the
-current code since they're not specific to the merge step: `syft`/`cyclonedx-cli` need to
-be installed from `$DEPDIR` before use — see §4's `install_pkgs` line — and Syft's default
+current code since they're not specific to the merge step: `syft`/`cyclonedx-cli` have to
+actually be installed in the build container before use — see §6 — and Syft's default
 file-metadata component needs suppressing via `SYFT_FILE_METADATA_SELECTION=none`.)*
 
 **Resolved — Syft's `.deb`-scan support:** confirmed working against the real `syft`/
@@ -202,6 +208,44 @@ the top-level design's Tooling section separately calls out a possible Go overri
 (`cyclonedx-gomod`); defaulted to `"false"` here (baseline Syft-on-deb has a Go
 binary-build-info cataloger that may already cover it) — revisit under Phase 4's evaluation
 if gaps are found.
+
+### 6. Provisioning syft/cyclonedx-cli — generic build tooling, not a package dependency
+
+`generate_sbom()` is a **default hook**: defined once in `lib/common.sh` and inherited
+unmodified by all 8 flagged packages (none of them override it, unlike e.g. `zfs`'s own
+`build()`). The tooling it runs is therefore the hook's concern, not its callers' — so no
+package's `config.sh` declares `syft`/`cyclonedx-cli` anywhere. They are installed with the
+rest of the generic build tooling in `setup.sh`, which runs before every package build:
+
+```bash
+logmust install_awscli
+logmust install_sbom_tools   # must follow install_awscli -- fetches from S3
+logmust install_shfmt
+```
+
+`install_sbom_tools()` (`lib/common.sh`) is modelled on the existing `install_awscli()`/
+`install_shfmt()` non-apt installers, with one difference: `delphix-syft`/
+`delphix-cyclonedx-cli` are Delphix-built `.deb`s with no apt source (the container's apt
+sources are only the Ubuntu primary mirror plus the PPA secondary mirror), so they're
+fetched from the same S3 location `fetch_dependencies()` uses —
+`get_package_dependency_s3_url()` → `aws s3 cp --recursive` → `apt-get install <path>`
+(apt, not dpkg, because `delphix-cyclonedx-cli` has real `libicu` dependencies).
+
+**Best-effort by design.** `setup.sh` is package-agnostic — it has no idea which package is
+about to be built — so it cannot skip itself when the package being built *is* `syft` or
+`cyclonedx-cli`. Hard-failing on a missing artifact would therefore break *every* build on
+a branch where those two haven't been published yet, including their own. Instead a missing
+artifact warns and continues, and `generate_sbom()` checks for the tools itself and fails
+loudly — so only the builds that actually need them are affected.
+
+**Rejected alternative:** deriving `PACKAGE_DEPENDENCIES += "syft cyclonedx-cli"` from
+`SBOM_DEEP_SCAN` in `load_package_config()`. That also keeps it out of each `config.sh`,
+is scoped to just the 8 packages, and keeps the relationship visible to Jenkins's static
+dependency graph (so `syft` batches before its dependents and a `syft` rebuild cascades to
+them). It was implemented and working, but sits in the per-package dependency layer rather
+than the generic installed-prior layer, which is not what review asked for. Noting the
+trade-off explicitly: with the `setup.sh` approach, Jenkins no longer knows these packages
+relate to `syft`/`cyclonedx-cli`, so that batching/rebuild-cascade behaviour is lost.
 
 ### S3 upload — no new plumbing needed
 
@@ -283,8 +327,9 @@ Not caught by CI — only surfaced by actually running builds:
 
 1. **`syft`/`cyclonedx-cli` command not found.** Nothing installed them into the
    `linux-pkg` build container (Phase 1 only solved this for the `appliance-build` host).
-   Fixed by declaring them as `PACKAGE_DEPENDENCIES` on all 8 flagged packages and
-   installing from `$DEPDIR` in `generate_sbom()`.
+   Fixed by installing them from `setup.sh` with the rest of the generic build tooling
+   (§6). An interim fix declared them as `PACKAGE_DEPENDENCIES` on each flagged package
+   instead; that was replaced per review feedback.
 2. **Blank `--source-version`.** `$PACKAGE_VERSION` doesn't reliably survive to the
    `generate_sbom` stage for packages that don't set it themselves (unlike
    `syft`/`cyclonedx-cli`'s own `config.sh`). Fixed by reading the version back out of the

@@ -620,6 +620,66 @@ function install_shfmt() {
 }
 
 #
+# Install the tooling generate_sbom() needs. That is a default hook, shared
+# unmodified by every package that sets SBOM_DEEP_SCAN, so the tools it runs
+# belong with the rest of the generic build tooling installed here rather than
+# being declared as a dependency by each of those packages individually.
+#
+# Unlike everything else installed from setup.sh these are Delphix-built
+# packages with no apt source, so they are fetched from the same S3 location
+# fetch_dependencies() pulls a package's dependencies from, then installed by
+# path. apt rather than dpkg, because delphix-cyclonedx-cli has real
+# dependencies (libicu and the usual shared libraries) that dpkg will not
+# resolve.
+#
+# Best-effort by design: this runs before *every* package build, including the
+# builds of syft and cyclonedx-cli themselves, and on a branch where neither
+# has been published yet there is nothing to fetch. Failing hard would break
+# every build on such a branch rather than just SBOM generation, so a missing
+# artifact warns and moves on; generate_sbom() checks for the tools itself and
+# fails loudly, for the only builds that actually need them.
+#
+function install_sbom_tools() {
+	local pkg s3url tmpdir
+	local debs=()
+
+	tmpdir="$(mktemp -d)" || die "Failed to create a temporary directory"
+
+	for pkg in syft cyclonedx-cli; do
+		#
+		# Run in a command substitution so that a failure to resolve
+		# the URL (get_package_dependency_s3_url dies when a package
+		# has no published artifacts) leaves $s3url empty here instead
+		# of aborting setup.
+		#
+		s3url="$(
+			get_package_dependency_s3_url "$pkg" >/dev/null 2>&1
+			echo "$_RET"
+		)"
+		if [[ -z "$s3url" ]]; then
+			echo "WARNING: no published artifacts found for '$pkg';" \
+				"skipping the SBOM tooling install. Builds of" \
+				"packages that set SBOM_DEEP_SCAN will fail until" \
+				"'$pkg' has been built for this branch."
+			logmust rm -rf "$tmpdir"
+			return 0
+		fi
+
+		[[ "$s3url" != */ ]] && s3url="$s3url/"
+		logmust mkdir -p "$tmpdir/$pkg"
+		logmust aws s3 cp --only-show-errors --recursive \
+			"$s3url" "$tmpdir/$pkg/"
+	done
+
+	debs=("$tmpdir"/*/*.deb)
+	[[ -e "${debs[0]}" ]] ||
+		die "No .deb found in the fetched syft/cyclonedx-cli artifacts"
+
+	logmust install_pkgs "${debs[@]}"
+	logmust rm -rf "$tmpdir"
+}
+
+#
 # Install kernel headers packages for all target kernels.
 # The kernel packages are fetched from S3.
 #
@@ -1485,16 +1545,22 @@ function generate_sbom() {
 	fi
 
 	#
-	# syft/cyclonedx-cli are build-host-only tooling (never shipped in
-	# any product package), fetched the same way any other linux-pkg
-	# build dependency is: declared in PACKAGE_DEPENDENCIES, populated
-	# into $DEPDIR by the "fetch_dependencies" stage, installed here.
-	# This mirrors appliance-build's build-ancillary-repository.sh,
-	# which installs the same two packages onto the appliance-build host
-	# for the same reason.
+	# syft/cyclonedx-cli are part of the generic build tooling installed
+	# by setup.sh (install_sbom_tools()) before any package is built,
+	# rather than something each SBOM_DEEP_SCAN package declares for
+	# itself -- this is a default hook, so what it needs is its own
+	# concern, not its callers'. That install is best-effort, so check
+	# here rather than letting "command not found" surface from the
+	# middle of a scan.
 	#
-	check_env DEPDIR
-	logmust install_pkgs "$DEPDIR"/syft/*.deb "$DEPDIR"/cyclonedx-cli/*.deb
+	local tool
+	for tool in syft cyclonedx-cli; do
+		command -v "$tool" >/dev/null ||
+			die "'$tool' is not installed, so no SBOM can be" \
+				"generated for '$PACKAGE'. It is provisioned by" \
+				"install_sbom_tools() in setup.sh; check that" \
+				"run's output for why it was skipped."
+	done
 
 	#
 	# One sidecar per .deb, not per package: a package that emits more

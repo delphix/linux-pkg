@@ -263,6 +263,12 @@ function install_awscli() {
 
 logmust install_awscli
 
+#
+# Must follow install_awscli: the syft/cyclonedx-cli packages it installs are
+# fetched from S3, so the aws CLI has to be present first.
+#
+logmust install_sbom_tools
+
 logmust install_shfmt
 
 logmust git config --global user.email "eng@delphix.com"

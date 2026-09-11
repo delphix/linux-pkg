@@ -19,13 +19,6 @@
 DEFAULT_PACKAGE_GIT_URL="https://github.com/delphix/ptools.git"
 SBOM_DEEP_SCAN="true"
 
-#
-# syft/cyclonedx-cli are build-host-only tooling needed by generate_sbom()
-# (lib/common.sh) to scan this package's own .deb -- never shipped in the
-# built package itself.
-#
-PACKAGE_DEPENDENCIES="syft cyclonedx-cli"
-
 function prepare() {
 	logmust install_pkgs cargo devscripts
 }
