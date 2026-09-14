@@ -33,7 +33,8 @@ dependency to add** — it only needs to *invoke* `syft`, which is already avail
 The Phase 1 base scan lists every installed `.deb` as a flat `pkg:deb` component. That is
 correct and sufficient for 3rd-party Debian packages, but wrong for Delphix's own
 first-party packages: `masking`, `virtualization`, `delphix-sso-app`, `containerized-masking`,
-`windows-connector`, `zfs`, `ptools`, and `delphix-rust` all bundle third-party components
+`windows-connector`, `zfs`, `ptools`, `delphix-rust`, and `performance-diagnostics` all
+bundle third-party components
 across ecosystems (jars, npm, wheels, Rust crates) that `dpkg` cannot see — dpkg only knows
 the files *it* placed, not what's vendored inside a jar or statically linked into a Rust
 binary. Those components are invisible to a vulnerability scanner today.
@@ -235,8 +236,9 @@ strictly "is it 1st-party" — see the `zfs` case), `SBOM_DEEP_SCAN="true"` is s
 | `zfs` | OpenZFS fork bundling Delphix's Rust object agent (crates invisible to dpkg) |
 | `ptools` | Rust |
 | `delphix-rust` | Rust |
+| `performance-diagnostics` | 1st-party Delphix package built from its own source |
 
-The remaining 32 packages (kernel packages, `misc-debs`, `syft`/`cyclonedx-cli` themselves,
+The remaining 31 packages (kernel packages, `misc-debs`, `syft`/`cyclonedx-cli` themselves,
 etc.) get `SBOM_DEEP_SCAN="false"` — plain 3rd-party forks or single-ecosystem tools already
 fully represented by the Phase 1 flat `pkg:deb` component. `delphix-go` is a judgment call:
 the top-level design's Tooling section separately calls out a possible Go override
@@ -247,7 +249,7 @@ if gaps are found.
 ### 6. Provisioning syft/cyclonedx-cli — generic build tooling, not a package dependency
 
 `generate_sbom()` is a **default hook**: defined once in `lib/common.sh` and inherited
-unmodified by all 8 flagged packages (none of them override it, unlike e.g. `zfs`'s own
+unmodified by every flagged package (none of them override it, unlike e.g. `zfs`'s own
 `build()`). The tooling it runs is therefore the hook's concern, not its callers' — so no
 package's `config.sh` declares `syft`/`cyclonedx-cli` anywhere. They are installed with the
 rest of the generic build tooling in `setup.sh`, which runs before every package build:
@@ -275,7 +277,7 @@ loudly — so only the builds that actually need them are affected.
 
 **Rejected alternative:** deriving `PACKAGE_DEPENDENCIES += "syft cyclonedx-cli"` from
 `SBOM_DEEP_SCAN` in `load_package_config()`. That also keeps it out of each `config.sh`,
-is scoped to just the 8 packages, and keeps the relationship visible to Jenkins's static
+is scoped to just the flagged packages, and keeps the relationship visible to Jenkins's static
 dependency graph (so `syft` batches before its dependents and a `syft` rebuild cascades to
 them). It was implemented and working, but sits in the per-package dependency layer rather
 than the generic installed-prior layer, which is not what review asked for. Noting the

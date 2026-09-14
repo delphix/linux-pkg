@@ -18,7 +18,7 @@
 #
 
 DEFAULT_PACKAGE_GIT_URL="https://github.com/delphix/performance-diagnostics.git"
-SBOM_DEEP_SCAN="false"
+SBOM_DEEP_SCAN="true"
 
 function prepare() {
 	logmust install_build_deps_from_control_file
