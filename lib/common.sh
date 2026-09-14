@@ -1572,7 +1572,7 @@ function generate_sbom() {
 	#
 	local deb
 	for deb in "${debs[@]}"; do
-		local sbom_file deb_version
+		local sbom_file deb_version extract_dir
 		sbom_file="$WORKDIR/artifacts/$(basename "$deb").cdx.json"
 		#
 		# Read the version back out of the .deb itself, rather than
@@ -1585,17 +1585,42 @@ function generate_sbom() {
 		# version of the artifact being scanned.
 		#
 		deb_version="$(dpkg-deb -f "$deb" Version)"
+
+		#
+		# Scan the .deb's extracted payload rather than the .deb file.
+		# "syft scan <file>.deb" only identifies the archive: its
+		# deb-archive-cataloger reads the control metadata and emits a
+		# single pkg:deb component, never descending into data.tar.*,
+		# so none of the bundled jars/wheels/modules this sidecar
+		# exists to capture are found. That produced valid but empty
+		# documents -- one component for a 1.2GB application -- which
+		# is no more than appliance-build's image-level dpkg scan
+		# already gives for free. Extracting first is what the design
+		# spec prescribed for exactly this case.
+		#
+		extract_dir="$(logmust mktemp -d)"
+		logmust dpkg-deb -x "$deb" "$extract_dir"
+
+		#
+		# Full catalogers here, deliberately unlike appliance-build's
+		# 95-generate-sbom.binary hook, which restricts to dpkg. That
+		# restriction exists because a jar sitting somewhere on a whole
+		# rootfs cannot be attributed to the package that placed it;
+		# within a single package's own extracted payload everything
+		# found belongs to that package by construction, which is the
+		# entire point of scanning here rather than at image level.
 		#
 		# SYFT_FILE_METADATA_SELECTION=none suppresses Syft's default
 		# per-file "file" component (with SHA-1/SHA-256 hashes and the
-		# absolute build-workspace path baked in) -- noise that doesn't
-		# belong in a per-deb sidecar. Same reasoning as
-		# appliance-build's 95-generate-sbom.binary hook.
+		# scanned path baked in) -- with a whole extracted payload to
+		# walk that would otherwise emit an entry per file.
 		#
-		SYFT_FILE_METADATA_SELECTION=none logmust syft scan "$deb" \
+		SYFT_FILE_METADATA_SELECTION=none logmust syft scan "dir:$extract_dir" \
 			--source-name "$PACKAGE" \
 			--source-version "$deb_version" \
 			-o "cyclonedx-json@1.6=$sbom_file"
+
+		logmust rm -rf "$extract_dir"
 
 		logmust cyclonedx-cli validate \
 			--input-file "$sbom_file" \

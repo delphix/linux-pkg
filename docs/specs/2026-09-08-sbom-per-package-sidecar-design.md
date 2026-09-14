@@ -130,13 +130,20 @@ function generate_sbom() {
 	# 1:1 mapping, no merging across a package's .deb(s).
 	local deb
 	for deb in "${debs[@]}"; do
-		local sbom_file deb_version
+		local sbom_file deb_version extract_dir
 		sbom_file="$WORKDIR/artifacts/$(basename "$deb").cdx.json"
 		deb_version="$(dpkg-deb -f "$deb" Version)"
-		SYFT_FILE_METADATA_SELECTION=none logmust syft scan "$deb" \
+
+		# Scan the extracted payload, not the .deb -- see below.
+		extract_dir="$(logmust mktemp -d)"
+		logmust dpkg-deb -x "$deb" "$extract_dir"
+
+		SYFT_FILE_METADATA_SELECTION=none logmust syft scan "dir:$extract_dir" \
 			--source-name "$PACKAGE" \
 			--source-version "$deb_version" \
 			-o "cyclonedx-json@1.6=$sbom_file"
+
+		logmust rm -rf "$extract_dir"
 
 		logmust cyclonedx-cli validate \
 			--input-file "$sbom_file" \
@@ -181,9 +188,37 @@ current code since they're not specific to the merge step: `syft`/`cyclonedx-cli
 actually be installed in the build container before use — see §6 — and Syft's default
 file-metadata component needs suppressing via `SYFT_FILE_METADATA_SELECTION=none`.)*
 
-**Resolved — Syft's `.deb`-scan support:** confirmed working against the real `syft`/
-`cyclonedx-cli` binaries via an actual pre-push build (`delphix-sso-app`, `delphix-rust`) —
-`syft scan <deb-path>` scans a standalone `.deb` file directly, no extraction needed.
+**Resolved — Syft's `.deb`-scan support: the `.deb` must be extracted first.** This was
+initially, and wrongly, closed as "confirmed working" after a `delphix-sso-app` pre-push
+build produced a schema-valid document. It was valid but empty: `syft scan <deb-path>`
+only *identifies* the archive — its `deb-archive-cataloger` reads the control metadata and
+emits a single `pkg:deb` component, never descending into `data.tar.*`. A
+`delphix-virtualization` sidecar from a real build contained exactly **one** component for
+a 1.17 GB Java + Angular application, i.e. no more information than the image-level dpkg
+scan already provides for free, and nothing at all for a vulnerability scanner to match
+against the bundled jars.
+
+`generate_sbom()` therefore does what this spec originally prescribed as the fallback:
+`dpkg-deb -x` the `.deb` into a temp directory and scan that with `syft scan dir:...`,
+with Syft's **full** catalogers rather than `--select-catalogers dpkg`. The dpkg-only
+restriction in `appliance-build`'s image-level hook exists because a jar found somewhere
+on a whole rootfs cannot be attributed to the package that placed it; inside a single
+package's own extracted payload everything found belongs to that package by construction,
+which is the whole reason for scanning here instead of at image level.
+
+Note the shape change this brings: because the scanned source is now a directory rather
+than a `.deb`, the sidecar no longer carries a `pkg:deb` component for the package itself
+— the package's identity lives in `metadata.component` (via `--source-name`/
+`--source-version`), and the flat `pkg:deb` entry continues to come from Phase 1's
+image-level scan. Phase 3 associates a sidecar with its `.deb` by filename (§4), so
+nothing depends on that component being present here.
+
+**Still open — the bundled npm frontend.** Extraction fixes the jars, but
+`masking`/`virtualization` ship the *built*, minified Angular bundle with no
+`package.json`/`node_modules`, so Syft has nothing to catalog for the frontend regardless
+of extraction. That is the known blind spot the top-level design flagged for Phase 4's
+method evaluation (per-language tooling vs. Xray vs. Mend), not something extraction can
+address.
 
 ### 5. Package classification
 
@@ -269,7 +304,9 @@ per-package artifact directories at all.
 |   stage store_build_info   --> GIT_HASH, BUILD_INFO, ...                  |
 |   stage generate_sbom      --> [only if SBOM_DEEP_SCAN="true"]            |
 |                                   for each .deb:                          |
-|                                     syft scan <deb> -o cyclonedx-json@1.6  |
+|                                     dpkg-deb -x <deb> <tmpdir>             |
+|                                     syft scan dir:<tmpdir> (full           |
+|                                       catalogers) -o cyclonedx-json@1.6     |
 |                                     --> <deb-filename>.deb.cdx.json        |
 |                                     cyclonedx-cli validate --fail-on-errors|
 |                                   (strict 1:1 .deb <-> BOM, no merging)    |
@@ -323,8 +360,17 @@ per-package artifact directories at all.
 
 ## Bugs found and fixed during real-build testing
 
-Not caught by CI — only surfaced by actually running builds:
+Not caught by CI — only surfaced by actually running builds, and in one case only by
+inspecting the *contents* of a produced SBOM rather than its exit status:
 
+0. **Valid but empty SBOMs — the most serious of these.** `syft scan <deb>` identifies the
+   archive without descending into it, so every sidecar contained a single `pkg:deb`
+   component and nothing else: no jars, no wheels, no modules. A `delphix-virtualization`
+   sidecar had one component for a 1.17 GB application. Every flagged package was affected.
+   Caught when the output was actually read, not when the build passed — the build had been
+   passing the whole time, and `cyclonedx-cli validate` passes an empty-but-well-formed
+   document quite happily. Fixed by extracting with `dpkg-deb -x` and scanning the
+   extracted tree with full catalogers (§4).
 1. **`syft`/`cyclonedx-cli` command not found.** Nothing installed them into the
    `linux-pkg` build container (Phase 1 only solved this for the `appliance-build` host).
    Fixed by installing them from `setup.sh` with the rest of the generic build tooling
