@@ -36,6 +36,20 @@ export JENKINS_OPS_DIR="${JENKINS_OPS_DIR:-jenkins-ops}"
 #
 export UBUNTU_DISTRIBUTION="${UBUNTU_DISTRIBUTION:-noble}"
 
+#
+# Whether generate_sbom() post-processes each CycloneDX sidecar before it is
+# validated and published (see sanitize_sbom() and resources/sanitize-sbom.jq).
+#
+# Set to "false" to publish the raw Syft output instead, which keeps
+# syft:metadata:virtualPath and so records where inside the package each
+# component was found. That is of no use to a customer, but is how we determine
+# where an unexpected component came from.
+#
+# Only the exact string "false" disables it, so that a typo leaves us with a
+# publishable document rather than one recording our internal paths.
+#
+export CYCLONEDX_FILTERING="${CYCLONEDX_FILTERING:-true}"
+
 source "$(dirname "${BASH_SOURCE[0]}")/container.sh"
 
 #
@@ -1533,6 +1547,35 @@ function store_build_info() {
 # it's picked up by the same S3 sync as every other build artifact, no
 # separate upload path needed.
 #
+#
+# Rewrite a Syft-generated CycloneDX document in place, dropping what should
+# not be published and collapsing Syft's per-location duplicates. See
+# resources/sanitize-sbom.jq for what is removed and why.
+#
+# Skipped entirely when CYCLONEDX_FILTERING is "false", which leaves the raw
+# Syft output -- including syft:metadata:virtualPath, the only field that
+# records where inside the package a component was found. That is of no use to
+# a customer but is how we work out where an unexpected component came from,
+# so it stays available on demand.
+#
+function sanitize_sbom() {
+	local sbom_file="$1"
+	local tmp
+
+	check_env TOP
+	[[ -f "$sbom_file" ]] || die "sanitize_sbom: '$sbom_file' does not exist."
+
+	tmp="$(logmust mktemp)"
+
+	#
+	# jq cannot edit a file in place, so write to a temporary file and
+	# move it over only once jq has succeeded. Redirecting straight back
+	# into the input would truncate it before jq had read it.
+	#
+	logmust jq -f "$TOP/resources/sanitize-sbom.jq" "$sbom_file" >"$tmp"
+	logmust mv "$tmp" "$sbom_file"
+}
+
 function generate_sbom() {
 	if [[ "$SBOM_DEEP_SCAN" != "true" ]]; then
 		return 0
@@ -1561,6 +1604,19 @@ function generate_sbom() {
 				"install_sbom_tools() in setup.sh; check that" \
 				"run's output for why it was skipped."
 	done
+
+	#
+	# jq comes from setup.sh's baseline package install rather than
+	# install_sbom_tools(), but sanitize_sbom() is useless without it, so
+	# fail here rather than part-way through a package's .debs.
+	#
+	if [[ "$CYCLONEDX_FILTERING" != "false" ]]; then
+		command -v jq >/dev/null ||
+			die "'jq' is not installed, so the SBOM for '$PACKAGE'" \
+				"cannot be sanitized. Either install it (setup.sh" \
+				"does so by default) or set CYCLONEDX_FILTERING" \
+				"to 'false' to publish the raw Syft output."
+	fi
 
 	#
 	# One sidecar per .deb, not per package: a package that emits more
@@ -1621,6 +1677,22 @@ function generate_sbom() {
 			-o "cyclonedx-json@1.6=$sbom_file"
 
 		logmust rm -rf "$extract_dir"
+
+		#
+		# Sanitize before validating, so that what is validated is
+		# exactly what is published.
+		#
+		# Only the exact string "false" disables this. Anything else,
+		# including unset, sanitizes: a typo should leave us with a
+		# publishable document rather than silently shipping one that
+		# records our internal paths.
+		#
+		if [[ "$CYCLONEDX_FILTERING" != "false" ]]; then
+			logmust sanitize_sbom "$sbom_file"
+		else
+			echo_bold "CYCLONEDX_FILTERING is 'false': publishing" \
+				"the raw Syft output for $(basename "$deb")."
+		fi
 
 		logmust cyclonedx-cli validate \
 			--input-file "$sbom_file" \

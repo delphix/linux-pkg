@@ -284,6 +284,67 @@ than the generic installed-prior layer, which is not what review asked for. Noti
 trade-off explicitly: with the `setup.sh` approach, Jenkins no longer knows these packages
 relate to `syft`/`cyclonedx-cli`, so that batching/rebuild-cascade behaviour is lost.
 
+### 7. Sanitizing the sidecar before publication
+
+Raw Syft output is not publishable as-is. Measured on a real `delphix-virtualization`
+sidecar (4.7 MB, 1,693 components):
+
+| | raw | sanitized |
+|---|---|---|
+| components | 1,693 | 416 |
+| property entries | 43,566 | 6,296 |
+| `dependencies` entries | 26 | 0 |
+| occurrences of `/opt/delphix` | 3,384 | 0 |
+| size | 4.7 MB | 0.8 MB |
+
+`sanitize_sbom()` in `lib/common.sh` applies `resources/sanitize-sbom.jq` to each sidecar,
+**between the Syft scan and the `cyclonedx-cli validate` call**, so that what is validated
+is exactly what is published. It does three things:
+
+1. **Drops the `dependencies` graph.** For a directory scan Syft emits jar containment
+   ("this WAR bundles these jars"), not resolved dependency edges — it covered 501 of 1,693
+   components, with no `compositions` element declaring it incomplete, so a consumer would
+   reasonably misread a missing entry as "this component has no dependencies". 90 of its 568
+   edges were already dangling, pointing at the per-file components that
+   `SYFT_FILE_METADATA_SELECTION=none` suppresses (§4), and de-duplication below would
+   orphan many more.
+
+2. **Drops every property except `syft:cpe23`.** This removes the internal path leak —
+   `syft:location:*:path` and `syft:metadata:virtualPath` together exposed 470 directories
+   under `/opt/delphix`, including jar-internal structure such as
+   `resources.war:WEB-INF/lib/ST4-4.3.4.jar` — and metadata that merely restates the purl.
+   `syft:cpe23` is retained because the schema permits one top-level `cpe` while Syft derives
+   several candidates per component, and those are the fallback matching path when the
+   primary CPE guess is wrong.
+
+3. **Merge-dedupes components**, keyed on `purl` and falling back to `name+version+type`. A
+   purl-only key would drop the Windows binaries found by Syft's PE cataloger, which carry a
+   `cpe` but no `purl`; a name+version key would wrongly merge distinct components sharing a
+   name at version `UNKNOWN`. Duplicates are *merged* rather than reduced to the first
+   occurrence, because Syft does not detect the same metadata at every location — licences
+   differed across copies in 84 groups, `externalReferences` in 92, `cpe` in 59, and
+   keeping only the first would have silently lost licence data for 25 components and SHA-1
+   hashes for 31. A duplicate's differing primary CPE is demoted into `syft:cpe23`, so no
+   matching coordinate is lost to the merge.
+
+The duplication is not a Syft defect: all eight `spring-core` entries had the identical
+SHA-1, being one jar vendored into eight service directories.
+
+**`CYCLONEDX_FILTERING` — opting out for diagnostics.** The flag defaults to `true`, and
+setting it to `false` skips this pass entirely, publishing the raw Syft output. That keeps
+`syft:metadata:virtualPath`, the only field recording *where inside the package* a component
+was found — of no use to a customer, but how we determine where an unexpected component came
+from. Only the exact string `false` disables it: a typo should leave us with a publishable
+document rather than one recording our internal paths. `cyclonedx-cli validate` runs in both
+modes, and the sidecar filename is unchanged either way.
+
+Verified with Grype 0.119.0 that sanitizing does not weaken vulnerability matching: the raw
+and sanitized documents produce identical findings (40 matches, 21 unique CVEs, same
+severities), because Grype matches on `purl` and `cpe`, both standard top-level fields. What
+is lost is location *reporting* — every match in the sanitized document carries zero
+locations — not detection. Note this comparison did not exercise the de-duplication path, as
+neither of the two vulnerable packages had duplicates.
+
 ### S3 upload — no new plumbing needed
 
 Confirmed by reading `devops-gate/jenkins/jobs/pipelines/linux_pkg_build_package.groovy`'s
@@ -359,6 +420,12 @@ per-package artifact directories at all.
       `linux-kernel-*` packages are `SBOM_DEEP_SCAN="false"` (no SBOM generated for
       build-host tooling or 3rd-party kernel forks), and the `.deb` ↔ `.cdx.json` mapping
       is now strictly 1:1 with a shared filename prefix.
+- [x] `sanitize_sbom()` and `resources/sanitize-sbom.jq` added, gated on
+      `CYCLONEDX_FILTERING` (§7). Verified against a real `delphix-virtualization` sidecar:
+      1,693 → 416 components, zero `/opt/delphix` occurrences, schema-valid, and identical
+      Grype findings before and after.
+- [ ] `CYCLONEDX_FILTERING` exposed as a build parameter on the `build-package` and
+      `build-packages` Jenkins jobs — tracked separately as TOOL-31116 (`devops-gate`).
 
 ## Bugs found and fixed during real-build testing
 
