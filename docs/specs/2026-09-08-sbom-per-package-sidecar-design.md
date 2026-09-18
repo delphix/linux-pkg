@@ -309,13 +309,26 @@ is exactly what is published. It does three things:
    `SYFT_FILE_METADATA_SELECTION=none` suppresses (§4), and de-duplication below would
    orphan many more.
 
-2. **Drops every property except `syft:cpe23`.** This removes the internal path leak —
-   `syft:location:*:path` and `syft:metadata:virtualPath` together exposed 470 directories
-   under `/opt/delphix`, including jar-internal structure such as
+2. **Drops every property except `syft:cpe23` and `syft:package:type`.** This removes the
+   internal path leak — `syft:location:*:path` and `syft:metadata:virtualPath` together
+   exposed 470 directories under `/opt/delphix`, including jar-internal structure such as
    `resources.war:WEB-INF/lib/ST4-4.3.4.jar` — and metadata that merely restates the purl.
+
    `syft:cpe23` is retained because the schema permits one top-level `cpe` while Syft derives
    several candidates per component, and those are the fallback matching path when the
-   primary CPE guess is wrong.
+   primary CPE guess is wrong. This is for **Mend's** benefit rather than Grype's: Grype sets
+   `match.java.using-cpes: false` by default, so for the 405 Java components here it matches
+   on the purl and ignores CPEs entirely. Reducing `syft:cpe23` from 6,296 entries to 62 left
+   Grype's output byte-identical — worth recording, since anyone measuring against Grype
+   alone would reasonably conclude these are dead weight.
+
+   `syft:package:type` is retained because it is the only record of a component's ecosystem
+   for anything whose purl carries none: the six `pkg:generic` components and the eight PE
+   binaries Syft finds without assigning a purl. Without it Grype reports those as
+   `UnknownPackage` instead of `binary`. Components with a `pkg:maven` purl are unaffected,
+   as Grype derives the type from the purl. `syft:package:metadataType` and
+   `syft:package:foundBy` were evaluated alongside it and retained nothing — Grype's output
+   was unchanged with or without them — so they are dropped.
 
 3. **Merge-dedupes components**, keyed on `purl` and falling back to `name+version+type`. A
    purl-only key would drop the Windows binaries found by Syft's PE cataloger, which carry a
@@ -340,10 +353,20 @@ modes, and the sidecar filename is unchanged either way.
 
 Verified with Grype 0.119.0 that sanitizing does not weaken vulnerability matching: the raw
 and sanitized documents produce identical findings (40 matches, 21 unique CVEs, same
-severities), because Grype matches on `purl` and `cpe`, both standard top-level fields. What
-is lost is location *reporting* — every match in the sanitized document carries zero
-locations — not detection. Note this comparison did not exercise the de-duplication path, as
-neither of the two vulnerable packages had duplicates.
+severities), because Grype matches on `purl` and the primary `cpe`, both standard top-level
+fields. Detection was also confirmed for a component that *is* vulnerable, by injecting
+`log4j-core 2.14.1` into each variant — all reported the same seven advisories, correctly
+typed `java-archive` from the purl.
+
+What is lost is location *reporting*: every match in the sanitized document carries zero
+locations, where the raw document names each path the component was found at. That is a
+remediation-context loss, not a detection one, and it is precisely what
+`CYCLONEDX_FILTERING=false` exists to recover.
+
+Two caveats on that testing. The comparison did not exercise the de-duplication path, since
+neither vulnerable package had duplicates; and all 40 matches fell on a single component
+(`jq`, at versions 1.4 and 1.6), so the Java matching path was only exercised by the injected
+component rather than by a real finding.
 
 ### S3 upload — no new plumbing needed
 

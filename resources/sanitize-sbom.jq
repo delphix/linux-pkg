@@ -18,7 +18,7 @@
 #      SYFT_FILE_METADATA_SELECTION=none suppresses, and de-duplication below
 #      would orphan many more.
 #
-#   2. Drop every property except syft:cpe23.
+#   2. Drop every property except syft:cpe23 and syft:package:type.
 #
 #      This removes the internal path leak (syft:location:*:path and
 #      syft:metadata:virtualPath, which together expose several hundred
@@ -29,7 +29,17 @@
 #      top-level `cpe`, while Syft derives several candidate CPEs per component
 #      to improve the odds of matching NVD, whose dictionary has no canonical
 #      naming convention. Those candidates are the fallback matching path for
-#      components whose primary CPE guess is wrong.
+#      components whose primary CPE guess is wrong. Note this is for Mend's
+#      benefit rather than Grype's: Grype disables CPE matching for Java by
+#      default (match.java.using-cpes), so for the great majority of components
+#      here it matches on the purl instead.
+#
+#      syft:package:type is retained because it is the only record of a
+#      component's ecosystem for anything whose purl does not carry one --
+#      pkg:generic components and the PE binaries Syft finds without assigning
+#      a purl at all. Without it those are reported as "UnknownPackage" rather
+#      than "binary". Components with a pkg:maven purl are unaffected, as the
+#      type is derived from the purl itself.
 #
 #   3. Merge-dedupe components.
 #
@@ -45,7 +55,8 @@
 #      matching coordinate is lost to the merge.
 
 def keepprops:
-  [ (.properties // [])[] | select(.name == "syft:cpe23") ];
+  [ (.properties // [])[]
+    | select(.name | test("^syft:(cpe23|package:type)$")) ];
 
 del(.dependencies)
 | .components |= (
