@@ -17,6 +17,7 @@
 # shellcheck disable=SC2034
 
 DEFAULT_PACKAGE_GIT_URL="https://github.com/delphix/challenge-response.git"
+SBOM_DEEP_SCAN="false"
 
 function prepare() {
 	install_build_deps_from_control_file
