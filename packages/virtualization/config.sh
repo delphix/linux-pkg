@@ -65,58 +65,58 @@ function build() {
 	#
 	logmust cd "$WORKDIR/repo/appliance"
 
-	local args=()
-
-	set_secret_build_args
-	args+=("${_SECRET_BUILD_ARGS[@]}")
-
-	args+=("-Dbuild.branch=$DEFAULT_GIT_BRANCH")
-
-	args+=("-Ddockerize=true")
-	args+=("-DbuildJni=true")
-
-	if [[ -n "$DELPHIX_RELEASE_VERSION" ]]; then
-		args+=("-DhotfixGenDlpxVersion=$DELPHIX_RELEASE_VERSION")
-	fi
-
-	logmust ant "${args[@]}" all-secrets package
-
-	#
-	# Publish the virtualization package artifacts
-	#
-	logmust cd "$WORKDIR/repo/appliance"
-	logmust rsync -av packaging/build/distributions/ "$WORKDIR/artifacts/"
-	logmust rsync -av \
-		bin/out/common/com.delphix.common/uem/tars \
-		"$WORKDIR/artifacts/hostchecker2"
-	logmust cp -v \
-		server/api/build/api/json-schemas/delphix.json \
-		"$WORKDIR/artifacts"
-	logmust cp -v \
-		dist/server/opt/delphix/client/etc/api.ini \
-		"$WORKDIR/artifacts"
-	logmust cp -v \
-		packaging/build/reports/dependency-license/* \
-		"$WORKDIR/artifacts/"
-
-	#
-	# Build the "toolkit-devkit" artifacts
-	#
-	logmust cd "$WORKDIR/repo/appliance/toolkit"
-	if [[ -n "$DELPHIX_RELEASE_VERSION" ]]; then
-		logmust ant \
-			-Dversion.number="$DELPHIX_RELEASE_VERSION" \
-			toolkit-devkit
-	else
-		logmust ant \
-			"-Dversion.number=$(date --utc +%Y-%m-%d-%H-%m)" \
-			toolkit-devkit
-	fi
-
-	#
-	# Publish the "toolkit-devkit" artifacts
-	#
-	logmust cd "$WORKDIR/repo/appliance"
-	logmust mkdir -p "$WORKDIR/artifacts/hostchecker2"
-	logmust cp -v toolkit/toolkit-devkit.tar "$WORKDIR/artifacts"
+#	local args=()
+#
+#	set_secret_build_args
+#	args+=("${_SECRET_BUILD_ARGS[@]}")
+#
+#	args+=("-Dbuild.branch=$DEFAULT_GIT_BRANCH")
+#
+#	args+=("-Ddockerize=true")
+#	args+=("-DbuildJni=true")
+#
+#	if [[ -n "$DELPHIX_RELEASE_VERSION" ]]; then
+#		args+=("-DhotfixGenDlpxVersion=$DELPHIX_RELEASE_VERSION")
+#	fi
+#
+#	logmust ant "${args[@]}" all-secrets package
+#
+#	#
+#	# Publish the virtualization package artifacts
+#	#
+#	logmust cd "$WORKDIR/repo/appliance"
+#	logmust rsync -av packaging/build/distributions/ "$WORKDIR/artifacts/"
+#	logmust rsync -av \
+#		bin/out/common/com.delphix.common/uem/tars \
+#		"$WORKDIR/artifacts/hostchecker2"
+#	logmust cp -v \
+#		server/api/build/api/json-schemas/delphix.json \
+#		"$WORKDIR/artifacts"
+#	logmust cp -v \
+#		dist/server/opt/delphix/client/etc/api.ini \
+#		"$WORKDIR/artifacts"
+#	logmust cp -v \
+#		packaging/build/reports/dependency-license/* \
+#		"$WORKDIR/artifacts/"
+#
+#	#
+#	# Build the "toolkit-devkit" artifacts
+#	#
+#	logmust cd "$WORKDIR/repo/appliance/toolkit"
+#	if [[ -n "$DELPHIX_RELEASE_VERSION" ]]; then
+#		logmust ant \
+#			-Dversion.number="$DELPHIX_RELEASE_VERSION" \
+#			toolkit-devkit
+#	else
+#		logmust ant \
+#			"-Dversion.number=$(date --utc +%Y-%m-%d-%H-%m)" \
+#			toolkit-devkit
+#	fi
+#
+#	#
+#	# Publish the "toolkit-devkit" artifacts
+#	#
+#	logmust cd "$WORKDIR/repo/appliance"
+#	logmust mkdir -p "$WORKDIR/artifacts/hostchecker2"
+#	logmust cp -v toolkit/toolkit-devkit.tar "$WORKDIR/artifacts"
 }
