@@ -292,22 +292,50 @@ sidecar (4.7 MB, 1,693 components):
 | | raw | sanitized |
 |---|---|---|
 | components | 1,693 | 416 |
-| property entries | 43,566 | 6,296 |
-| `dependencies` entries | 26 | 0 |
+| property entries | 43,566 | 6,712 |
+| `dependencies` entries | 26 | 1 |
+| components orphaned from `dependencies` | 70% | 0% |
+| `metadata.component.type` | `file` | `application` |
 | occurrences of `/opt/delphix` | 3,384 | 0 |
-| size | 4.7 MB | 0.8 MB |
+| size | 4.7 MB | 1.2 MB |
 
 `sanitize_sbom()` in `lib/common.sh` applies `resources/sanitize-sbom.jq` to each sidecar,
 **between the Syft scan and the `cyclonedx-cli validate` call**, so that what is validated
 is exactly what is published. It does three things:
 
-1. **Drops the `dependencies` graph.** For a directory scan Syft emits jar containment
-   ("this WAR bundles these jars"), not resolved dependency edges — it covered 501 of 1,693
-   components, with no `compositions` element declaring it incomplete, so a consumer would
-   reasonably misread a missing entry as "this component has no dependencies". 90 of its 568
-   edges were already dangling, pointing at the per-file components that
-   `SYFT_FILE_METADATA_SELECTION=none` suppresses (§4), and de-duplication below would
-   orphan many more.
+1. **Replaces the `dependencies` graph, and types the root component as `application`.**
+
+   Syft's own graph is dropped. For a directory scan it emits jar containment ("this WAR
+   bundles these jars"), not resolved dependency edges — it covered 501 of 1,693 components,
+   with no `compositions` element declaring it incomplete, so a consumer would reasonably
+   misread a missing entry as "this component has no dependencies". 90 of its 568 edges were
+   already dangling, pointing at the per-file components that
+   `SYFT_FILE_METADATA_SELECTION=none` suppresses (§4), and de-duplication would orphan many
+   more.
+
+   It is rebuilt as a single flat edge — the root depending on every component — and marked
+   `compositions: [{ aggregate: "incomplete" }]`. Both of these, and the `application` root
+   type, come from Mend support's analysis of a sidecar we sent them (2026-09-24):
+
+   > The root component (virtualization 2026.09.15.08) is declared with type `file` rather
+   > than type `application`. Mend's importer only processes `metadata.component` as the
+   > project root when its type is `application`, so this root is not being recognized
+   > correctly. […] when a component has no defined relationship in `dependencies`, it is
+   > treated as a direct dependency of the root rather than being dropped or placed correctly
+   > in the hierarchy.
+
+   Syft emits `type: file` because `generate_sbom()` scans an extracted directory, so the
+   root was being ignored entirely. Leaving `dependencies` absent is not harmful — nothing is
+   dropped, and Mend flattens to the root — but it leaves the outcome to each consumer's
+   default. Declaring the flat graph explicitly says the same thing unambiguously, connects
+   the root (which Syft leaves unreferenced even in its own output), and takes the share of
+   components orphaned from the graph from 70% to zero. `aggregate: "incomplete"` is what
+   keeps it honest: this is not a resolved dependency graph and should not be read as one.
+
+   Note this does **not** manufacture real relationships. Mend's closing point — that a Syft
+   scan of the packaged `.deb` cannot recover what only exists at build time, and that
+   scanning the build or source with the Mend CLI would — is the same conclusion the
+   top-level design reached, and is CP-13467's subject.
 
 2. **Drops every property except `syft:cpe23` and `syft:package:type`.** This removes the
    internal path leak — `syft:location:*:path` and `syft:metadata:virtualPath` together

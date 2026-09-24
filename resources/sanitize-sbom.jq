@@ -7,7 +7,7 @@
 # is 4.7 MB, of which roughly three quarters is repetition, and it records the
 # absolute path of every component inside the package.
 #
-#   1. Drop the `dependencies` graph.
+#   1. Replace the `dependencies` graph, and type the root component.
 #
 #      Syft emits relationships it can observe, which for a directory scan means
 #      jar containment ("this WAR bundles these jars"), not resolved dependency
@@ -16,7 +16,9 @@
 #      entry as "this component has no dependencies". It also holds dangling
 #      bom-refs pointing at the per-file components that
 #      SYFT_FILE_METADATA_SELECTION=none suppresses, and de-duplication below
-#      would orphan many more.
+#      would orphan many more. It is dropped and rebuilt at the end of this
+#      filter as a flat graph declared `incomplete`, alongside setting the root
+#      component's type to "application" -- see the comments there.
 #
 #   2. Drop every property except syft:cpe23 and syft:package:type.
 #
@@ -88,3 +90,30 @@ del(.dependencies)
         | if (.properties         | length) == 0 then del(.properties)         else . end
       )
   )
+
+# Mend's CycloneDX importer only treats metadata.component as the project root
+# when it is application-typed; Syft emits "file" because generate_sbom() scans
+# an extracted directory. Without this the root is not recognised at all.
+| .metadata.component.type = "application"
+
+# Re-state the dependency graph rather than leaving it absent.
+#
+# Syft's own graph was dropped above: it covered ~30% of components, encoded jar
+# containment rather than resolved dependencies, and held dangling bom-refs. But
+# leaving `dependencies` out entirely means each consumer falls back to its own
+# default -- Mend, for one, treats a component with no declared relationship as a
+# direct dependency of the root. Declaring that explicitly says the same thing
+# unambiguously, and connects the root component, which Syft leaves unreferenced
+# even in its own output.
+#
+# `compositions: incomplete` is what keeps this honest: it states that the
+# relationships here are not a resolved dependency graph, so a flat tree is not
+# mistaken for the real hierarchy. Recovering that would require scanning the
+# build rather than the packaged .deb -- see CP-13467.
+| .metadata.component["bom-ref"] as $root
+| .dependencies = [
+    { "ref": $root, "dependsOn": [ .components[]["bom-ref"] ] }
+  ]
+| .compositions = [
+    { "aggregate": "incomplete", "dependencies": [ $root ] }
+  ]
