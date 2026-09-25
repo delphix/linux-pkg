@@ -60,7 +60,13 @@ def keepprops:
   [ (.properties // [])[]
     | select(.name | test("^syft:(cpe23|package:type)$")) ];
 
-del(.dependencies)
+# Syft omits `components` altogether -- rather than emitting an empty array --
+# when it finds nothing in the scanned payload, which happens for a package
+# whose .deb holds only content no cataloger recognises. Normalise that to an
+# empty array first, or every iteration below fails with "Cannot iterate over
+# null" and takes the build with it.
+.components //= []
+| del(.dependencies)
 | .components |= (
     group_by(.purl // ([.name, .version, .type] | tostring))
     | map(
