@@ -25,6 +25,7 @@
 #
 DEFAULT_PACKAGE_GIT_URL="none"
 SKIP_COPYRIGHTS_CHECK=true
+SBOM_DEEP_SCAN="true"
 
 function fetch() {
 	PACKAGE_GIT_URL="https://github.com/delphix/dlpx-app-gate.git"

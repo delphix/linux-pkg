@@ -36,6 +36,20 @@ export JENKINS_OPS_DIR="${JENKINS_OPS_DIR:-jenkins-ops}"
 #
 export UBUNTU_DISTRIBUTION="${UBUNTU_DISTRIBUTION:-noble}"
 
+#
+# Whether generate_sbom() post-processes each CycloneDX sidecar before it is
+# validated and published (see sanitize_sbom() and resources/sanitize-sbom.jq).
+#
+# Set to "false" to publish the raw Syft output instead, which keeps
+# syft:metadata:virtualPath and so records where inside the package each
+# component was found. That is of no use to a customer, but is how we determine
+# where an unexpected component came from.
+#
+# Only the exact string "false" disables it, so that a typo leaves us with a
+# publishable document rather than one recording our internal paths.
+#
+export CYCLONEDX_FILTERING="${CYCLONEDX_FILTERING:-true}"
+
 source "$(dirname "${BASH_SOURCE[0]}")/container.sh"
 
 #
@@ -617,6 +631,66 @@ function install_shfmt() {
 		logmust sudo chmod +x /usr/local/bin/shfmt
 	fi
 	echo "shfmt version $(shfmt -version) is installed."
+}
+
+#
+# Install the tooling generate_sbom() needs. That is a default hook, shared
+# unmodified by every package that sets SBOM_DEEP_SCAN, so the tools it runs
+# belong with the rest of the generic build tooling installed here rather than
+# being declared as a dependency by each of those packages individually.
+#
+# Unlike everything else installed from setup.sh these are Delphix-built
+# packages with no apt source, so they are fetched from the same S3 location
+# fetch_dependencies() pulls a package's dependencies from, then installed by
+# path. apt rather than dpkg, because delphix-cyclonedx-cli has real
+# dependencies (libicu and the usual shared libraries) that dpkg will not
+# resolve.
+#
+# Best-effort by design: this runs before *every* package build, including the
+# builds of syft and cyclonedx-cli themselves, and on a branch where neither
+# has been published yet there is nothing to fetch. Failing hard would break
+# every build on such a branch rather than just SBOM generation, so a missing
+# artifact warns and moves on; generate_sbom() checks for the tools itself and
+# fails loudly, for the only builds that actually need them.
+#
+function install_sbom_tools() {
+	local pkg s3url tmpdir
+	local debs=()
+
+	tmpdir="$(mktemp -d)" || die "Failed to create a temporary directory"
+
+	for pkg in syft cyclonedx-cli; do
+		#
+		# Run in a command substitution so that a failure to resolve
+		# the URL (get_package_dependency_s3_url dies when a package
+		# has no published artifacts) leaves $s3url empty here instead
+		# of aborting setup.
+		#
+		s3url="$(
+			get_package_dependency_s3_url "$pkg" >/dev/null 2>&1
+			echo "$_RET"
+		)"
+		if [[ -z "$s3url" ]]; then
+			echo "WARNING: no published artifacts found for '$pkg';" \
+				"skipping the SBOM tooling install. Builds of" \
+				"packages that set SBOM_DEEP_SCAN will fail until" \
+				"'$pkg' has been built for this branch."
+			logmust rm -rf "$tmpdir"
+			return 0
+		fi
+
+		[[ "$s3url" != */ ]] && s3url="$s3url/"
+		logmust mkdir -p "$tmpdir/$pkg"
+		logmust aws s3 cp --only-show-errors --recursive \
+			"$s3url" "$tmpdir/$pkg/"
+	done
+
+	debs=("$tmpdir"/*/*.deb)
+	[[ -e "${debs[0]}" ]] ||
+		die "No .deb found in the fetched syft/cyclonedx-cli artifacts"
+
+	logmust install_pkgs "${debs[@]}"
+	logmust rm -rf "$tmpdir"
 }
 
 #
@@ -1459,6 +1533,173 @@ function store_build_info() {
 	if [[ -f "$TOP/PACKAGE_MIRROR_URL_SECONDARY" ]]; then
 		logmust cp "$TOP/PACKAGE_MIRROR_URL_SECONDARY" "$WORKDIR/artifacts/"
 	fi
+}
+
+#
+# Generate a CycloneDX SBOM sidecar for each of this package's built
+# .deb(s) by running Syft against it. Only packages that bundle
+# third-party composition (jars, npm, wheels, Rust crates, ...) opt in
+# via SBOM_DEEP_SCAN="true" in their config.sh -- everything else is
+# left as a flat pkg:deb component by appliance-build's base chroot
+# scan, so a deb scan here would add nothing. Each <deb-filename>.cdx.json
+# is dropped in $WORKDIR/artifacts/ alongside the .deb it describes --
+# a strict 1:1 mapping, no merging across a package's .deb(s) -- where
+# it's picked up by the same S3 sync as every other build artifact, no
+# separate upload path needed.
+#
+#
+# Rewrite a Syft-generated CycloneDX document in place, dropping what should
+# not be published and collapsing Syft's per-location duplicates. See
+# resources/sanitize-sbom.jq for what is removed and why.
+#
+# Skipped entirely when CYCLONEDX_FILTERING is "false", which leaves the raw
+# Syft output -- including syft:metadata:virtualPath, the only field that
+# records where inside the package a component was found. That is of no use to
+# a customer but is how we work out where an unexpected component came from,
+# so it stays available on demand.
+#
+function sanitize_sbom() {
+	local sbom_file="$1"
+	local tmp
+
+	check_env TOP
+	[[ -f "$sbom_file" ]] || die "sanitize_sbom: '$sbom_file' does not exist."
+
+	tmp="$(logmust mktemp)"
+
+	#
+	# jq cannot edit a file in place, so write to a temporary file and
+	# move it over only once jq has succeeded. Redirecting straight back
+	# into the input would truncate it before jq had read it.
+	#
+	logmust jq -f "$TOP/resources/sanitize-sbom.jq" "$sbom_file" >"$tmp"
+	logmust mv "$tmp" "$sbom_file"
+}
+
+function generate_sbom() {
+	if [[ "$SBOM_DEEP_SCAN" != "true" ]]; then
+		return 0
+	fi
+
+	local debs=("$WORKDIR/artifacts/"*.deb)
+	if [[ ! -e "${debs[0]}" ]]; then
+		die "SBOM_DEEP_SCAN is set but no .deb was found in" \
+			"'$WORKDIR/artifacts'"
+	fi
+
+	#
+	# syft/cyclonedx-cli are part of the generic build tooling installed
+	# by setup.sh (install_sbom_tools()) before any package is built,
+	# rather than something each SBOM_DEEP_SCAN package declares for
+	# itself -- this is a default hook, so what it needs is its own
+	# concern, not its callers'. That install is best-effort, so check
+	# here rather than letting "command not found" surface from the
+	# middle of a scan.
+	#
+	local tool
+	for tool in syft cyclonedx-cli; do
+		command -v "$tool" >/dev/null ||
+			die "'$tool' is not installed, so no SBOM can be" \
+				"generated for '$PACKAGE'. It is provisioned by" \
+				"install_sbom_tools() in setup.sh; check that" \
+				"run's output for why it was skipped."
+	done
+
+	#
+	# jq comes from setup.sh's baseline package install rather than
+	# install_sbom_tools(), but sanitize_sbom() is useless without it, so
+	# fail here rather than part-way through a package's .debs.
+	#
+	if [[ "$CYCLONEDX_FILTERING" != "false" ]]; then
+		command -v jq >/dev/null ||
+			die "'jq' is not installed, so the SBOM for '$PACKAGE'" \
+				"cannot be sanitized. Either install it (setup.sh" \
+				"does so by default) or set CYCLONEDX_FILTERING" \
+				"to 'false' to publish the raw Syft output."
+	fi
+
+	#
+	# One sidecar per .deb, not per package: a package that emits more
+	# than one .deb (e.g. "zfs" splits into zfs-dkms, zfsutils-linux,
+	# etc.) gets one <deb-filename>.deb.cdx.json per .deb, each a
+	# standalone document scoped to that .deb alone. No merging across
+	# .debs -- keeps a strict 1:1 mapping between a .deb and its BOM,
+	# with the .deb's own filename as the common prefix.
+	#
+	local deb
+	for deb in "${debs[@]}"; do
+		local sbom_file deb_version extract_dir
+		sbom_file="$WORKDIR/artifacts/$(basename "$deb").cdx.json"
+		#
+		# Read the version back out of the .deb itself, rather than
+		# relying on $PACKAGE_VERSION: by this point in the build,
+		# $PACKAGE_VERSION may no longer hold the final,
+		# revision-suffixed version set_changelog() wrote into the
+		# package (e.g. it's empty for packages that don't set it
+		# explicitly themselves, unlike syft/cyclonedx-cli's own
+		# config.sh). dpkg-deb reads the actual, authoritative
+		# version of the artifact being scanned.
+		#
+		deb_version="$(dpkg-deb -f "$deb" Version)"
+
+		#
+		# Scan the .deb's extracted payload rather than the .deb file.
+		# "syft scan <file>.deb" only identifies the archive: its
+		# deb-archive-cataloger reads the control metadata and emits a
+		# single pkg:deb component, never descending into data.tar.*,
+		# so none of the bundled jars/wheels/modules this sidecar
+		# exists to capture are found. That produced valid but empty
+		# documents -- one component for a 1.2GB application -- which
+		# is no more than appliance-build's image-level dpkg scan
+		# already gives for free. Extracting first is what the design
+		# spec prescribed for exactly this case.
+		#
+		extract_dir="$(logmust mktemp -d)"
+		logmust dpkg-deb -x "$deb" "$extract_dir"
+
+		#
+		# Full catalogers here, deliberately unlike appliance-build's
+		# 95-generate-sbom.binary hook, which restricts to dpkg. That
+		# restriction exists because a jar sitting somewhere on a whole
+		# rootfs cannot be attributed to the package that placed it;
+		# within a single package's own extracted payload everything
+		# found belongs to that package by construction, which is the
+		# entire point of scanning here rather than at image level.
+		#
+		# SYFT_FILE_METADATA_SELECTION=none suppresses Syft's default
+		# per-file "file" component (with SHA-1/SHA-256 hashes and the
+		# scanned path baked in) -- with a whole extracted payload to
+		# walk that would otherwise emit an entry per file.
+		#
+		SYFT_FILE_METADATA_SELECTION=none logmust syft scan "dir:$extract_dir" \
+			--source-name "$PACKAGE" \
+			--source-version "$deb_version" \
+			-o "cyclonedx-json@1.6=$sbom_file"
+
+		logmust rm -rf "$extract_dir"
+
+		#
+		# Sanitize before validating, so that what is validated is
+		# exactly what is published.
+		#
+		# Only the exact string "false" disables this. Anything else,
+		# including unset, sanitizes: a typo should leave us with a
+		# publishable document rather than silently shipping one that
+		# records our internal paths.
+		#
+		if [[ "$CYCLONEDX_FILTERING" != "false" ]]; then
+			logmust sanitize_sbom "$sbom_file"
+		else
+			echo_bold "CYCLONEDX_FILTERING is 'false': publishing" \
+				"the raw Syft output for $(basename "$deb")."
+		fi
+
+		logmust cyclonedx-cli validate \
+			--input-file "$sbom_file" \
+			--input-format json \
+			--input-version v1_6 \
+			--fail-on-errors
+	done
 }
 
 function set_secret_build_args() {

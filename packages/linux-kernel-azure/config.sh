@@ -31,3 +31,6 @@ default)
 	die "invalid linux-kernel package source '$linux_package_source'"
 	;;
 esac
+
+# shellcheck disable=SC2034
+SBOM_DEEP_SCAN="false"

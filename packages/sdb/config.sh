@@ -17,6 +17,7 @@
 
 # shellcheck disable=SC2034
 DEFAULT_PACKAGE_GIT_URL="https://github.com/delphix/sdb.git"
+SBOM_DEEP_SCAN="false"
 
 UPSTREAM_GIT_URL="https://github.com/sdimitro/sdb.git"
 UPSTREAM_GIT_BRANCH="develop"
