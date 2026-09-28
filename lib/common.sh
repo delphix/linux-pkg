@@ -48,7 +48,7 @@ export UBUNTU_DISTRIBUTION="${UBUNTU_DISTRIBUTION:-noble}"
 # Only the exact string "false" disables it, so that a typo leaves us with a
 # publishable document rather than one recording our internal paths.
 #
-export CYCLONEDX_FILTERING="${CYCLONEDX_FILTERING:-true}"
+export CYCLONEDX_FILTERING="${CYCLONEDX_FILTERING:-false}"
 
 source "$(dirname "${BASH_SOURCE[0]}")/container.sh"
 
