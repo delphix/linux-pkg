@@ -37,7 +37,7 @@ export JENKINS_OPS_DIR="${JENKINS_OPS_DIR:-jenkins-ops}"
 export UBUNTU_DISTRIBUTION="${UBUNTU_DISTRIBUTION:-noble}"
 
 #
-# Whether generate_sbom() post-processes each CycloneDX sidecar before it is
+# Whether generate_sbom() post-processes each CycloneDX SBOM before it is
 # validated and published (see sanitize_sbom() and resources/sanitize-sbom.jq).
 #
 # Set to "false" to publish the raw Syft output instead, which keeps
@@ -1536,7 +1536,7 @@ function store_build_info() {
 }
 
 #
-# Generate a CycloneDX SBOM sidecar for each of this package's built
+# Generate a CycloneDX SBOM for each of this package's built
 # .deb(s) by running Syft against it. Only packages that bundle
 # third-party composition (jars, npm, wheels, Rust crates, ...) opt in
 # via SBOM_DEEP_SCAN="true" in their config.sh -- everything else is
@@ -1619,7 +1619,7 @@ function generate_sbom() {
 	fi
 
 	#
-	# One sidecar per .deb, not per package: a package that emits more
+	# One SBOM file per .deb, not per package: a package that emits more
 	# than one .deb (e.g. "zfs" splits into zfs-dkms, zfsutils-linux,
 	# etc.) gets one <deb-filename>.deb.cdx.json per .deb, each a
 	# standalone document scoped to that .deb alone. No merging across
@@ -1647,7 +1647,7 @@ function generate_sbom() {
 		# "syft scan <file>.deb" only identifies the archive: its
 		# deb-archive-cataloger reads the control metadata and emits a
 		# single pkg:deb component, never descending into data.tar.*,
-		# so none of the bundled jars/wheels/modules this sidecar
+		# so none of the bundled jars/wheels/modules this SBOM
 		# exists to capture are found. That produced valid but empty
 		# documents -- one component for a 1.2GB application -- which
 		# is no more than appliance-build's image-level dpkg scan

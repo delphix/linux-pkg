@@ -1,4 +1,4 @@
-# SBOM Per-Package Sidecar Generation — Design
+# SBOM Per-Package Generation — Design
 
 - **Date:** 2026-09-08
 - **Jira:** [DLPX-98872](https://perforce.atlassian.net/browse/DLPX-98872)
@@ -98,7 +98,7 @@ fi
 The one-time classification of all 40 packages (§5) lands in the same change, so this lint
 never lands red.
 
-### 4. `generate_sbom()` — sidecar generation
+### 4. `generate_sbom()` — SBOM generation
 
 Modeled on `store_build_info()` — a default stage function in `lib/common.sh` that packages
 don't need to override, gated on the new flag:
@@ -125,7 +125,7 @@ function generate_sbom() {
 		command -v "$tool" >/dev/null || die "'$tool' is not installed..."
 	done
 
-	# One sidecar per .deb, not per package: a package that emits more
+	# One SBOM file per .deb, not per package: a package that emits more
 	# than one .deb (e.g. "zfs" splits into zfs-dkms, zfsutils-linux,
 	# etc.) gets one <deb-filename>.deb.cdx.json per .deb -- a strict
 	# 1:1 mapping, no merging across a package's .deb(s).
@@ -173,14 +173,14 @@ overrides, out of scope for Phase 2, would override the function in a package's 
 the same way packages already override `build()`).
 
 **Resolved — multiple `.deb`s per package:** a reviewer flagged that the original
-merge-into-one-sidecar approach (below, kept here for history) doesn't give a clean 1:1
+merge-into-one-SBOM approach (below, kept here for history) doesn't give a clean 1:1
 mapping between a `.deb` and its BOM. Changed to: one `<deb-filename>.deb.cdx.json` per
-`.deb`, no merge, no `cyclonedx-cli merge` step at all — each `.deb`'s sidecar is fully
+`.deb`, no merge, no `cyclonedx-cli merge` step at all — each `.deb`'s SBOM is fully
 independent and filename-matched to it. This is a real divergence from the top-level
 design doc (CP-13456), which called for "one package-level SBOM... associated with all
 of that package's debs via `COMPONENTS`" — that assumption didn't survive review. Phase 3
 (`appliance-build`'s consumer, not yet built) will need to associate each `.deb` with its
-own sidecar directly by filename, not go through a package-level indirection.
+own SBOM directly by filename, not go through a package-level indirection.
 
 *(For reference, the approach this replaced: scan each `.deb` into its own document, then
 `cyclonedx-cli merge --output-version v1_6` them into a single `<package>.cdx.json`. Two
@@ -194,7 +194,7 @@ initially, and wrongly, closed as "confirmed working" after a `delphix-sso-app` 
 build produced a schema-valid document. It was valid but empty: `syft scan <deb-path>`
 only *identifies* the archive — its `deb-archive-cataloger` reads the control metadata and
 emits a single `pkg:deb` component, never descending into `data.tar.*`. A
-`delphix-virtualization` sidecar from a real build contained exactly **one** component for
+`delphix-virtualization` SBOM from a real build contained exactly **one** component for
 a 1.17 GB Java + Angular application, i.e. no more information than the image-level dpkg
 scan already provides for free, and nothing at all for a vulnerability scanner to match
 against the bundled jars.
@@ -208,10 +208,10 @@ package's own extracted payload everything found belongs to that package by cons
 which is the whole reason for scanning here instead of at image level.
 
 Note the shape change this brings: because the scanned source is now a directory rather
-than a `.deb`, the sidecar no longer carries a `pkg:deb` component for the package itself
+than a `.deb`, the SBOM no longer carries a `pkg:deb` component for the package itself
 — the package's identity lives in `metadata.component` (via `--source-name`/
 `--source-version`), and the flat `pkg:deb` entry continues to come from Phase 1's
-image-level scan. Phase 3 associates a sidecar with its `.deb` by filename (§4), so
+image-level scan. Phase 3 associates an SBOM with its `.deb` by filename (§4), so
 nothing depends on that component being present here.
 
 **Still open — the bundled npm frontend.** Extraction fixes the jars, but
@@ -284,10 +284,10 @@ than the generic installed-prior layer, which is not what review asked for. Noti
 trade-off explicitly: with the `setup.sh` approach, Jenkins no longer knows these packages
 relate to `syft`/`cyclonedx-cli`, so that batching/rebuild-cascade behaviour is lost.
 
-### 7. Sanitizing the sidecar before publication
+### 7. Sanitizing the SBOM before publication
 
 Raw Syft output is not publishable as-is. Measured on a real `delphix-virtualization`
-sidecar (4.7 MB, 1,693 components):
+SBOM (4.7 MB, 1,693 components):
 
 | | raw | sanitized |
 |---|---|---|
@@ -299,7 +299,7 @@ sidecar (4.7 MB, 1,693 components):
 | occurrences of `/opt/delphix` | 3,384 | 0 |
 | size | 4.7 MB | 1.2 MB |
 
-`sanitize_sbom()` in `lib/common.sh` applies `resources/sanitize-sbom.jq` to each sidecar,
+`sanitize_sbom()` in `lib/common.sh` applies `resources/sanitize-sbom.jq` to each SBOM,
 **between the Syft scan and the `cyclonedx-cli validate` call**, so that what is validated
 is exactly what is published. It does three things:
 
@@ -315,7 +315,7 @@ is exactly what is published. It does three things:
 
    It is rebuilt as a single flat edge — the root depending on every component — and marked
    `compositions: [{ aggregate: "incomplete" }]`. Both of these, and the `application` root
-   type, come from Mend support's analysis of a sidecar we sent them (2026-09-24):
+   type, come from Mend support's analysis of an SBOM we sent them (2026-09-24):
 
    > The root component (virtualization 2026.09.15.08) is declared with type `file` rather
    > than type `application`. Mend's importer only processes `metadata.component` as the
@@ -377,7 +377,7 @@ setting it to `false` skips this pass entirely, publishing the raw Syft output. 
 was found — of no use to a customer, but how we determine where an unexpected component came
 from. Only the exact string `false` disables it: a typo should leave us with a publishable
 document rather than one recording our internal paths. `cyclonedx-cli validate` runs in both
-modes, and the sidecar filename is unchanged either way.
+modes, and the SBOM filename is unchanged either way.
 
 Verified with Grype 0.119.0 that sanitizing does not weaken vulnerability matching: the raw
 and sanitized documents produce identical findings (40 matches, 21 unique CVEs, same
@@ -440,7 +440,7 @@ per-package artifact directories at all.
                                      |
                                      |  (Phase 3, not in scope here:
                                      |   appliance-build fetches each .deb's
-                                     |   own sidecar by filename match)
+                                     |   own SBOM by filename match)
                                      v
                               [out of scope for Phase 2]
 ```
@@ -450,10 +450,10 @@ per-package artifact directories at all.
 - Per-ecosystem overrides (`cargo-cyclonedx` for Rust, `cyclonedx-gradle-plugin` for
   Java) — Phase 4's evaluation decides if the Syft-on-deb baseline here is good enough
   first.
-- `appliance-build` fetching/merging these sidecars into the per-image document — that's
+- `appliance-build` fetching/merging these SBOMs into the per-image document — that's
   Phase 3 (CP-13466), which explicitly depends on this phase completing.
-- DCT/Hyperscale sidecars — deferred in the top-level design, not filed as a story yet.
-- The `devops-gate` publishing switch (CSV → CycloneDX) — unrelated to sidecar generation.
+- DCT/Hyperscale SBOMs — deferred in the top-level design, not filed as a story yet.
+- The `devops-gate` publishing switch (CSV → CycloneDX) — unrelated to SBOM generation.
 
 ## Implementation status
 
@@ -466,13 +466,13 @@ per-package artifact directories at all.
       `verify-query-packages.sh` both pass; `shellcheck`/`shfmt` clean on every touched file.
 - [x] Verified against a real build host: `delphix-sso-app` (single-`.deb`) and
       `delphix-rust` (multi-`.deb`) pre-push builds both produce valid, schema-checked
-      CycloneDX 1.6 sidecars in S3, correctly named per `.deb`.
+      CycloneDX 1.6 SBOMs in S3, correctly named per `.deb`.
 - [x] Confirmed compliant with reviewer feedback: `syft`, `cyclonedx-cli`, and all
       `linux-kernel-*` packages are `SBOM_DEEP_SCAN="false"` (no SBOM generated for
       build-host tooling or 3rd-party kernel forks), and the `.deb` ↔ `.cdx.json` mapping
       is now strictly 1:1 with a shared filename prefix.
 - [x] `sanitize_sbom()` and `resources/sanitize-sbom.jq` added, gated on
-      `CYCLONEDX_FILTERING` (§7). Verified against a real `delphix-virtualization` sidecar:
+      `CYCLONEDX_FILTERING` (§7). Verified against a real `delphix-virtualization` SBOM:
       1,693 → 416 components, zero `/opt/delphix` occurrences, schema-valid, and identical
       Grype findings before and after.
 - [ ] `CYCLONEDX_FILTERING` exposed as a build parameter on the `build-package` and
@@ -484,9 +484,9 @@ Not caught by CI — only surfaced by actually running builds, and in one case o
 inspecting the *contents* of a produced SBOM rather than its exit status:
 
 0. **Valid but empty SBOMs — the most serious of these.** `syft scan <deb>` identifies the
-   archive without descending into it, so every sidecar contained a single `pkg:deb`
+   archive without descending into it, so every SBOM contained a single `pkg:deb`
    component and nothing else: no jars, no wheels, no modules. A `delphix-virtualization`
-   sidecar had one component for a 1.17 GB application. Every flagged package was affected.
+   SBOM had one component for a 1.17 GB application. Every flagged package was affected.
    Caught when the output was actually read, not when the build passed — the build had been
    passing the whole time, and `cyclonedx-cli validate` passes an empty-but-well-formed
    document quite happily. Fixed by extracting with `dpkg-deb -x` and scanning the
@@ -501,7 +501,7 @@ inspecting the *contents* of a produced SBOM rather than its exit status:
    `syft`/`cyclonedx-cli`'s own `config.sh`). Fixed by reading the version back out of the
    built `.deb` via `dpkg-deb -f "$deb" Version`.
 3. **Stray Syft "file" component**, carrying file hashes and an absolute build-workspace
-   path, polluting the sidecar. Fixed with `SYFT_FILE_METADATA_SELECTION=none`, matching
+   path, polluting the SBOM. Fixed with `SYFT_FILE_METADATA_SELECTION=none`, matching
    `appliance-build`'s `95-generate-sbom.binary` hook.
 4. **`cyclonedx-cli merge` defaulted to spec version 1.7**, failing the subsequent
    `--input-version v1_6` validate call. Moot now that merging was removed entirely per

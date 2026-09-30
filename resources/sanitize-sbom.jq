@@ -1,4 +1,4 @@
-# Sanitise a Syft-generated CycloneDX sidecar for external consumption.
+# Sanitise a Syft-generated CycloneDX SBOM for external consumption.
 #
 # Applied by sanitize_sbom() in lib/common.sh to each <deb>.deb.cdx.json before
 # it is validated and uploaded, unless CYCLONEDX_FILTERING is set to "false".
