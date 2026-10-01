@@ -25,7 +25,7 @@ source "$TOP/lib/common.sh"
 #
 export LOGGING=false
 
-ALL_OUTPUT_FIELDS=(name git-url dependencies can-update mend-scan mend-scan-images mend-scan-using-sudo)
+ALL_OUTPUT_FIELDS=(name git-url dependencies can-update mend-scan mend-scan-images mend-scan-using-sudo sbom-deep-scan)
 
 function usage() {
 	local output_fields="${ALL_OUTPUT_FIELDS[*]}"
@@ -73,6 +73,7 @@ function print_package() {
 			mend-scan) outarray+=("${MEND_SCAN_APPLICABLE:-none}") ;;
 			mend-scan-images) outarray+=("${MEND_SCAN_IMAGES:-none}") ;;
 			mend-scan-using-sudo) outarray+=("${MEND_SCAN_USING_SUDO:-none}") ;;
+			sbom-deep-scan) outarray+=("${SBOM_DEEP_SCAN:-none}") ;;
 			dependencies)
 				for dep in $PACKAGE_DEPENDENCIES; do
 					check_package_exists "$dep"

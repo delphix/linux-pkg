@@ -17,6 +17,7 @@
 # shellcheck disable=SC2034
 
 DEFAULT_PACKAGE_GIT_URL="https://github.com/delphix/makedumpfile.git"
+SBOM_DEEP_SCAN="false"
 
 UPSTREAM_SOURCE_PACKAGE="makedumpfile"
 

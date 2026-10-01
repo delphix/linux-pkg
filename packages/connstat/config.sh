@@ -17,6 +17,7 @@
 # shellcheck disable=SC2034
 
 DEFAULT_PACKAGE_GIT_URL="https://github.com/delphix/connstat.git"
+SBOM_DEEP_SCAN="false"
 PACKAGE_DEPENDENCIES="@linux-kernel dwarves"
 
 function prepare() {

@@ -17,6 +17,7 @@
 # shellcheck disable=SC2034
 
 DEFAULT_PACKAGE_GIT_URL=none
+SBOM_DEEP_SCAN="false"
 SKIP_COPYRIGHTS_CHECK=true
 
 URI="s3://release-de-images/internal-artifacts/2025.3.0.1/1.0.53/input-artifacts/combined-packages/packages/grub2"
