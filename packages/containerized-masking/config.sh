@@ -40,7 +40,14 @@ DEFAULT_PACKAGE_GIT_URL="https://github.com/delphix/dms-core-gate.git"
 #
 PACKAGE_NEEDS_DOCKER="true"
 MEND_SCAN_APPLICABLE="true"
-SBOM_DEEP_SCAN="true"
+#
+# Not deep-scanned: generate_sbom() scans this package's .debs, and it builds
+# none -- its only artifact is the masking-kubernetes zip, so opting in fails
+# the build. It is in no appliance image either, so there would be no image
+# SBOM to merge one into. Its third-party content is covered by the Mend scans
+# of MEND_SCAN_IMAGES below.
+#
+SBOM_DEEP_SCAN="false"
 
 MEND_SCAN_IMAGES="'delphix-masking-proxy', 'delphix-masking-database', 'delphix-masking-app'"
 
