@@ -32,7 +32,7 @@ dependency to add** — it only needs to *invoke* `syft`, which is already avail
 
 The Phase 1 base scan lists every installed `.deb` as a flat `pkg:deb` component. That is
 correct and sufficient for 3rd-party Debian packages, but wrong for Delphix's own
-first-party packages: `masking`, `virtualization`, `delphix-sso-app`, `containerized-masking`,
+first-party packages: `masking`, `virtualization`, `delphix-sso-app`,
 `windows-connector`, `zfs`, `ptools`, `delphix-rust`, and `performance-diagnostics` all
 bundle third-party components
 across ecosystems (jars, npm, wheels, Rust crates) that `dpkg` cannot see — dpkg only knows
@@ -231,7 +231,6 @@ strictly "is it 1st-party" — see the `zfs` case), `SBOM_DEEP_SCAN="true"` is s
 | `masking` | Java/Gradle app bundling jars + npm frontend |
 | `virtualization` | Java/Gradle app bundling jars + npm frontend |
 | `delphix-sso-app` | Java/Gradle app |
-| `containerized-masking` | Java/Gradle app |
 | `windows-connector` | Java/Gradle app |
 | `zfs` | OpenZFS fork bundling Delphix's Rust object agent (crates invisible to dpkg) |
 | `ptools` | Rust |
@@ -245,6 +244,15 @@ the top-level design's Tooling section separately calls out a possible Go overri
 (`cyclonedx-gomod`); defaulted to `"false"` here (baseline Syft-on-deb has a Go
 binary-build-info cataloger that may already cover it) — revisit under Phase 4's evaluation
 if gaps are found.
+
+`containerized-masking` was originally in the table above, on the strength of its content (it
+is the masking Java/Gradle app). It was removed under DLPX-99530: it builds no `.deb` — its
+only artifact is a `masking-kubernetes-<version>.zip` — so `generate_sbom()`, which scans
+`.deb`s and fails when an opted-in package produced none, failed every post-push build. It is
+also in no appliance image, so a per-`.deb` SBOM for it would have no image SBOM to be merged
+into; its third-party content is covered by the Mend scans of its container images
+(`MEND_SCAN_IMAGES`). Every package left in the table builds `.deb`s that ship in appliance
+images.
 
 ### 6. Provisioning syft/cyclonedx-cli — generic build tooling, not a package dependency
 
