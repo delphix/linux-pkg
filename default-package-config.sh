@@ -156,6 +156,18 @@ function kernel_build() {
 	logmust fakeroot debian/rules clean "${debian_rules_args[@]}"
 
 	#
+	# Ubuntu kernels that use "linux-main-modules" (lmm, LP: #2165131)
+	# make linux-modules Depend on linux-main-modules-* packages (e.g.
+	# zfs, v4l2loopback). Those are built from separate Ubuntu source
+	# packages against Ubuntu's kernel ABI, so nothing can satisfy them
+	# for our kernel, and we don't use those modules (see do_zfs=false
+	# etc. above). Strip them from the generated control file. This is a
+	# no-op for kernels that haven't switched to lmm.
+	#
+	logmust sed -i -E '/^Depends:/ s/, *linux-main-modules-[^,]*//g' debian/control
+	logmust test -z "$(grep linux-main-modules debian/control)"
+
+	#
 	# Print the environment configuration solely for
 	# debugging purposes.
 	#
