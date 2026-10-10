@@ -4,6 +4,7 @@
 
 bcc
 challenge-response
+chrony
 cloud-init
 crash-python
 crypt-blowfish
