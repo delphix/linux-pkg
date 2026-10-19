@@ -877,6 +877,11 @@ is to create an official repository for it.
 
 ## Testing your changes
 
+For a reader that will act on this programmatically — exact commands, preconditions, pass/fail
+signals, and how `linux-pkg` is used to build/validate a change made in one of its orchestrated
+packages — see [docs/testing.md](docs/testing.md), which expands on this section rather than
+duplicating it.
+
 ### Testing changes to an existing package
 
 If you are not making any changes to linux-pkg, only changes to a given

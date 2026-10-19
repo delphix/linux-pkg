@@ -439,10 +439,15 @@ function load_package_config() {
 #   2. Package-specific environment variables {PACKAGE_PREFIX}_{SUFFIX}.
 #      PACKAGE_PREFIX is the package's name in CAPS with '-' replaced by '_'.
 #      E.g. CLOUD_INIT_GIT_URL sets PACKAGE_GIT_URL for package cloud-init.
-#   3. DEFAULT_PACKAGE_{SUFFIX} variables defined in package's config.sh.
-#   4. Global defaults for all packages, DEFAULT_{SUFFIX}.
+#   3. DEFAULT_PACKAGE_{SUFFIX} variable defined in package's config.sh.
+#      Only GIT_URL has this tier (DEFAULT_PACKAGE_GIT_URL); GIT_BRANCH and
+#      REVISION fall straight from tier 2 to tier 4 below.
+#   4. Global defaults for all packages, DEFAULT_{SUFFIX} (none for GIT_URL).
 #
 # This function should be called after loading a package's config.sh.
+#
+# A change to this precedence, or to buildpkg.sh's -g/-b/-r flags, needs
+# docs/testing.md updated.
 #
 function get_package_config_from_env() {
 	local var
