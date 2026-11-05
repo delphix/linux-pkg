@@ -72,6 +72,7 @@ function prepare() {
 	logmust install_kernel_headers_and_dbgsyms
 	logmust install_pkgs "$DEPDIR"/delphix-rust/*.deb
 	logmust cargo install cargo-bundle-licenses@2.1.1 --locked
+	logmust cargo install cargo-cyclonedx@0.5.9 --locked
 	logmust install_pkgs "$DEPDIR"/delphix-go/*.deb
 	logmust install_pkgs "$DEPDIR"/dwarves/*.deb
 }
