@@ -1653,6 +1653,37 @@ function catalog_npm_lockfiles() {
 	done
 }
 
+#
+# Copy the hashes recorded in the CycloneDX documents a package ships (e.g.
+# zfs's Rust crate SBOMs) onto the matching components, by purl, of the SBOM
+# Syft generated from that package. Syft reads those documents but drops their
+# hashes, and scanners such as Mend identify some ecosystems, Rust crates among
+# them, only by hash.
+#
+function restore_sbom_hashes() {
+	local sbom_file="$1"
+	local extract_dir="$2"
+	local hashes tmp
+
+	hashes="$(logmust mktemp)"
+	find "$extract_dir" -name '*.cdx.json' -type f -print0 |
+		xargs -0 -r jq -s '[ .[].components[]?
+		    | select(.purl != null and .hashes != null)
+		    | { (.purl): .hashes } ] | add // {}' >"$hashes" ||
+		die "restore_sbom_hashes: cannot read the SBOMs in '$extract_dir'"
+
+	if [[ -s "$hashes" ]]; then
+		tmp="$(logmust mktemp)"
+		logmust jq --slurpfile h "$hashes" '
+		    .components |= map(
+		        if .hashes == null and $h[0][.purl // ""] != null
+		        then .hashes = $h[0][.purl] else . end)' \
+			"$sbom_file" >"$tmp"
+		logmust mv "$tmp" "$sbom_file"
+	fi
+	logmust rm -f "$hashes"
+}
+
 function generate_sbom() {
 	if [[ "$SBOM_DEEP_SCAN" != "true" ]]; then
 		return 0
@@ -1764,6 +1795,7 @@ function generate_sbom() {
 			--source-version "$deb_version" \
 			-o "cyclonedx-json@1.6=$sbom_file"
 
+		logmust restore_sbom_hashes "$sbom_file" "$extract_dir"
 		logmust rm -rf "$extract_dir"
 
 		#
