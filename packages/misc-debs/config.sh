@@ -54,6 +54,12 @@ function fetch() {
 		# Source: https://s3.amazonaws.com/mountpoint-s3-release/latest/x86_64/mount-s3.deb
 		# Required by HM-5952 (Hyperscale Snowflake connector S3 staging mounts). DLPXECO-13872.
 		"mount-s3_1.22.3_amd64.deb 259a793b1233258b35ce5ce902df177393542fd76dd2a606f07e800e28591df6"
+
+		# USN-8974-1 (DLPX-100305): backport pcre2 10.42-4ubuntu2.2 to the
+		# release-track appliance. Fixes CVE-2026-89161, -86145, -103111. Fetched
+		# from the Delphix develop apt mirror (noble-updates/noble-security), which already
+		# carries this fix.
+		"libpcre2-8-0_10.42-4ubuntu2.2_amd64.deb f41da7cb7e979d6b037ea92650c72ec8ec532ec3c93aa8d5b997207de56695ea"
 	)
 
 	local url="http://artifactory.delphix.com/artifactory/linux-pkg/misc-debs"
