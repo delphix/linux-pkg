@@ -60,6 +60,14 @@ function fetch() {
 		# from the Delphix develop apt mirror (noble-updates/noble-security), which already
 		# carries this fix.
 		"libpcre2-8-0_10.42-4ubuntu2.2_amd64.deb f41da7cb7e979d6b037ea92650c72ec8ec532ec3c93aa8d5b997207de56695ea"
+
+		# USN-8969-1 (DLPX-100314): backport bind9 1:9.18.39-0ubuntu0.24.04.9 to the
+		# release-track appliance. Fixes CVE-2026-94300, -96888, -19630, -97313. Fetched
+		# from the Delphix develop apt mirror (noble-updates/noble-security), which already
+		# carries this fix.
+		"bind9-host_1%3a9.18.39-0ubuntu0.24.04.9_amd64.deb 6230d7e1f6d7a5b356fc1dde8afb3e65574a760ffec4c51018dcfad79a1bc98e"
+		"bind9-dnsutils_1%3a9.18.39-0ubuntu0.24.04.9_amd64.deb edb46901460a673ebb73c8d6742a2c0243fee673dff70a53f6ade420ba260f09"
+		"bind9-libs_1%3a9.18.39-0ubuntu0.24.04.9_amd64.deb 8398995816db0090f7320717b6fade84f4c7ea353a04282fd4b29d1183b5b2b9"
 	)
 
 	local url="http://artifactory.delphix.com/artifactory/linux-pkg/misc-debs"
