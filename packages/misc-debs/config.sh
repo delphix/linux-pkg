@@ -61,6 +61,17 @@ function fetch() {
 		# carries this fix.
 		"libpcre2-8-0_10.42-4ubuntu2.2_amd64.deb f41da7cb7e979d6b037ea92650c72ec8ec532ec3c93aa8d5b997207de56695ea"
 
+		# USN-8974-1 (DLPX-100305), follow-up: libpcre2-dev and its sibling libraries
+		# must move to 10.42-4ubuntu2.2 together with libpcre2-8-0. libpcre2-dev is
+		# pulled in by libselinux-dev and requires libpcre2-8-0, -16-0, -32-0 and
+		# -posix3 at its own version, so with only libpcre2-8-0 bumped the build
+		# dependency install fails with "held broken packages". Fetched from the
+		# Delphix develop apt mirror (noble-updates/noble-security).
+		"libpcre2-dev_10.42-4ubuntu2.2_amd64.deb 572714fe3fbe1b49ffb4c5a483223c663a51948e0d8590add1620917326f3d21"
+		"libpcre2-16-0_10.42-4ubuntu2.2_amd64.deb a6365e17d88d5fb6223fe2b8cb4c8c65425aeac056e1a212a0151c95e83edf38"
+		"libpcre2-32-0_10.42-4ubuntu2.2_amd64.deb 8415cabfaad4fce8633538d93f81f22ee1cef7b74dd7b323741424d17b10d898"
+		"libpcre2-posix3_10.42-4ubuntu2.2_amd64.deb 90e4f67c2ce096716520ce190d7ae642714ddf692947bbe66e26272ace3cdf8d"
+
 		# USN-8969-1 (DLPX-100314): backport bind9 1:9.18.39-0ubuntu0.24.04.9 to the
 		# release-track appliance. Fixes CVE-2026-94300, -96888, -19630, -97313. Fetched
 		# from the Delphix develop apt mirror (noble-updates/noble-security), which already
