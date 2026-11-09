@@ -79,6 +79,19 @@ function fetch() {
 		"bind9-host_1%3a9.18.39-0ubuntu0.24.04.9_amd64.deb 6230d7e1f6d7a5b356fc1dde8afb3e65574a760ffec4c51018dcfad79a1bc98e"
 		"bind9-dnsutils_1%3a9.18.39-0ubuntu0.24.04.9_amd64.deb edb46901460a673ebb73c8d6742a2c0243fee673dff70a53f6ade420ba260f09"
 		"bind9-libs_1%3a9.18.39-0ubuntu0.24.04.9_amd64.deb 8398995816db0090f7320717b6fade84f4c7ea353a04282fd4b29d1183b5b2b9"
+
+		# USN-8997-1 (DLPX-100380): backport net-snmp 5.9.4+dfsg-1.1ubuntu3.3 to the
+		# release-track appliance. Fixes CVE-2026-89147. snmpd depends on libsnmp40t64
+		# (= its own version), and libsnmp40t64/snmp/snmptrapd/libnetsnmptrapd40t64 all
+		# carry the same exact-version dependency chain, so every installed binary from
+		# this source must move together. Fetched from the Delphix develop apt mirror
+		# (noble-updates/noble-security), which already carries this fix.
+		"snmpd_5.9.4+dfsg-1.1ubuntu3.3_amd64.deb a90b335dc3343eb65b46fa386e788afc58f1fe0a757194c16ce3130c6ef3a512"
+		"libsnmp40t64_5.9.4+dfsg-1.1ubuntu3.3_amd64.deb be208ec5ce5e2de4a8a96eff62ebdf70a836e8e51aaf315b6ca2874b00949775"
+		"libsnmp-base_5.9.4+dfsg-1.1ubuntu3.3_all.deb 8a68afbc15eee7165905af57dddf1163ee7b29a653e305c16686096fc1d22c06"
+		"libnetsnmptrapd40t64_5.9.4+dfsg-1.1ubuntu3.3_amd64.deb 66581218cb48054e389bf852501eb6c7cf7118a5fe9bca003447f5b3894ae4ba"
+		"snmp_5.9.4+dfsg-1.1ubuntu3.3_amd64.deb 6af9975173b45b7521dfb4195e69f7adef945ae26faea66733d1eb47392615ea"
+		"snmptrapd_5.9.4+dfsg-1.1ubuntu3.3_amd64.deb 473c5d3db3e026020276bc2b416427dddf0e717d7bbd48d5dab2ee9778371067"
 	)
 
 	local url="http://artifactory.delphix.com/artifactory/linux-pkg/misc-debs"
