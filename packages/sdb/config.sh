@@ -18,11 +18,18 @@
 # shellcheck disable=SC2034
 DEFAULT_PACKAGE_GIT_URL="https://github.com/delphix/sdb.git"
 SBOM_DEEP_SCAN="false"
+PACKAGE_DEPENDENCIES="libkdumpfile"
 
 UPSTREAM_GIT_URL="https://github.com/sdimitro/sdb.git"
 UPSTREAM_GIT_BRANCH="develop"
 
 function prepare() {
+	#
+	# sdb compiles drgn from source against libkdumpfile. Ubuntu ships
+	# an older ABI of it (libkdumpfile.so.10), so the Delphix-built
+	# package is installed here instead.
+	#
+	logmust install_pkgs "$DEPDIR"/libkdumpfile/*.deb
 	logmust install_build_deps_from_control_file
 }
 
