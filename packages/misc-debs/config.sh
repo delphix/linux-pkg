@@ -93,6 +93,13 @@ function fetch() {
 		# develop apt mirror snapshot).
 		"nginx_1.24.0-2ubuntu7.20_amd64.deb 5076b4e1737d6fe9eddbd0dae4b8bd478f96fb88dad2bfd537de27bdc696e406"
 		"nginx-common_1.24.0-2ubuntu7.20_all.deb 5362868fb4499e0547e9daa8a623eb5f59ea8477742f389157e952c689dde301"
+
+		# USN-8996-1 (DLPX-101071): backport apt 2.8.4ubuntu0.1 to the
+		# patch-track appliance. Fixes CVE-2026-109518. Fetched from the Delphix
+		# develop apt mirror (noble-updates/noble-security), which already carries
+		# this fix.
+		"apt_2.8.4ubuntu0.1_amd64.deb ad2ea7f107f250ba88b0bfdba31812a341e3247589647aa2b03b9dc4e8abf8ed"
+		"libapt-pkg6.0t64_2.8.4ubuntu0.1_amd64.deb a50f3e68a793f90b05f44a4b5f2f59f3ec7687e39b5d8bbd1da44c84671fa3d6"
 	)
 
 	local url="http://artifactory.delphix.com/artifactory/linux-pkg/misc-debs"
