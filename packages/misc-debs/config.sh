@@ -107,6 +107,10 @@ function fetch() {
 		# (noble-updates/noble-security), which already carries this fix.
 		"libc6_2.39-0ubuntu8.12_amd64.deb d821b41fc59cb4978ecd53bc83e5c964ac15d305c8d2ac4c8a35aebe55010fb9"
 		"nscd_2.39-0ubuntu8.12_amd64.deb 2b627b3e867f5c5b0affbcef1310ee41a77c978685049084beb837b4b57ba945"
+		"locales_2.39-0ubuntu8.12_all.deb 0047f997c3799818514d1d08fece7cf2614a61e5505678bcf0c9558587a85d1d"
+		"libc-bin_2.39-0ubuntu8.12_amd64.deb 22f0393621e72ed1b53d228ee332180269182b5445761c7d7b74f5cba75a1dd6"
+		"libc6-dev_2.39-0ubuntu8.12_amd64.deb d81dd6dc9d515762cc93f338efa6219252acf3e2e87b5b89dd7dc517741e6eed"
+		"libc-dev-bin_2.39-0ubuntu8.12_amd64.deb 74ac21dab2a0a6524a2cf9de623adf1bb1f7d9b672e6b0f70adec0c40452bae3"
 	)
 
 	local url="http://artifactory.delphix.com/artifactory/linux-pkg/misc-debs"
