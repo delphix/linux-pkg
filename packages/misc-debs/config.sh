@@ -111,6 +111,17 @@ function fetch() {
 		"libc-bin_2.39-0ubuntu8.12_amd64.deb 22f0393621e72ed1b53d228ee332180269182b5445761c7d7b74f5cba75a1dd6"
 		"libc6-dev_2.39-0ubuntu8.12_amd64.deb d81dd6dc9d515762cc93f338efa6219252acf3e2e87b5b89dd7dc517741e6eed"
 		"libc-dev-bin_2.39-0ubuntu8.12_amd64.deb 74ac21dab2a0a6524a2cf9de623adf1bb1f7d9b672e6b0f70adec0c40452bae3"
+
+		# USN-8997-1 (DLPX-101072): backport net-snmp 5.9.4+dfsg-1.1ubuntu3.3 to the
+		# patch-track appliance. Fixes CVE-2026-89147. Fetched from the Delphix
+		# develop apt mirror (noble-updates/noble-security), which already carries
+		# this fix.
+		"snmpd_5.9.4+dfsg-1.1ubuntu3.3_amd64.deb a90b335dc3343eb65b46fa386e788afc58f1fe0a757194c16ce3130c6ef3a512"
+		"snmp_5.9.4+dfsg-1.1ubuntu3.3_amd64.deb 6af9975173b45b7521dfb4195e69f7adef945ae26faea66733d1eb47392615ea"
+		"snmptrapd_5.9.4+dfsg-1.1ubuntu3.3_amd64.deb 473c5d3db3e026020276bc2b416427dddf0e717d7bbd48d5dab2ee9778371067"
+		"libsnmp40t64_5.9.4+dfsg-1.1ubuntu3.3_amd64.deb be208ec5ce5e2de4a8a96eff62ebdf70a836e8e51aaf315b6ca2874b00949775"
+		"libsnmp-base_5.9.4+dfsg-1.1ubuntu3.3_all.deb 8a68afbc15eee7165905af57dddf1163ee7b29a653e305c16686096fc1d22c06"
+		"libnetsnmptrapd40t64_5.9.4+dfsg-1.1ubuntu3.3_amd64.deb 66581218cb48054e389bf852501eb6c7cf7118a5fe9bca003447f5b3894ae4ba"
 	)
 
 	local url="http://artifactory.delphix.com/artifactory/linux-pkg/misc-debs"
