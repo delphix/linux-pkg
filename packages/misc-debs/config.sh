@@ -79,6 +79,13 @@ function fetch() {
 		"bind9-host_1%3a9.18.39-0ubuntu0.24.04.9_amd64.deb 6230d7e1f6d7a5b356fc1dde8afb3e65574a760ffec4c51018dcfad79a1bc98e"
 		"bind9-dnsutils_1%3a9.18.39-0ubuntu0.24.04.9_amd64.deb edb46901460a673ebb73c8d6742a2c0243fee673dff70a53f6ade420ba260f09"
 		"bind9-libs_1%3a9.18.39-0ubuntu0.24.04.9_amd64.deb 8398995816db0090f7320717b6fade84f4c7ea353a04282fd4b29d1183b5b2b9"
+
+		# DLPX-101047: backport openjdk-17 17.0.21.1+2-1~24.04.1 to the
+		# patch-track appliance. Fixes CVE-2026-114938 ("Java4Shell"). Fetched
+		# from the Ubuntu noble-security archive (published 2026-11-18; not yet
+		# in the Delphix develop apt mirror snapshot).
+		"openjdk-17-jdk-headless_17.0.21.1+2-1~24.04.1_amd64.deb 288c75d61943a1d7284868fae125118aa4b25c31294f090e209f4b0c614f2719"
+		"openjdk-17-jre-headless_17.0.21.1+2-1~24.04.1_amd64.deb e7c01b78a2cbbafbb2f7ca9e03b85b4553db2c090ccb3175d8aff00ea47a2d63"
 	)
 
 	local url="http://artifactory.delphix.com/artifactory/linux-pkg/misc-debs"
