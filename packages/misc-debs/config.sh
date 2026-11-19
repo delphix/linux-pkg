@@ -124,6 +124,13 @@ function fetch() {
 		"libsnmp40t64_5.9.4+dfsg-1.1ubuntu3.3_amd64.deb be208ec5ce5e2de4a8a96eff62ebdf70a836e8e51aaf315b6ca2874b00949775"
 		"libsnmp-base_5.9.4+dfsg-1.1ubuntu3.3_all.deb 8a68afbc15eee7165905af57dddf1163ee7b29a653e305c16686096fc1d22c06"
 		"libnetsnmptrapd40t64_5.9.4+dfsg-1.1ubuntu3.3_amd64.deb 66581218cb48054e389bf852501eb6c7cf7118a5fe9bca003447f5b3894ae4ba"
+
+		# USN-9009-1 (DLPX-101069): backport openjdk-8 8u512-b09~us1-0ubuntu1~24.04.1 to
+		# the patch-track appliance. Fixes 37 CVEs, including CVE-2026-114820, CVE-2026-91463
+		# and CVE-2026-91464 (full list in the Jira ticket). Fetched from the Delphix develop
+		# apt mirror (noble-updates/noble-security), which already carries this fix.
+		"openjdk-8-jre-headless_8u512-b09~us1-0ubuntu1~24.04.1_amd64.deb 88df804828a287946386738b2f0ed064512339b629c79324065eb945ba08455d"
+		"openjdk-8-jdk-headless_8u512-b09~us1-0ubuntu1~24.04.1_amd64.deb d65d88d47ecb0dfca3957f7ce5749a6b2052b27680f1ad2b5c7b5303d7688038"
 	)
 
 	local url="http://artifactory.delphix.com/artifactory/linux-pkg/misc-debs"
