@@ -131,6 +131,11 @@ function fetch() {
 		# apt mirror (noble-updates/noble-security), which already carries this fix.
 		"openjdk-8-jre-headless_8u512-b09~us1-0ubuntu1~24.04.1_amd64.deb 88df804828a287946386738b2f0ed064512339b629c79324065eb945ba08455d"
 		"openjdk-8-jdk-headless_8u512-b09~us1-0ubuntu1~24.04.1_amd64.deb d65d88d47ecb0dfca3957f7ce5749a6b2052b27680f1ad2b5c7b5303d7688038"
+
+		# USN-8751-2 (DLPX-101070): backport urwid 2.6.10-1ubuntu0.1 to the
+		# patch-track appliance. Fixes CVE-2026-9323. Fetched from the Ubuntu
+		# noble-security archive (not yet in the Delphix develop apt mirror snapshot).
+		"python3-urwid_2.6.10-1ubuntu0.1_amd64.deb 4f28f7170fa04c11092e2edd397a9be8baa0e1c8d86eeee39b7d183c39144c84"
 	)
 
 	local url="http://artifactory.delphix.com/artifactory/linux-pkg/misc-debs"
