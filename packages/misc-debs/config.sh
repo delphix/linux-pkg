@@ -86,6 +86,13 @@ function fetch() {
 		# in the Delphix develop apt mirror snapshot).
 		"openjdk-17-jdk-headless_17.0.21.1+2-1~24.04.1_amd64.deb 288c75d61943a1d7284868fae125118aa4b25c31294f090e209f4b0c614f2719"
 		"openjdk-17-jre-headless_17.0.21.1+2-1~24.04.1_amd64.deb e7c01b78a2cbbafbb2f7ca9e03b85b4553db2c090ccb3175d8aff00ea47a2d63"
+
+		# USN pending (DLPX-101075, "nginx2root"): backport nginx 1.24.0-2ubuntu7.20 to
+		# the patch-track appliance. Fixes CVE-2026-123007, -123634, -123633, -113425.
+		# Fetched from the Ubuntu noble-security archive (not yet in the Delphix
+		# develop apt mirror snapshot).
+		"nginx_1.24.0-2ubuntu7.20_amd64.deb 5076b4e1737d6fe9eddbd0dae4b8bd478f96fb88dad2bfd537de27bdc696e406"
+		"nginx-common_1.24.0-2ubuntu7.20_all.deb 5362868fb4499e0547e9daa8a623eb5f59ea8477742f389157e952c689dde301"
 	)
 
 	local url="http://artifactory.delphix.com/artifactory/linux-pkg/misc-debs"
