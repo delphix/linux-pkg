@@ -136,6 +136,15 @@ function fetch() {
 		# patch-track appliance. Fixes CVE-2026-9323. Fetched from the Ubuntu
 		# noble-security archive (not yet in the Delphix develop apt mirror snapshot).
 		"python3-urwid_2.6.10-1ubuntu0.1_amd64.deb 4f28f7170fa04c11092e2edd397a9be8baa0e1c8d86eeee39b7d183c39144c84"
+
+		# USN-9006-1 (DLPX-101073): backport perl 5.38.2-3.2ubuntu0.7 to the
+		# patch-track appliance. Fixes CVE-2026-82560. Fetched from the Delphix
+		# develop apt mirror (noble-updates/noble-security), which already carries
+		# this fix.
+		"perl_5.38.2-3.2ubuntu0.7_amd64.deb 5e95eaa0db06b3eb4c669c033a6a9347f47c2923c8fd1297c7d9c553c4f8d153"
+		"perl-base_5.38.2-3.2ubuntu0.7_amd64.deb 38045b6be63d521ab389b2fe619f0d22ad0582191605e6108a4c51b452090265"
+		"perl-modules-5.38_5.38.2-3.2ubuntu0.7_all.deb 8d2652aa897458aa2482be38d1d0fb26745e87450ab5b620b33180ab0078190c"
+		"libperl5.38t64_5.38.2-3.2ubuntu0.7_amd64.deb 134f2d9341d97b8a3582df4d646f8da19d505aa75eb42e67cefb7570c42be7cc"
 	)
 
 	local url="http://artifactory.delphix.com/artifactory/linux-pkg/misc-debs"
