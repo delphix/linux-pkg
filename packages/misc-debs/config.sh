@@ -86,6 +86,63 @@ function fetch() {
 		# in the Delphix develop apt mirror snapshot).
 		"openjdk-17-jdk-headless_17.0.21.1+2-1~24.04.1_amd64.deb 288c75d61943a1d7284868fae125118aa4b25c31294f090e209f4b0c614f2719"
 		"openjdk-17-jre-headless_17.0.21.1+2-1~24.04.1_amd64.deb e7c01b78a2cbbafbb2f7ca9e03b85b4553db2c090ccb3175d8aff00ea47a2d63"
+
+		# USN-9009-1 (DLPX-101069): backport openjdk-8 8u512-b09~us1-0ubuntu1~24.04.1 to
+		# the patch-track appliance. Fixes 37 CVEs, including CVE-2026-114820, CVE-2026-91463
+		# and CVE-2026-91464 (full list in the Jira ticket). Fetched from the Delphix develop
+		# apt mirror (noble-updates/noble-security), which already carries this fix.
+		"openjdk-8-jre-headless_8u512-b09~us1-0ubuntu1~24.04.1_amd64.deb 88df804828a287946386738b2f0ed064512339b629c79324065eb945ba08455d"
+		"openjdk-8-jdk-headless_8u512-b09~us1-0ubuntu1~24.04.1_amd64.deb d65d88d47ecb0dfca3957f7ce5749a6b2052b27680f1ad2b5c7b5303d7688038"
+
+		# USN-8751-2 (DLPX-101070): backport urwid 2.6.10-1ubuntu0.1 to the
+		# patch-track appliance. Fixes CVE-2026-9323. Fetched from the Ubuntu
+		# noble-security archive (not yet in the Delphix develop apt mirror snapshot).
+		"python3-urwid_2.6.10-1ubuntu0.1_amd64.deb 4f28f7170fa04c11092e2edd397a9be8baa0e1c8d86eeee39b7d183c39144c84"
+
+		# USN-8996-1 (DLPX-101071): backport apt 2.8.4ubuntu0.1 to the
+		# patch-track appliance. Fixes CVE-2026-109518. Fetched from the Delphix
+		# develop apt mirror (noble-updates/noble-security), which already carries
+		# this fix.
+		"apt_2.8.4ubuntu0.1_amd64.deb ad2ea7f107f250ba88b0bfdba31812a341e3247589647aa2b03b9dc4e8abf8ed"
+		"libapt-pkg6.0t64_2.8.4ubuntu0.1_amd64.deb a50f3e68a793f90b05f44a4b5f2f59f3ec7687e39b5d8bbd1da44c84671fa3d6"
+
+		# USN-8997-1 (DLPX-101072): backport net-snmp 5.9.4+dfsg-1.1ubuntu3.3 to the
+		# patch-track appliance. Fixes CVE-2026-89147. Fetched from the Delphix
+		# develop apt mirror (noble-updates/noble-security), which already carries
+		# this fix.
+		"snmpd_5.9.4+dfsg-1.1ubuntu3.3_amd64.deb a90b335dc3343eb65b46fa386e788afc58f1fe0a757194c16ce3130c6ef3a512"
+		"snmp_5.9.4+dfsg-1.1ubuntu3.3_amd64.deb 6af9975173b45b7521dfb4195e69f7adef945ae26faea66733d1eb47392615ea"
+		"snmptrapd_5.9.4+dfsg-1.1ubuntu3.3_amd64.deb 473c5d3db3e026020276bc2b416427dddf0e717d7bbd48d5dab2ee9778371067"
+		"libsnmp40t64_5.9.4+dfsg-1.1ubuntu3.3_amd64.deb be208ec5ce5e2de4a8a96eff62ebdf70a836e8e51aaf315b6ca2874b00949775"
+		"libsnmp-base_5.9.4+dfsg-1.1ubuntu3.3_all.deb 8a68afbc15eee7165905af57dddf1163ee7b29a653e305c16686096fc1d22c06"
+		"libnetsnmptrapd40t64_5.9.4+dfsg-1.1ubuntu3.3_amd64.deb 66581218cb48054e389bf852501eb6c7cf7118a5fe9bca003447f5b3894ae4ba"
+
+		# USN-9006-1 (DLPX-101073): backport perl 5.38.2-3.2ubuntu0.7 to the
+		# patch-track appliance. Fixes CVE-2026-82560. Fetched from the Delphix
+		# develop apt mirror (noble-updates/noble-security), which already carries
+		# this fix.
+		"perl_5.38.2-3.2ubuntu0.7_amd64.deb 5e95eaa0db06b3eb4c669c033a6a9347f47c2923c8fd1297c7d9c553c4f8d153"
+		"perl-base_5.38.2-3.2ubuntu0.7_amd64.deb 38045b6be63d521ab389b2fe619f0d22ad0582191605e6108a4c51b452090265"
+		"perl-modules-5.38_5.38.2-3.2ubuntu0.7_all.deb 8d2652aa897458aa2482be38d1d0fb26745e87450ab5b620b33180ab0078190c"
+		"libperl5.38t64_5.38.2-3.2ubuntu0.7_amd64.deb 134f2d9341d97b8a3582df4d646f8da19d505aa75eb42e67cefb7570c42be7cc"
+
+		# USN-9065-1 (DLPX-101074): backport glibc 2.39-0ubuntu8.12 to the
+		# patch-track appliance. Fixes CVE-2026-18374, -84243, -8674, -86805,
+		# -89092, -95818, -97399. Fetched from the Delphix develop apt mirror
+		# (noble-updates/noble-security), which already carries this fix.
+		"libc6_2.39-0ubuntu8.12_amd64.deb d821b41fc59cb4978ecd53bc83e5c964ac15d305c8d2ac4c8a35aebe55010fb9"
+		"nscd_2.39-0ubuntu8.12_amd64.deb 2b627b3e867f5c5b0affbcef1310ee41a77c978685049084beb837b4b57ba945"
+		"locales_2.39-0ubuntu8.12_all.deb 0047f997c3799818514d1d08fece7cf2614a61e5505678bcf0c9558587a85d1d"
+		"libc-bin_2.39-0ubuntu8.12_amd64.deb 22f0393621e72ed1b53d228ee332180269182b5445761c7d7b74f5cba75a1dd6"
+		"libc6-dev_2.39-0ubuntu8.12_amd64.deb d81dd6dc9d515762cc93f338efa6219252acf3e2e87b5b89dd7dc517741e6eed"
+		"libc-dev-bin_2.39-0ubuntu8.12_amd64.deb 74ac21dab2a0a6524a2cf9de623adf1bb1f7d9b672e6b0f70adec0c40452bae3"
+
+		# USN pending (DLPX-101075, "nginx2root"): backport nginx 1.24.0-2ubuntu7.20 to
+		# the patch-track appliance. Fixes CVE-2026-123007, -123634, -123633, -113425.
+		# Fetched from the Ubuntu noble-security archive (not yet in the Delphix
+		# develop apt mirror snapshot).
+		"nginx_1.24.0-2ubuntu7.20_amd64.deb 5076b4e1737d6fe9eddbd0dae4b8bd478f96fb88dad2bfd537de27bdc696e406"
+		"nginx-common_1.24.0-2ubuntu7.20_all.deb 5362868fb4499e0547e9daa8a623eb5f59ea8477742f389157e952c689dde301"
 	)
 
 	local url="http://artifactory.delphix.com/artifactory/linux-pkg/misc-debs"
