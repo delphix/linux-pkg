@@ -115,7 +115,9 @@ function fetch() {
 		# USN-8997-1 (DLPX-101072): backport net-snmp 5.9.4+dfsg-1.1ubuntu3.3 to the
 		# patch-track appliance. Fixes CVE-2026-89147. Fetched from the Delphix
 		# develop apt mirror (noble-updates/noble-security), which already carries
-		# this fix.
+		# this fix. Reused from the earlier DLPX-100379/DLPX-100380 attempt
+		# (PRs #427/#428, closed unmerged) -- these six objects were already
+		# uploaded to Artifactory under that attempt.
 		"snmpd_5.9.4+dfsg-1.1ubuntu3.3_amd64.deb a90b335dc3343eb65b46fa386e788afc58f1fe0a757194c16ce3130c6ef3a512"
 		"snmp_5.9.4+dfsg-1.1ubuntu3.3_amd64.deb 6af9975173b45b7521dfb4195e69f7adef945ae26faea66733d1eb47392615ea"
 		"snmptrapd_5.9.4+dfsg-1.1ubuntu3.3_amd64.deb 473c5d3db3e026020276bc2b416427dddf0e717d7bbd48d5dab2ee9778371067"
