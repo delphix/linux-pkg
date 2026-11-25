@@ -55,6 +55,19 @@
 #      the first silently loses licences and hashes that a later copy carried.
 #      A duplicate's differing primary CPE is demoted into syft:cpe23 so that no
 #      matching coordinate is lost to the merge.
+#
+#   4. Give each Java archive its SHA-1 in `hashes`.
+#
+#      Syft computes the SHA-1 of every jar, nested ones included, but its
+#      CycloneDX encoder records it only in a URL-less "build-meta"
+#      externalReference. Mend reads `hashes`, and falls back to matching a
+#      Maven component by its SHA-1 when the coordinates Syft guessed from the
+#      jar's manifest are wrong. The hash is copied into `hashes`, where every
+#      scanner looks for it.
+
+def allhashes:
+  (.hashes // [])
+  + [ (.externalReferences // [])[] | select(.type == "build-meta") | .hashes[]? ];
 
 def keepprops:
   [ (.properties // [])[]
@@ -72,10 +85,11 @@ def keepprops:
     | map(
         reduce .[] as $c ({};
           if (. | length) == 0 then
-            ($c | .properties = keepprops)
+            ($c | .properties = keepprops | .hashes = (allhashes | unique))
           else
               .licenses           = (((.licenses           // []) + ($c.licenses           // [])) | unique)
             | .externalReferences = (((.externalReferences // []) + ($c.externalReferences // [])) | unique)
+            | .hashes             = (((.hashes             // []) + ($c | allhashes))           | unique)
             | .properties         = (
                 ( (.properties // [])
                   + ($c | keepprops)
@@ -93,6 +107,7 @@ def keepprops:
                           | select(.name != "syft:cpe23" or .value != $primary) ]
         | if (.licenses           | length) == 0 then del(.licenses)           else . end
         | if (.externalReferences | length) == 0 then del(.externalReferences) else . end
+        | if (.hashes             | length) == 0 then del(.hashes)             else . end
         | if (.properties         | length) == 0 then del(.properties)         else . end
       )
   )
