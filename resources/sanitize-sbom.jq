@@ -64,10 +64,48 @@
 #      Maven component by its SHA-1 when the coordinates Syft guessed from the
 #      jar's manifest are wrong. The hash is copied into `hashes`, where every
 #      scanner looks for it.
+#
+#   5. Describe the third-party programs Syft's binary cataloger finds.
+#
+#      Syft types these "application", and Mend's importer skips that type
+#      altogether. They are retyped "library". OpenSSL and 7-Zip are also given
+#      a pkg:conan purl, the only form Mend identifies them by; Mend ignores
+#      the CPE whenever a purl is present, and supports neither pkg:generic nor
+#      pkg:github. Syft names OpenSSL and stunnel after their version banners,
+#      which yields CPEs no database knows, so those are replaced. Mend cannot
+#      identify stunnel, Node.js, bash, jq or rust in any form, but listing them
+#      as libraries with correct CPEs keeps the SBOM complete for every other
+#      consumer. Delphix's own programs, and those whose origin is not known
+#      here, are left as Syft found them.
 
 def allhashes:
   (.hashes // [])
   + [ (.externalReferences // [])[] | select(.type == "build-meta") | .hashes[]? ];
+
+def cpe($vendor; $product):
+  "cpe:2.3:a:\($vendor):\($product):\(.version):*:*:*:*:*:*:*";
+
+# Replace a component's identity, dropping Syft's candidate CPEs, which were
+# all derived from the wrong name.
+def reidentify($name; $cpe; $purl):
+  .type = "library"
+  | .name = $name
+  | .cpe = $cpe
+  | if $purl == null then del(.purl) else .purl = $purl end
+  | .properties = [ (.properties // [])[] | select(.name != "syft:cpe23") ]
+  | if (.properties | length) == 0 then del(.properties) else . end;
+
+def bundled_binary:
+  if .type != "application" or .version == null or .version == "UNKNOWN" then .
+  elif .name == "7-Zip" then
+    reidentify("7-Zip"; cpe("7-zip"; "7-zip"); "pkg:conan/7zip@\(.version)")
+  elif .name == "The OpenSSL Toolkit" then
+    reidentify("OpenSSL"; cpe("openssl"; "openssl"); "pkg:conan/openssl@\(.version)")
+  elif (.name | startswith("stunnel ")) then
+    reidentify("stunnel"; cpe("stunnel"; "stunnel"); null)
+  elif (.purl // "" | test("^pkg:generic/(bash|jq|node|rust)@")) then
+    .type = "library"
+  else . end;
 
 def keepprops:
   [ (.properties // [])[]
@@ -110,6 +148,7 @@ def keepprops:
         | if (.hashes             | length) == 0 then del(.hashes)             else . end
         | if (.properties         | length) == 0 then del(.properties)         else . end
       )
+    | map(bundled_binary)
   )
 
 # Mend's CycloneDX importer only treats metadata.component as the project root
