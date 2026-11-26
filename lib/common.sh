@@ -1581,6 +1581,78 @@ function sanitize_sbom() {
 	logmust mv "$tmp" "$sbom_file"
 }
 
+#
+# Registry Syft asks for the license of each npm package it lists from a lock
+# file. A lock file records only names and versions, and every Delphix npm
+# build already resolves through this registry, so it can answer for internal
+# @delphix packages as well as public ones.
+#
+SBOM_NPM_REGISTRY="${SBOM_NPM_REGISTRY:-https://artifactory.delphix.com/artifactory/api/npm/dlpx-npm/}"
+
+#
+# Replace every npm lock file shipped in an extracted .deb payload with a
+# CycloneDX document of that project's runtime dependencies, for the main scan
+# in generate_sbom() to pick up through Syft's sbom-cataloger.
+#
+# A package whose browser UI is shipped as minified bundles can ship the UI
+# project's package.json and lock file alongside it, so that what went into
+# those bundles is still on record. Syft reads a lock file directly, but it
+# can only tell runtime from development dependencies by reading the
+# package.json next to it, and Syft 1.46 does so only when that lock file is at
+# the root of the scan. Anywhere deeper it lists every entry, so a UI's whole
+# build toolchain (compilers, bundlers, test runners) is reported as shipped
+# code: 1,847 components rather than 445 for one project in dlpx-app-gate.
+# Scanning each lock file's directory on its own puts it at the root.
+#
+# Lock files under node_modules belong to installed packages, which the main
+# scan already lists from their own package.json, so they are left alone.
+#
+function catalog_npm_lockfiles() {
+	local root="$1"
+	local dirs=() dir lock pids=() i
+
+	while IFS= read -r -d '' lock; do
+		dir="$(dirname "$lock")"
+		[[ -f "$dir/package.json" ]] || continue
+		[[ " ${dirs[*]} " == *" $dir "* ]] || dirs+=("$dir")
+	done < <(find "$root" -path '*/node_modules' -prune -o \
+		\( -name yarn.lock -o -name package-lock.json -o \
+		-name npm-shrinkwrap.json -o -name pnpm-lock.yaml \) \
+		-type f -print0)
+
+	[[ ${#dirs[@]} -eq 0 ]] && return 0
+
+	#
+	# Each scan looks up the license of every package with one request at
+	# a time, which takes minutes for a large UI project, so the projects
+	# are scanned in parallel.
+	#
+	for dir in "${dirs[@]}"; do
+		echo "Cataloging npm runtime dependencies of ${dir#"$root"}"
+		SYFT_FILE_METADATA_SELECTION=none \
+			SYFT_JAVASCRIPT_INCLUDE_DEV_DEPENDENCIES=false \
+			SYFT_JAVASCRIPT_SEARCH_REMOTE_LICENSES=true \
+			SYFT_JAVASCRIPT_NPM_BASE_URL="$SBOM_NPM_REGISTRY" \
+			syft scan "dir:$dir" -q \
+			--override-default-catalogers javascript-lock-cataloger \
+			-o "cyclonedx-json@1.6=$dir.npm.cdx.json" &
+		pids+=($!)
+	done
+	for i in "${!pids[@]}"; do
+		wait "${pids[$i]}" ||
+			die "Failed to catalog the npm lock file in '${dirs[$i]}'."
+	done
+
+	#
+	# The lock files and package.json go, so that the main scan neither
+	# lists every entry again nor reports the project itself as a package.
+	#
+	for dir in "${dirs[@]}"; do
+		logmust rm -f "$dir"/{package.json,yarn.lock,package-lock.json,npm-shrinkwrap.json,pnpm-lock.yaml}
+		logmust mv "$dir.npm.cdx.json" "$dir/npm-runtime.cdx.json"
+	done
+}
+
 function generate_sbom() {
 	if [[ "$SBOM_DEEP_SCAN" != "true" ]]; then
 		return 0
@@ -1661,6 +1733,7 @@ function generate_sbom() {
 		#
 		extract_dir="$(logmust mktemp -d)"
 		logmust dpkg-deb -x "$deb" "$extract_dir"
+		logmust catalog_npm_lockfiles "$extract_dir"
 
 		#
 		# Full catalogers here, deliberately unlike appliance-build's
@@ -1671,12 +1744,22 @@ function generate_sbom() {
 		# found belongs to that package by construction, which is the
 		# entire point of scanning here rather than at image level.
 		#
+		# Syft's default set for a directory scan is not quite all of
+		# them: it leaves out the catalogers it tags as "image" only.
+		# Two of those matter here. javascript-package-cataloger lists
+		# installed node_modules packages from their package.json;
+		# without it a package that ships a node_modules tree (such as
+		# virtualization's CLI) lists none of it. sbom-cataloger reads
+		# SBOMs shipped in the payload, which is how the documents
+		# catalog_npm_lockfiles() leaves are merged in.
+		#
 		# SYFT_FILE_METADATA_SELECTION=none suppresses Syft's default
 		# per-file "file" component (with SHA-1/SHA-256 hashes and the
 		# scanned path baked in) -- with a whole extracted payload to
 		# walk that would otherwise emit an entry per file.
 		#
 		SYFT_FILE_METADATA_SELECTION=none logmust syft scan "dir:$extract_dir" \
+			--select-catalogers +javascript-package-cataloger,+sbom-cataloger \
 			--source-name "$PACKAGE" \
 			--source-version "$deb_version" \
 			-o "cyclonedx-json@1.6=$sbom_file"

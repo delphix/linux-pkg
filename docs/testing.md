@@ -104,6 +104,15 @@ directly on the host under `packages/<package>/tmp` (the checkout is bind-mounte
 container), and use `docker cp linux-pkg-<package>:<path> <dest>` for anything that lives only
 inside the container.
 
+**Gotcha:** for a package with `SBOM_DEEP_SCAN="true"` whose `.deb` ships an npm lock file
+(`yarn.lock`, `package-lock.json`, `npm-shrinkwrap.json` or `pnpm-lock.yaml`) next to a
+`package.json`, outside `node_modules` — virtualization ships one per browser UI project —
+`generate_sbom()` asks an npm registry for the license of every runtime dependency in it. That
+needs network access to `SBOM_NPM_REGISTRY` (default: Artifactory's `dlpx-npm`, which needs no
+credentials) and takes a few minutes for virtualization. A registry that cannot be reached is not
+an error: the components are still listed, without licenses, so check the SBOM's licenses rather
+than the build's exit status. Set `SBOM_NPM_REGISTRY` to point the lookups at another registry.
+
 ### 1.3 Testing changes to an existing package (upstream source, not linux-pkg itself)
 
 If you changed the upstream source of a package `linux-pkg` already builds (not `linux-pkg`'s own
